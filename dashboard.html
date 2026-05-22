@@ -275,7 +275,8 @@ async function loadFunnel() {
   const container = el('funnel-container');
   container.innerHTML = stages.map((s, i) => {
     const pct = Math.round(s.val / max * 100);
-    const drop = i === 0 ? '' : `<span class="f-drop" style="color:var(--red)">-${100 - Math.round(s.val / stages[i-1].val * 100)}%</span>`;
+    const dropPct = stages[i-1].val > 0 ? Math.round((1 - s.val / stages[i-1].val) * 100) : 0;
+const drop = i === 0 ? '' : `<span class="f-drop" style="color:var(--red)">-${dropPct}%</span>`;
     return `
       <div class="funnel-row">
         <div class="f-lbl">${s.label}</div>
