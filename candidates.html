@@ -82,10 +82,8 @@ tr.row-onboarding td{background:#F5FFFA}
       <div class="filter-bar" style="margin-bottom:8px">
         <input class="search-input" id="cand-search" placeholder="🔍 Search name, phone, app no…" oninput="applyFilters()">
         <select class="fsel" id="f-desig" onchange="applyFilters()">
-          <option value="">All Designations</option>
-          <option>Sales Executive</option><option>Floor Manager</option>
-          <option>Cashier</option><option>Billing Executive</option><option>Store Keeper</option>
-        </select>
+  <option value="">All Designations</option>
+</select>
         <select class="fsel" id="f-source" onchange="applyFilters()">
           <option value="">All Sources</option>
           <option>Walk-in</option><option>Employee Ref</option>
@@ -200,7 +198,15 @@ function buildPills() {
   el('p-rej').textContent   = count('Rejected');
   el('p-board').textContent = count('Onboarding');
 }
-
+// Load designations from Roles_Config sheet
+API.call('getDesignations').then(res => {
+  const sel = el('f-desig');
+  (res.designations || []).forEach(d => {
+    const opt = document.createElement('option');
+    opt.value = d; opt.textContent = d;
+    sel.appendChild(opt);
+  });
+});
 // ── Filters ──
 function applyFilters() {
   const q      = (el('cand-search').value || '').toLowerCase();
