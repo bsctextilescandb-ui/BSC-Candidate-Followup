@@ -470,3 +470,13 @@ async function updateNavBadges() {
     if (offerCount) offerCount.textContent = kpis.pendingOffers  || 0;
   } catch(e) {}
 }
+function initPage(pageKey) {
+  const session = Auth.guard();
+  if (!session) return null;
+  startClock();
+  Auth.populateSidebar(session);
+  highlightNav(pageKey);
+  initPhoneReveal();
+  updateNavBadges();   // ← add this line
+  // ... rest of function
+}
