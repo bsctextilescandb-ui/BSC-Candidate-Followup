@@ -281,7 +281,7 @@ function debounce(fn, ms = 400) {
 
 /** Mask phone number */
 function maskPhone(phone) {
-  const p = phone.replace(/\D/g, '');
+  const p = String(phone || '').replace(/\D/g, '');
   return p.slice(0, 5) + ' XXXXX';
 }
 
