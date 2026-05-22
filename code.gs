@@ -120,7 +120,7 @@ function dispatch(action, params) {
   const handlers = {
     verifyUser,
     getCandidates, addCandidate, updateCandidate, checkDuplicate, getNextAppNo,
-    getKPIs, getPendingActions, getDesignations,
+    getKPIs, getPendingActions,
     getInterviewQuestions, saveScore, getScores,
     getOffers, logCall, updateOfferStatus,
     getOnboarding, tickChecklist,
@@ -262,15 +262,6 @@ function getKPIs({ dateRange }) {
     avgDays: 18,           // TODO: calculate from date fields
     onboarding: joined,
     interviewsToday: 3     // TODO: query Interview_Schedule for today
-  };
-}
-function getDesignations() {
-  const rows = getRows('Roles_Config', { DESIG:1, ACTIVE:2 });
-  return {
-    designations: rows
-      .filter(r => String(r.ACTIVE).toUpperCase() === 'TRUE')
-      .map(r => r.DESIG)
-      .filter(Boolean)
   };
 }
 
