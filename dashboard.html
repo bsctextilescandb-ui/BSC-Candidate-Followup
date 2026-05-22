@@ -265,9 +265,14 @@ async function loadFunnel() {
   ];
   const max = stages[0].val;
   const container = el('funnel-container');
+  if (total === 0) {
+    container.innerHTML = '<div style="text-align:center;padding:32px;color:#bbb;font-size:12px">📋 No candidates yet — add via Entry Form (QR)</div>';
+  } else {
   container.innerHTML = stages.map((s, i) => {
     const pct = Math.round(s.val / max * 100);
-    const drop = i === 0 ? '' : `<span class="f-drop" style="color:var(--red)">-${100 - Math.round(s.val / stages[i-1].val * 100)}%</span>`;
+    const prev    = (stages[i - 1] || {}).val || 0;
+      const dropPct = (i === 0 || prev === 0) ? '' : `-${Math.round((1 - s.val / prev) * 100)}%`;
+      const drop    = dropPct ? `<span class="f-drop" style="color:var(--red)">${dropPct}</span>` : '<span class="f-drop" style="color:#ccc">—</span>';
     return `
       <div class="funnel-row">
         <div class="f-lbl">${s.label}</div>
@@ -277,7 +282,12 @@ async function loadFunnel() {
       </div>`;
   }).join('');
 
+  }
+
   // Source donut
+  // Fetch real source breakdown from sheet
+  const srcData = await API.call('getSourceBreakdown').catch(() => ({ walkin:0, empref:0, online:0, other:0 }));
+
   const ctx = el('srcChart');
   if (ctx) {
     if (srcChart) srcChart.destroy();
@@ -286,7 +296,7 @@ async function loadFunnel() {
       data: {
         labels: ['Walk-in', 'Employee Ref', 'Online Apply', 'Other'],
         datasets: [{
-          data: [148, 62, 28, 10],
+          data: [srcData.walkin||0, srcData.empref||0, srcData.online||0, srcData.other||0],
           backgroundColor: ['#1E2D4E', '#C9952A', '#2d8a4e', '#C0272D'],
           borderWidth: 3, borderColor: '#fff', hoverOffset: 4
         }]
