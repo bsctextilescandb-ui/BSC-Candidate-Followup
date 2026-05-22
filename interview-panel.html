@@ -1,0 +1,364 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Interview Panel — BSC Candidate CRM</title>
+<link rel="stylesheet" href="css/shared.css">
+<style>
+.round-tabs{display:flex;gap:8px;flex-wrap:wrap;align-items:center;margin-bottom:14px}
+.rt-tab{font-size:11px;padding:7px 16px;border:1.5px solid #ddd;border-radius:7px;cursor:pointer;background:#fff;color:#888;font-weight:600;transition:all .15s;display:flex;align-items:center;gap:5px}
+.rt-tab.active{background:var(--navy);color:#fff;border-color:var(--navy)}
+.rt-tab.locked{color:#ccc;cursor:not-allowed;background:#fafafa}
+.score-card{background:#fff;border-radius:var(--radius);padding:18px}
+.cand-info{display:flex;justify-content:space-between;align-items:flex-start;margin-bottom:14px;padding-bottom:12px;border-bottom:1px solid #f0ede8}
+.cand-name{font-size:15px;font-weight:800;color:var(--navy)}
+.cand-meta{font-size:10px;color:#888;margin-top:3px}
+.q-row{display:grid;grid-template-columns:1fr 100px;align-items:center;gap:12px;padding:10px 0;border-bottom:1px solid #f9f8f5}
+.q-row:last-of-type{border-bottom:none}
+.q-name{font-size:12px;color:#333;font-weight:500}
+.q-max{font-size:9.5px;color:#bbb;margin-top:2px}
+.score-wrap{display:flex;flex-direction:column;align-items:center;gap:4px}
+.score-inp{width:58px;padding:5px 6px;font-size:14px;border:1.5px solid #ddd;border-radius:7px;text-align:center;background:#F9F7F4;font-weight:700;color:var(--navy);transition:all .2s}
+.score-inp:focus{outline:none;border-color:var(--gold)}
+.score-inp.s-green{border-color:var(--green);background:#F5FDF9;color:var(--green)}
+.score-inp.s-amber{border-color:var(--gold);background:#FFFBF0;color:#854F0B}
+.score-inp.s-red{border-color:var(--red);background:#FFF5F5;color:var(--red)}
+.mini-bar{width:58px;height:4px;background:#f0ede8;border-radius:3px;overflow:hidden}
+.mb-fill{height:100%;border-radius:3px;transition:width .3s}
+.score-lbl{font-size:8px;font-weight:700}
+.total-bar{display:flex;align-items:center;gap:10px;margin-top:14px;padding-top:12px;border-top:2px solid #f0ede8}
+.total-prog{flex:1;background:#f0ede8;border-radius:6px;height:10px;overflow:hidden}
+.total-prog-fill{height:100%;border-radius:6px;transition:width .4s}
+.total-num{font-size:24px;font-weight:800;color:var(--navy);line-height:1}
+.compare-bar{display:grid;grid-template-columns:repeat(4,1fr);gap:8px;margin-top:12px;background:#F9F7F4;border-radius:8px;padding:10px}
+.cb-item{text-align:center}
+.cb-label{font-size:8.5px;color:#888;margin-bottom:3px;text-transform:uppercase;letter-spacing:.05em}
+.cb-val{font-size:16px;font-weight:800;color:var(--navy)}
+.remarks-area{width:100%;font-size:12px;padding:9px 11px;border:1px solid var(--border);border-radius:7px;background:#F9F7F4;resize:none;height:70px;color:#333;margin-top:14px;font-family:inherit;transition:border .15s}
+.remarks-area:focus{outline:none;border-color:var(--navy);background:#fff}
+.char-count{font-size:9.5px;color:#bbb;text-align:right;margin-top:3px}
+.round-actions{display:flex;gap:9px;margin-top:14px;flex-wrap:wrap}
+.strong-hire-btn{display:flex;align-items:center;gap:6px;font-size:11px;padding:8px 13px;background:#FFF8E1;border:1.5px solid var(--gold);border-radius:8px;cursor:pointer;color:#854F0B;font-weight:600;transition:all .15s}
+.strong-hire-btn.flagged{background:#C9952A;color:#fff;border-color:#C9952A}
+.no-candidate{text-align:center;padding:50px 20px;color:var(--muted)}
+</style>
+</head>
+<body>
+<div class="app-shell">
+  <aside class="sidebar">
+    <div class="sb-head"><div class="sb-logo">BSC</div><div><div class="sb-brand-name">Candidate CRM</div><div class="sb-brand-sub">BSC The Textile Mall</div></div></div>
+    <div class="sb-user"><div class="sb-avatar" id="sb-av">HR</div><div><div class="sb-user-name" id="sb-username">HR Admin</div><div class="sb-user-role" id="sb-userrole">Human Resources</div></div></div>
+    <div class="sb-section">Main</div>
+    <a class="nav-item" data-page="dashboard" href="dashboard.html"><span class="nav-icon">📊</span> Dashboard</a>
+    <a class="nav-item" data-page="candidates" href="candidates.html"><span class="nav-icon">👥</span> Candidates</a>
+    <div class="sb-section">HR Process</div>
+    <a class="nav-item active" data-page="interview" href="interview-panel.html"><span class="nav-icon">🎯</span> Interview Panel</a>
+    <a class="nav-item" data-page="offer" href="offer-process.html"><span class="nav-icon">📄</span> Offer Process</a>
+    <a class="nav-item" data-page="onboarding" href="onboarding.html"><span class="nav-icon">✅</span> Onboarding</a>
+    <a class="nav-item" data-page="exit" href="employee-exit.html"><span class="nav-icon">🚪</span> Employee Exit</a>
+    <div class="sb-section">Public</div>
+    <a class="nav-item" data-page="form" href="candidate-entry.html" target="_blank"><span class="nav-icon">📋</span> Entry Form (QR)</a>
+    <div class="sb-section">Admin</div>
+    <a class="nav-item" href="#"><span class="nav-icon">⚙️</span> Settings</a>
+    <div class="sb-bottom"><button class="logout-btn" id="logout-btn">↩ &nbsp;Logout</button></div>
+  </aside>
+
+  <div class="main">
+    <header class="topbar">
+      <div class="topbar-left">
+        <div class="topbar-title">Interview Panel</div>
+        <div class="breadcrumb" id="breadcrumb">
+          <a class="bc-link" href="dashboard.html">Dashboard</a><span class="bc-sep">›</span>
+          <a class="bc-link" href="candidates.html">Candidates</a><span class="bc-sep">›</span>
+          <span id="bc-name">Select Candidate</span><span class="bc-sep" id="bc-sep2" style="display:none">›</span>
+          <span id="bc-panel" style="display:none">Interview Panel</span>
+        </div>
+      </div>
+      <div class="topbar-right">
+        <span class="topbar-time" id="live-clock"></span>
+        <span class="live-ind"><span class="live-dot"></span>Live</span>
+        <div class="bell-btn">🔔<div class="bell-dot"></div></div>
+      </div>
+    </header>
+
+    <main class="content">
+      <!-- Candidate search -->
+      <div style="display:flex;gap:10px;align-items:center;margin-bottom:14px;flex-wrap:wrap">
+        <input type="text" id="cand-search" placeholder="🔍 Search candidate name or app no…"
+               style="font-size:12px;padding:8px 12px;border:1.5px solid #ddd;border-radius:8px;background:#fff;color:#333;width:300px"
+               oninput="searchCandidates(this.value)">
+        <div id="search-results" style="display:none;position:absolute;z-index:200;background:#fff;border:1px solid #ddd;border-radius:8px;box-shadow:var(--shadow);width:300px;max-height:200px;overflow-y:auto;top:auto"></div>
+        <span id="sched-info" style="font-size:11px;color:#888"></span>
+        <span id="interviewer-badge" style="display:none;margin-left:auto;font-size:11px;color:var(--green);background:#EAF3DE;padding:4px 10px;border-radius:5px;font-weight:600"></span>
+      </div>
+
+      <!-- Round tabs -->
+      <div class="round-tabs" id="round-tabs" style="display:none">
+        <span style="font-size:10.5px;color:#888">Round:</span>
+        <div class="rt-tab active" data-round="HR" onclick="switchRound(this,'HR')">HR Round</div>
+        <div class="rt-tab locked" data-round="FM"  id="tab-FM">🔒 Floor Manager</div>
+        <div class="rt-tab locked" data-round="MGR" id="tab-MGR">🔒 Manager Round</div>
+        <span style="margin-left:auto;font-size:10.5px;color:#888">
+          Pass cutoff: <b style="color:var(--navy)" id="cutoff-label">36 / 60</b>
+        </span>
+      </div>
+
+      <!-- Score card -->
+      <div id="score-area">
+        <div class="no-candidate">
+          <div style="font-size:40px;margin-bottom:10px">🎯</div>
+          <div style="font-size:13px;font-weight:600;color:#888;margin-bottom:5px">No candidate selected</div>
+          <div style="font-size:11px">Search for a candidate above to begin scoring</div>
+        </div>
+      </div>
+    </main>
+  </div>
+</div>
+
+<script src="js/config.js"></script>
+<script src="js/shared.js"></script>
+<script>
+'use strict';
+const session = initPage('interview');
+
+let currentCandidate = null;
+let currentRound     = 'HR';
+let scoreData        = {};  // { HR: {scores:[],total,remarks}, FM: ..., MGR: ... }
+let strongHire       = false;
+
+// ── Load candidate from sessionStorage (if navigated from candidates page) ──
+(async function init() {
+  const focusAppNo = sessionStorage.getItem('bsc_focus_appno');
+  if (focusAppNo) {
+    sessionStorage.removeItem('bsc_focus_appno');
+    const data = await API.getCandidates({ q: focusAppNo, limit: 1 });
+    if (data.candidates && data.candidates[0]) loadCandidate(data.candidates[0]);
+  }
+})();
+
+// ── Search ──
+async function searchCandidates(q) {
+  if (q.length < 2) { document.getElementById('search-results').style.display = 'none'; return; }
+  const data = await API.getCandidates({ q, limit: 8 });
+  const results = data.candidates || [];
+  const box = document.getElementById('search-results');
+  if (!results.length) { box.style.display = 'none'; return; }
+  const inp = document.getElementById('cand-search');
+  const rect = inp.getBoundingClientRect();
+  box.style.top  = (rect.bottom + window.scrollY + 4) + 'px';
+  box.style.left = rect.left + 'px';
+  box.style.width = rect.width + 'px';
+  box.innerHTML = results.map(c => `
+    <div onclick="selectCandidate('${c.appNo}')" style="padding:8px 12px;cursor:pointer;border-bottom:1px solid #f5f5f5;font-size:11px;display:flex;align-items:center;gap:8px" onmouseover="this.style.background='#f5f5f5'" onmouseout="this.style.background=''">
+      <div class="av av-${c.color}" style="width:24px;height:24px;font-size:9px">${c.initials}</div>
+      <div><b>${c.name}</b> · ${c.desig}<br><span style="color:#aaa">${c.appNo}</span></div>
+      <div style="margin-left:auto">${statusBadge(c.status)}</div>
+    </div>`).join('');
+  box.style.display = 'block';
+  document.addEventListener('click', () => box.style.display = 'none', { once: true });
+}
+
+async function selectCandidate(appNo) {
+  const data = await API.getCandidates({ q: appNo, limit: 1 });
+  if (data.candidates && data.candidates[0]) {
+    loadCandidate(data.candidates[0]);
+    document.getElementById('cand-search').value = data.candidates[0].name;
+  }
+}
+
+async function loadCandidate(c) {
+  currentCandidate = c;
+  currentRound = 'HR';
+  strongHire = false;
+
+  // Update breadcrumb
+  el('bc-name').textContent = c.name;
+  el('bc-sep2').style.display = '';
+  el('bc-panel').style.display = '';
+  el('sched-info').textContent = 'Scheduled: ' + new Date().toLocaleDateString('en-IN',{day:'2-digit',month:'short',year:'numeric'}) + ', 3:00 PM';
+  el('interviewer-badge').textContent = 'Conducted by: ' + session.username + ' (You)';
+  el('interviewer-badge').style.display = '';
+  el('round-tabs').style.display = 'flex';
+
+  // Load existing scores
+  scoreData = {};
+  const saved = await API.getScores(c.appNo);
+  if (saved.rounds) scoreData = saved.rounds;
+
+  // Load questions and render
+  const qData = await API.getInterviewQuestions(c.desig);
+  renderScoreCard(c, qData.questions || [], 'HR');
+  updateRoundTabs();
+}
+
+function renderScoreCard(c, questions, round) {
+  const existing = scoreData[round] || {};
+  const scores   = existing.scores || [];
+  const maxTotal = questions.reduce((s, q) => s + (q.max || 10), 0);
+
+  el('score-area').innerHTML = `
+    <div class="score-card">
+      <div class="cand-info">
+        <div>
+          <div class="cand-name">${c.name}</div>
+          <div class="cand-meta">${c.desig} · ${c.appNo} · Applied ${c.date}</div>
+        </div>
+        <div style="display:flex;flex-direction:column;align-items:flex-end;gap:6px">
+          <span class="badge b-short">${round === 'HR' ? 'HR' : round === 'FM' ? 'Floor Manager' : 'Manager'} Round</span>
+          <button class="strong-hire-btn ${strongHire ? 'flagged' : ''}" id="sh-btn" onclick="toggleStrongHire()">
+            ⭐ ${strongHire ? 'Strong Hire — Flagged' : 'Flag as Strong Hire'}
+          </button>
+        </div>
+      </div>
+
+      ${questions.map((q, i) => {
+        const saved = scores[i] || 0;
+        const pct   = (saved / q.max) * 100;
+        const cls   = pct >= 70 ? 's-green' : pct >= 50 ? 's-amber' : (saved ? 's-red' : '');
+        const color = pct >= 70 ? '#2d8a4e' : pct >= 50 ? '#C9952A' : '#C0272D';
+        const lbl   = pct >= 70 ? 'Good' : pct >= 50 ? 'Average' : (saved ? 'Weak' : '—');
+        return `
+          <div class="q-row">
+            <div><div class="q-name">${q.text}</div><div class="q-max">Max ${q.max} pts</div></div>
+            <div class="score-wrap">
+              <input class="score-inp ${cls}" id="si-${i}" type="number" min="0" max="${q.max}"
+                     value="${saved || ''}" placeholder="0"
+                     oninput="onScore(this,${i},${q.max})" data-max="${q.max}">
+              <div class="mini-bar"><div class="mb-fill" id="mb-${i}" style="width:${saved ? pct : 0}%;background:${color}"></div></div>
+              <div class="score-lbl" id="sl-${i}" style="color:${color}">${lbl}</div>
+            </div>
+          </div>`;
+      }).join('')}
+
+      <div class="total-bar">
+        <div class="total-prog"><div class="total-prog-fill" id="total-fill" style="width:0%;background:var(--green)"></div></div>
+        <span class="total-num" id="total-score">${scores.reduce((a,b)=>a+b,0)}</span>
+        <span style="font-size:13px;color:#bbb">/ ${maxTotal}</span>
+        <span class="badge" id="pass-tag" style="padding:5px 14px;font-size:10px"></span>
+      </div>
+
+      <div class="compare-bar">
+        <div class="cb-item"><div class="cb-label">HR Round</div><div class="cb-val" id="cb-HR" style="color:var(--navy)">—</div></div>
+        <div class="cb-item"><div class="cb-label">Floor Mgr</div><div class="cb-val" id="cb-FM" style="color:#aaa">—</div></div>
+        <div class="cb-item"><div class="cb-label">Manager</div><div class="cb-val" id="cb-MGR" style="color:#aaa">—</div></div>
+        <div class="cb-item"><div class="cb-label">Grand Total</div><div class="cb-val" id="cb-GRAND" style="color:#aaa">—</div></div>
+      </div>
+
+      <textarea class="remarks-area" id="remarks-area" placeholder="Add interviewer remarks (max 500 chars)…"
+                maxlength="500" oninput="el('char-count').textContent=this.value.length">${existing.remarks||''}</textarea>
+      <div class="char-count"><span id="char-count">${(existing.remarks||'').length}</span> / 500</div>
+
+      <div class="round-actions">
+        <button class="btn btn-primary" style="flex:1" onclick="saveRound()">Save &amp; Advance to Next Round →</button>
+        <button class="btn btn-outline-red" onclick="rejectCandidate()">Reject Candidate</button>
+      </div>
+    </div>`;
+
+  updateTotalBar(maxTotal, scores.reduce((a,b)=>a+b,0));
+  updateCompareBar();
+}
+
+function onScore(inp, idx, max) {
+  let v = parseInt(inp.value) || 0;
+  if (v > max) { v = max; inp.value = max; }
+  if (v < 0)   { v = 0;   inp.value = 0; }
+  const pct = (v / max) * 100;
+  const mb  = el('mb-' + idx);
+  const sl  = el('sl-' + idx);
+  if (pct >= 70)    { inp.className='score-inp s-green'; mb.style.cssText=`width:${pct}%;background:var(--green)`;  sl.textContent='Good';    sl.style.color='var(--green)'; }
+  else if (pct>=50) { inp.className='score-inp s-amber'; mb.style.cssText=`width:${pct}%;background:var(--gold)`;   sl.textContent='Average'; sl.style.color='#854F0B'; }
+  else              { inp.className='score-inp s-red';   mb.style.cssText=`width:${pct}%;background:var(--red)`;    sl.textContent='Weak';    sl.style.color='var(--red)'; }
+
+  const allInputs = document.querySelectorAll('.score-inp');
+  const total = [...allInputs].reduce((s, i) => s + (parseInt(i.value) || 0), 0);
+  const maxT  = [...allInputs].reduce((s, i) => s + parseInt(i.dataset.max || 10), 0);
+  updateTotalBar(maxT, total);
+}
+
+function updateTotalBar(maxT, total) {
+  const fill = el('total-fill');
+  const tag  = el('pass-tag');
+  const num  = el('total-score');
+  if (!fill) return;
+  const pct  = (total / maxT) * 100;
+  fill.style.width      = pct + '%';
+  fill.style.background = total >= CONFIG.INTERVIEW_CUTOFF ? 'var(--green)' : 'var(--red)';
+  num.textContent = total;
+  if (tag) {
+    if (total >= CONFIG.INTERVIEW_CUTOFF) { tag.textContent='PASS ✓'; tag.style.background='#EAF3DE'; tag.style.color='#3B6D11'; }
+    else                                  { tag.textContent='FAIL ✗'; tag.style.background='#FCEBEB'; tag.style.color='#A32D2D'; }
+  }
+  el('cb-' + currentRound) && (el('cb-' + currentRound).textContent = total + '/' + maxT);
+}
+
+function updateCompareBar() {
+  ['HR','FM','MGR'].forEach(r => {
+    const saved = scoreData[r];
+    if (saved && saved.total !== undefined) {
+      const cbEl = el('cb-' + r);
+      if (cbEl) { cbEl.textContent = saved.total + '/60'; cbEl.style.color = saved.total >= CONFIG.INTERVIEW_CUTOFF ? 'var(--green)' : 'var(--red)'; }
+    }
+  });
+  const totals = ['HR','FM','MGR'].map(r => scoreData[r]?.total || 0);
+  const grand  = totals.reduce((a,b)=>a+b,0);
+  if (el('cb-GRAND')) el('cb-GRAND').textContent = totals.some(t=>t>0) ? grand + '/180' : '—';
+}
+
+function updateRoundTabs() {
+  const hrDone  = !!(scoreData['HR']?.total);
+  const fmDone  = !!(scoreData['FM']?.total);
+  const tabFM   = el('tab-FM');
+  const tabMGR  = el('tab-MGR');
+  if (tabFM)  { tabFM.className  = 'rt-tab' + (hrDone ? '' : ' locked'); tabFM.textContent  = (hrDone ? '' : '🔒 ') + 'Floor Manager'; if (hrDone)  tabFM.setAttribute('onclick', "switchRound(this,'FM')");  }
+  if (tabMGR) { tabMGR.className = 'rt-tab' + (fmDone ? '' : ' locked'); tabMGR.textContent = (fmDone ? '' : '🔒 ') + 'Manager Round'; if (fmDone) tabMGR.setAttribute('onclick', "switchRound(this,'MGR')"); }
+}
+
+function switchRound(btn, round) {
+  if (btn.classList.contains('locked')) return;
+  document.querySelectorAll('.rt-tab').forEach(t => t.classList.remove('active'));
+  btn.classList.add('active');
+  currentRound = round;
+  API.getInterviewQuestions(currentCandidate.desig).then(qData => renderScoreCard(currentCandidate, qData.questions || [], round));
+}
+
+function toggleStrongHire() {
+  strongHire = !strongHire;
+  const btn = el('sh-btn');
+  if (btn) { btn.className = 'strong-hire-btn' + (strongHire ? ' flagged' : ''); btn.textContent = '⭐ ' + (strongHire ? 'Strong Hire — Flagged' : 'Flag as Strong Hire'); }
+}
+
+async function saveRound() {
+  const inputs = document.querySelectorAll('.score-inp');
+  const scores = [...inputs].map(i => parseInt(i.value) || 0);
+  const maxT   = [...inputs].reduce((s, i) => s + parseInt(i.dataset.max || 10), 0);
+  const total  = scores.reduce((a,b)=>a+b,0);
+  const remarks = el('remarks-area') ? el('remarks-area').value : '';
+
+  await API.saveScore(currentCandidate.appNo, currentRound, { scores, total, remarks, strongHire });
+  scoreData[currentRound] = { scores, total, remarks };
+
+  // Advance status
+  const statusMap = { HR:'Interviewed', FM:'Interviewed', MGR:'Selected' };
+  await API.updateCandidate(currentCandidate.appNo, { status: statusMap[currentRound] });
+
+  toast(`${currentRound} round saved! ${total >= CONFIG.INTERVIEW_CUTOFF ? '✓ PASS' : '✗ FAIL'}`, total >= CONFIG.INTERVIEW_CUTOFF ? 'success' : 'warn');
+  updateCompareBar();
+  updateRoundTabs();
+}
+
+async function rejectCandidate() {
+  showModal({
+    title: 'Reject Candidate',
+    body: `Reject <b>${currentCandidate.name}</b> and send rejection notice?<br><br>This action will mark them as Rejected and cannot be easily undone.`,
+    confirmText: 'Confirm Reject', confirmClass: 'btn-red',
+    onConfirm: async () => {
+      await API.updateCandidate(currentCandidate.appNo, { status: 'Rejected' });
+      toast('Candidate rejected', 'warn');
+      window.location.href = 'candidates.html';
+    }
+  });
+}
+</script>
+</body>
+</html>

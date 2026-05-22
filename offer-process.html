@@ -1,0 +1,366 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Offer Process — BSC Candidate CRM</title>
+<link rel="stylesheet" href="css/shared.css">
+<style>
+.ot-btn{padding:6px 16px;border:1.5px solid #ddd;border-radius:7px;font-size:11px;cursor:pointer;background:#fff;color:#888;font-weight:600;transition:all .15s}
+.ot-btn.active{background:var(--navy);color:#fff;border-color:var(--navy)}
+.call-done{color:var(--green);font-size:10.5px;font-weight:700;white-space:nowrap}
+.call-today{color:var(--gold);font-size:10.5px;font-weight:700;white-space:nowrap;animation:pulse 1.8s infinite}
+.call-pending{color:#aaa;font-size:10.5px;white-space:nowrap}
+.call-locked{color:#e0ddd8;font-size:10.5px;white-space:nowrap}
+.log-call-btn{font-size:9.5px;padding:3px 9px;border-radius:5px;cursor:pointer;font-weight:600;background:#fff;border:1px solid var(--gold);color:var(--gold);white-space:nowrap}
+.log-call-btn:hover{background:var(--gold);color:#fff}
+/* Timeline view */
+.tl-view{display:none}
+.tl-view.active{display:block}
+.tl-row{display:flex;align-items:center;gap:10px;padding:10px 0;border-bottom:1px solid #f0ede8}
+.tl-row:last-child{border-bottom:none}
+.tl-name{width:160px;flex-shrink:0}
+.tl-cname{font-size:12px;font-weight:700;color:var(--navy)}
+.tl-desig{font-size:9.5px;color:#888;margin-top:1px}
+.tl-dots{flex:1;display:flex;align-items:center}
+.tl-dot{width:24px;height:24px;border-radius:50%;display:flex;align-items:center;justify-content:center;font-size:9px;font-weight:700;color:#fff;flex-shrink:0;z-index:1}
+.tl-dot.done{background:var(--green)}.tl-dot.current{background:var(--gold)}.tl-dot.todo{background:#e8e4dd;color:#999}.tl-dot.locked{background:#f5f5f5;border:1px solid #ddd;color:#ccc}.tl-dot.declined{background:var(--red)}
+.tl-line{flex:1;height:2px;background:#e0ddd8}.tl-line.done{background:var(--green)}
+/* Log call modal */
+.lc-modal .modal{max-width:380px}
+</style>
+</head>
+<body>
+<div class="app-shell">
+  <aside class="sidebar">
+    <div class="sb-head"><div class="sb-logo">BSC</div><div><div class="sb-brand-name">Candidate CRM</div><div class="sb-brand-sub">BSC The Textile Mall</div></div></div>
+    <div class="sb-user"><div class="sb-avatar" id="sb-av">HR</div><div><div class="sb-user-name" id="sb-username">HR Admin</div><div class="sb-user-role" id="sb-userrole">Human Resources</div></div></div>
+    <div class="sb-section">Main</div>
+    <a class="nav-item" data-page="dashboard" href="dashboard.html"><span class="nav-icon">📊</span> Dashboard</a>
+    <a class="nav-item" data-page="candidates" href="candidates.html"><span class="nav-icon">👥</span> Candidates</a>
+    <div class="sb-section">HR Process</div>
+    <a class="nav-item" data-page="interview" href="interview-panel.html"><span class="nav-icon">🎯</span> Interview Panel</a>
+    <a class="nav-item active" data-page="offer" href="offer-process.html"><span class="nav-icon">📄</span> Offer Process</a>
+    <a class="nav-item" data-page="onboarding" href="onboarding.html"><span class="nav-icon">✅</span> Onboarding</a>
+    <a class="nav-item" data-page="exit" href="employee-exit.html"><span class="nav-icon">🚪</span> Employee Exit</a>
+    <div class="sb-section">Public</div>
+    <a class="nav-item" data-page="form" href="candidate-entry.html" target="_blank"><span class="nav-icon">📋</span> Entry Form (QR)</a>
+    <div class="sb-section">Admin</div>
+    <a class="nav-item" href="#"><span class="nav-icon">⚙️</span> Settings</a>
+    <div class="sb-bottom"><button class="logout-btn" id="logout-btn">↩ &nbsp;Logout</button></div>
+  </aside>
+
+  <div class="main">
+    <header class="topbar">
+      <div class="topbar-left">
+        <div class="topbar-title">Offer Process</div>
+        <div class="breadcrumb"><a class="bc-link" href="dashboard.html">Dashboard</a><span class="bc-sep">›</span><span>Offer Process</span></div>
+      </div>
+      <div class="topbar-right">
+        <span class="topbar-time" id="live-clock"></span>
+        <span class="live-ind"><span class="live-dot"></span>Live</span>
+        <div class="bell-btn">🔔<div class="bell-dot"></div></div>
+      </div>
+    </header>
+
+    <main class="content">
+      <!-- 5 KPIs -->
+      <div class="kpi-grid" style="grid-template-columns:repeat(5,1fr)">
+        <div class="kpi orange"><div class="kpi-label">Pending Calls</div><div class="kpi-val" id="k-pending">—</div></div>
+        <div class="kpi green"><div class="kpi-label">Accepted</div><div class="kpi-val" id="k-accept">—</div></div>
+        <div class="kpi red"><div class="kpi-label">Declined</div><div class="kpi-val" id="k-decline">—</div></div>
+        <div class="kpi blue"><div class="kpi-label">Acceptance Rate</div><div class="kpi-val" id="k-rate">—<span style="font-size:13px">%</span></div></div>
+        <div class="kpi navy"><div class="kpi-label">Avg Days to Accept</div><div class="kpi-val" id="k-avgdays">—<span style="font-size:13px">d</span></div></div>
+      </div>
+
+      <!-- View toggle + filters -->
+      <div class="filter-bar" style="margin-bottom:12px">
+        <div style="display:flex;gap:7px">
+          <button class="ot-btn active" id="ot-table"    onclick="setView('table')">📋 Table View</button>
+          <button class="ot-btn"        id="ot-timeline" onclick="setView('timeline')">📅 Timeline View</button>
+        </div>
+        <select class="fsel" id="f-status" onchange="applyFilters()">
+          <option value="">All Status</option>
+          <option>Pending Accept</option><option>Accepted</option><option>Declined</option>
+        </select>
+        <select class="fsel" id="f-desig" onchange="applyFilters()">
+          <option value="">All Designations</option>
+          <option>Sales Executive</option><option>Floor Manager</option>
+          <option>Cashier</option><option>Billing Executive</option><option>Store Keeper</option>
+        </select>
+        <input class="search-input" id="offer-search" placeholder="🔍 Search…" oninput="applyFilters()">
+      </div>
+
+      <!-- TABLE VIEW -->
+      <div id="table-view">
+        <div class="table-card" style="padding:0">
+          <div style="padding:12px 14px;border-bottom:1px solid #f0ede8;display:flex;justify-content:space-between;align-items:center;flex-wrap:wrap;gap:8px">
+            <span class="card-title">Offer Tracking</span>
+            <span style="font-size:10px;color:var(--muted)" id="offer-count">Loading…</span>
+          </div>
+          <div class="table-wrap">
+            <table>
+              <thead>
+                <tr>
+                  <th>App No</th><th>Candidate</th><th>Designation</th>
+                  <th>Notice Pd</th><th>Est. DOJ</th>
+                  <th>1st Call</th><th>2nd Call</th><th>Confirm</th>
+                  <th>Offer Letter</th><th>Status</th><th>Action</th>
+                </tr>
+              </thead>
+              <tbody id="offer-tbody">
+                <tr><td colspan="11" style="text-align:center;padding:30px"><div class="skel" style="height:14px;margin:auto;width:50%"></div></td></tr>
+              </tbody>
+            </table>
+          </div>
+          <div style="padding:8px 14px;border-top:1px solid #f0ede8;font-size:9.5px;color:#aaa;display:flex;gap:16px;flex-wrap:wrap">
+            <span>Legend:</span>
+            <span style="color:var(--green)">✓ Done</span>
+            <span style="color:var(--gold)">📅 Due Today</span>
+            <span style="color:#aaa">⏳ Pending</span>
+            <span style="color:#e0ddd8">🔒 Locked</span>
+          </div>
+          <div class="table-pagination">
+            <span id="offer-page-info">—</span>
+            <div style="display:flex;gap:6px">
+              <button class="btn btn-muted btn-sm" id="prev-btn" onclick="changePage(-1)" disabled>← Prev</button>
+              <button class="btn btn-outline btn-sm" id="next-btn" onclick="changePage(1)">Next →</button>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <!-- TIMELINE VIEW -->
+      <div class="tl-view" id="timeline-view">
+        <div class="table-card">
+          <div class="card-title" style="margin-bottom:4px">Offer Timeline</div>
+          <div class="card-sub">Each dot = one call stage. Click any offer to log next call.</div>
+          <div id="tl-container"></div>
+        </div>
+      </div>
+
+    </main>
+  </div>
+</div>
+
+<!-- Log call modal -->
+<div class="modal-overlay lc-modal" id="log-modal">
+  <div class="modal">
+    <div class="modal-title" id="lm-title">Log Call</div>
+    <div class="modal-body">
+      <p id="lm-body" style="margin-bottom:12px"></p>
+      <div class="fg">
+        <label>Call Date</label>
+        <input type="date" id="lm-date" value="">
+      </div>
+      <div class="fg" style="margin-top:10px">
+        <label>Notes (optional)</label>
+        <textarea style="width:100%;font-size:12px;padding:8px;border:1px solid var(--border);border-radius:7px;resize:none;height:60px;font-family:inherit" id="lm-notes" placeholder="Any remarks about this call…"></textarea>
+      </div>
+    </div>
+    <div class="modal-btns">
+      <button class="btn btn-muted" onclick="closeLogModal()">Cancel</button>
+      <button class="btn btn-primary" onclick="confirmLog()">Log Call</button>
+    </div>
+  </div>
+</div>
+
+<script src="js/config.js"></script>
+<script src="js/shared.js"></script>
+<script>
+'use strict';
+initPage('offer');
+
+const PAGE_SIZE = 10;
+let currentPage = 1;
+let allOffers   = [];
+let filtered    = [];
+let logTarget   = null;
+let currentView = 'table';
+
+// Set default call date to today
+el('lm-date').value = new Date().toISOString().slice(0,10);
+
+(async function load() {
+  const data = await API.getOffers();
+  allOffers = data.offers || [];
+  buildKPIs();
+  applyFilters();
+})();
+
+function buildKPIs() {
+  const pending  = allOffers.filter(o => o.status === 'Pending Accept').length;
+  const accepted = allOffers.filter(o => o.status === 'Accepted').length;
+  const declined = allOffers.filter(o => o.status === 'Declined').length;
+  const total    = accepted + declined;
+  el('k-pending').textContent  = pending;
+  el('k-accept').textContent   = accepted;
+  el('k-decline').textContent  = declined;
+  el('k-rate').innerHTML       = (total ? Math.round(accepted/total*100) : 0) + '<span style="font-size:13px">%</span>';
+  el('k-avgdays').innerHTML    = '4.2<span style="font-size:13px">d</span>';
+}
+
+function applyFilters() {
+  const q      = (el('offer-search').value || '').toLowerCase();
+  const status = el('f-status').value;
+  const desig  = el('f-desig').value;
+  filtered = allOffers.filter(o => {
+    if (status && o.status !== status) return false;
+    if (desig  && o.desig  !== desig)  return false;
+    if (q && !o.name.toLowerCase().includes(q) && !o.appNo.toLowerCase().includes(q)) return false;
+    return true;
+  });
+  currentPage = 1;
+  if (currentView === 'table') renderTable();
+  else renderTimeline();
+}
+
+function setView(v) {
+  currentView = v;
+  el('ot-table').classList.toggle('active', v === 'table');
+  el('ot-timeline').classList.toggle('active', v === 'timeline');
+  el('table-view').style.display    = v === 'table'    ? 'block' : 'none';
+  el('timeline-view').classList.toggle('active', v === 'timeline');
+  if (v === 'timeline') renderTimeline(); else renderTable();
+}
+
+function callDisplay(dateVal, nextLocked) {
+  if (!dateVal || dateVal === '—') {
+    return nextLocked ? `<span class="call-locked">🔒 Locked</span>` : `<span class="call-pending">⏳ Pending</span>`;
+  }
+  const today = new Date().toDateString();
+  const d     = new Date(dateVal);
+  if (d.toDateString() === today) return `<span class="call-today">📅 Due Today</span>`;
+  return `<span class="call-done">✓ ${dateVal}</span>`;
+}
+
+function nextCallNo(o) {
+  if (!o.call1 || o.call1 === '—') return 1;
+  if (!o.call2 || o.call2 === '—') return 2;
+  if (!o.confirm || o.confirm === '—') return 3;
+  return null;
+}
+
+function renderTable() {
+  const start = (currentPage - 1) * PAGE_SIZE;
+  const page  = filtered.slice(start, start + PAGE_SIZE);
+  const total = filtered.length;
+  el('offer-count').textContent = `${total} offers`;
+
+  if (!page.length) {
+    el('offer-tbody').innerHTML = `<tr><td colspan="11"><div class="empty-state"><div class="empty-icon">📄</div><div class="empty-title">No offers found</div></div></td></tr>`;
+    el('offer-page-info').textContent = 'No results';
+    el('prev-btn').disabled = true; el('next-btn').disabled = true;
+    return;
+  }
+
+  el('offer-tbody').innerHTML = page.map(o => {
+    const rowCls  = o.urgent ? 'row-urgent' : '';
+    const call1   = callDisplay(o.call1, false);
+    const call2   = callDisplay(o.call2, !o.call1 || o.call1 === '—');
+    const confirm = callDisplay(o.confirm, !o.call2 || o.call2 === '—');
+    const nextNo  = nextCallNo(o);
+    const statusBdg = o.status === 'Accepted' ? 'b-board' : o.status === 'Declined' ? 'b-rej' : 'b-short';
+    const decReason  = o.status === 'Declined' ? `<div style="font-size:9px;color:var(--red);margin-top:3px">${o.declineReason||'—'}</div>` : '';
+    const action = o.status === 'Accepted' ? `<button class="btn btn-outline-green btn-sm" onclick="goOnboarding('${o.appNo}')">Start Onboarding →</button>`
+      : o.status === 'Declined' ? `<button class="btn btn-muted btn-sm" onclick="reengage('${o.appNo}')">Re-engage</button>`
+      : nextNo ? `<button class="log-call-btn" onclick="openLog('${o.appNo}','${o.name}',${nextNo})">Log Call ${nextNo}</button>` : '—';
+
+    return `
+      <tr class="${rowCls}">
+        <td style="font-size:10px">${o.appNo}</td>
+        <td><div class="td-name"><div class="av av-${o.color}">${o.initials}</div><b>${o.name}</b></div></td>
+        <td style="white-space:nowrap">${o.desig}</td>
+        <td style="white-space:nowrap">${o.noticePd||'—'}</td>
+        <td style="white-space:nowrap">${o.doj||'—'}</td>
+        <td>${call1}</td>
+        <td>${call2}</td>
+        <td>${confirm}</td>
+        <td><a href="#" style="font-size:10.5px;color:var(--blue)">📄 View PDF</a></td>
+        <td><span class="badge ${statusBdg}">${o.status}</span>${decReason}</td>
+        <td>${action}</td>
+      </tr>`;
+  }).join('');
+
+  el('offer-page-info').textContent = `Showing ${start+1}–${Math.min(start+PAGE_SIZE, total)} of ${total}`;
+  el('prev-btn').disabled = currentPage === 1;
+  el('next-btn').disabled = start + PAGE_SIZE >= total;
+}
+
+function renderTimeline() {
+  const dotClass = (dateVal, locked) => {
+    if (locked) return 'locked';
+    if (!dateVal || dateVal === '—') return 'todo';
+    const today = new Date().toDateString();
+    if (new Date(dateVal).toDateString() === today) return 'current';
+    return 'done';
+  };
+
+  el('tl-container').innerHTML = filtered.map(o => {
+    const d1 = dotClass(o.call1, false);
+    const d2 = dotClass(o.call2, !o.call1 || o.call1==='—');
+    const d3 = dotClass(o.confirm, !o.call2 || o.call2==='—');
+    const accepted = o.status === 'Accepted';
+    const declined = o.status === 'Declined';
+    const finalCls = accepted ? 'done' : declined ? 'declined' : (d3==='done' ? 'todo' : 'todo');
+    const statusBdg = accepted ? 'b-board' : declined ? 'b-rej' : d1==='current'||d2==='current'||d3==='current' ? 'b-warn' : 'b-short';
+    return `
+      <div class="tl-row">
+        <div class="tl-name"><div class="tl-cname">${o.name}</div><div class="tl-desig">${o.desig}</div></div>
+        <div class="tl-dots">
+          <div class="tl-dot ${d1}" title="1st Call">1</div>
+          <div class="tl-line ${d1==='done'?'done':''}"></div>
+          <div class="tl-dot ${d2}" title="2nd Call">2</div>
+          <div class="tl-line ${d2==='done'?'done':''}"></div>
+          <div class="tl-dot ${d3}" title="Confirm Call">3</div>
+          <div class="tl-line ${d3==='done'?'done':''}"></div>
+          <div class="tl-dot ${finalCls}" title="Final">${accepted?'✓':declined?'✗':'✓'}</div>
+        </div>
+        <span class="badge ${statusBdg}" style="margin-left:12px;white-space:nowrap">${o.status}</span>
+      </div>`;
+  }).join('') || '<div class="empty-state"><div class="empty-icon">📄</div><div class="empty-title">No offers found</div></div>';
+}
+
+function changePage(dir) { currentPage += dir; renderTable(); }
+
+// ── Log call modal ──
+function openLog(appNo, name, callNo) {
+  logTarget = { appNo, callNo };
+  el('lm-title').textContent = `Log Call ${callNo} — ${name}`;
+  el('lm-body').innerHTML = `Recording <b>Call ${callNo}</b> for <b>${name}</b> (${appNo})`;
+  el('lm-date').value = new Date().toISOString().slice(0,10);
+  el('lm-notes').value = '';
+  el('log-modal').classList.add('show');
+}
+function closeLogModal() { el('log-modal').classList.remove('show'); }
+async function confirmLog() {
+  if (!logTarget) return;
+  await API.logCall(logTarget.appNo, logTarget.callNo, el('lm-notes').value);
+  const today = new Date().toLocaleDateString('en-IN',{day:'2-digit',month:'short',year:'numeric'});
+  allOffers = allOffers.map(o => {
+    if (o.appNo !== logTarget.appNo) return o;
+    const updated = {...o};
+    if (logTarget.callNo === 1) updated.call1    = today;
+    if (logTarget.callNo === 2) updated.call2    = today;
+    if (logTarget.callNo === 3) updated.confirm  = today;
+    return updated;
+  });
+  closeLogModal();
+  buildKPIs();
+  applyFilters();
+  toast(`Call ${logTarget.callNo} logged`, 'success');
+}
+
+function reengage(appNo) {
+  showModal({
+    title:'Re-engage Candidate?',
+    body:`Move <b>${appNo}</b> back to active pipeline?`,
+    confirmText:'Re-engage', confirmClass:'btn-primary',
+    onConfirm: async () => { await API.updateOfferStatus(appNo, 'Pending Accept'); toast('Candidate re-engaged', 'success'); }
+  });
+}
+
+function goOnboarding(appNo) { sessionStorage.setItem('bsc_focus_appno', appNo); window.location.href = 'onboarding.html'; }
+</script>
+</body>
+</html>

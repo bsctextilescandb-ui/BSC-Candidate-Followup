@@ -1,0 +1,361 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Candidates — BSC Candidate CRM</title>
+<link rel="stylesheet" href="css/shared.css">
+<style>
+.bulk-bar{display:none;align-items:center;gap:9px;background:#EDE8DE;padding:8px 12px;border-radius:8px;margin-bottom:10px;font-size:11px}
+.bulk-bar.show{display:flex}
+.rej-reason{font-size:8.5px;background:#FCEBEB;color:#A32D2D;padding:2px 7px;border-radius:4px;font-style:italic;display:block;margin-top:3px}
+tr.row-hold td{background:#FFFBF4}
+tr.row-rejected td{background:#FFF8F8}
+tr.row-onboarding td{background:#F5FFFA}
+.td-actions{display:flex;flex-direction:column;gap:4px;align-items:flex-start}
+</style>
+</head>
+<body>
+<div class="app-shell">
+  <aside class="sidebar">
+    <div class="sb-head"><div class="sb-logo">BSC</div><div><div class="sb-brand-name">Candidate CRM</div><div class="sb-brand-sub">BSC The Textile Mall</div></div></div>
+    <div class="sb-user"><div class="sb-avatar" id="sb-av">HR</div><div><div class="sb-user-name" id="sb-username">HR Admin</div><div class="sb-user-role" id="sb-userrole">Human Resources</div></div></div>
+    <div class="sb-section">Main</div>
+    <a class="nav-item" data-page="dashboard" href="dashboard.html"><span class="nav-icon">📊</span> Dashboard</a>
+    <a class="nav-item active" data-page="candidates" href="candidates.html"><span class="nav-icon">👥</span> Candidates</a>
+    <div class="sb-section">HR Process</div>
+    <a class="nav-item" data-page="interview" href="interview-panel.html"><span class="nav-icon">🎯</span> Interview Panel</a>
+    <a class="nav-item" data-page="offer" href="offer-process.html"><span class="nav-icon">📄</span> Offer Process</a>
+    <a class="nav-item" data-page="onboarding" href="onboarding.html"><span class="nav-icon">✅</span> Onboarding</a>
+    <a class="nav-item" data-page="exit" href="employee-exit.html"><span class="nav-icon">🚪</span> Employee Exit</a>
+    <div class="sb-section">Public</div>
+    <a class="nav-item" data-page="form" href="candidate-entry.html" target="_blank"><span class="nav-icon">📋</span> Entry Form (QR)</a>
+    <div class="sb-section">Admin</div>
+    <a class="nav-item" href="#"><span class="nav-icon">⚙️</span> Settings</a>
+    <div class="sb-bottom"><button class="logout-btn" id="logout-btn">↩ &nbsp;Logout</button></div>
+  </aside>
+
+  <div class="main">
+    <header class="topbar">
+      <div class="topbar-left">
+        <div class="topbar-title">Candidates</div>
+        <div class="breadcrumb"><a class="bc-link" href="dashboard.html">Dashboard</a><span class="bc-sep">›</span><span>Candidates</span></div>
+      </div>
+      <div class="topbar-right">
+        <span class="topbar-time" id="live-clock"></span>
+        <span class="live-ind"><span class="live-dot"></span>Live</span>
+        <button class="btn btn-primary btn-sm" onclick="window.open('candidate-entry.html','_blank')">＋ Add Walk-in</button>
+        <div class="bell-btn">🔔<div class="bell-dot"></div></div>
+      </div>
+    </header>
+
+    <main class="content">
+      <!-- KPI Row 1 -->
+      <div class="kpi-grid">
+        <div class="kpi gold"><div class="kpi-label">All Candidates</div><div class="kpi-val" id="k-total">—</div></div>
+        <div class="kpi blue"><div class="kpi-label">New / Unreviewed</div><div class="kpi-val" id="k-new">—</div></div>
+        <div class="kpi navy"><div class="kpi-label">Shortlisted</div><div class="kpi-val" id="k-short">—</div></div>
+        <div class="kpi" style="border-left-color:#F57F17"><div class="kpi-label">Interviewed</div><div class="kpi-val" id="k-int" style="color:#F57F17">—</div></div>
+      </div>
+      <!-- KPI Row 2 -->
+      <div class="kpi-grid" style="margin-top:-4px">
+        <div class="kpi green"><div class="kpi-label">Selected</div><div class="kpi-val" id="k-sel">—</div></div>
+        <div class="kpi teal"><div class="kpi-label">Offer Sent</div><div class="kpi-val" id="k-offer">—</div></div>
+        <div class="kpi orange"><div class="kpi-label">On Hold</div><div class="kpi-val" id="k-hold">—</div></div>
+        <div class="kpi red"><div class="kpi-label">Rejected</div><div class="kpi-val" id="k-rej">—</div></div>
+      </div>
+
+      <!-- Status pills -->
+      <div class="status-pills" id="status-pills">
+        <span class="sp sp-all active"  data-status="all">All · <b id="p-all">—</b></span>
+        <span class="sp sp-new"         data-status="New">New · <b id="p-new">—</b></span>
+        <span class="sp sp-short"       data-status="Shortlisted">Shortlisted · <b id="p-short">—</b></span>
+        <span class="sp sp-int"         data-status="Interviewed">Interviewed · <b id="p-int">—</b></span>
+        <span class="sp sp-sel"         data-status="Selected">Selected · <b id="p-sel">—</b></span>
+        <span class="sp sp-offer"       data-status="Offer Sent">Offer Sent · <b id="p-offer">—</b></span>
+        <span class="sp sp-hold"        data-status="Hold">Hold · <b id="p-hold">—</b></span>
+        <span class="sp sp-rej"         data-status="Rejected">Rejected · <b id="p-rej">—</b></span>
+        <span class="sp sp-board"       data-status="Onboarding">Onboarding · <b id="p-board">—</b></span>
+      </div>
+
+      <!-- Filters -->
+      <div class="filter-bar" style="margin-bottom:8px">
+        <input class="search-input" id="cand-search" placeholder="🔍 Search name, phone, app no…" oninput="applyFilters()">
+        <select class="fsel" id="f-desig" onchange="applyFilters()">
+          <option value="">All Designations</option>
+          <option>Sales Executive</option><option>Floor Manager</option>
+          <option>Cashier</option><option>Billing Executive</option><option>Store Keeper</option>
+        </select>
+        <select class="fsel" id="f-source" onchange="applyFilters()">
+          <option value="">All Sources</option>
+          <option>Walk-in</option><option>Employee Ref</option>
+          <option>Online Apply</option><option>Other</option>
+        </select>
+        <button class="btn btn-outline-green btn-sm" onclick="exportCSV()">⬇ Export CSV</button>
+      </div>
+
+      <!-- Bulk action bar -->
+      <div class="bulk-bar" id="bulk-bar">
+        <b id="bulk-count">0 selected</b>
+        <button class="btn btn-outline-gold btn-sm" onclick="bulkAction('Shortlisted')">Bulk Shortlist</button>
+        <button class="btn btn-outline-red btn-sm"  onclick="bulkAction('Rejected')">Bulk Reject</button>
+        <button class="btn btn-muted btn-sm"         onclick="clearBulk()">✕ Clear</button>
+      </div>
+
+      <!-- Table -->
+      <div class="table-card" style="padding:0">
+        <div class="table-wrap">
+          <table>
+            <thead>
+              <tr>
+                <th><input type="checkbox" id="chk-all" onchange="toggleAll(this)"></th>
+                <th>App No</th><th>Candidate</th><th>Phone</th>
+                <th>Designation</th><th>Source</th><th>Referrer</th>
+                <th>Date</th><th>Status</th><th>Days In</th><th>Actions</th>
+              </tr>
+            </thead>
+            <tbody id="cand-tbody">
+              <tr><td colspan="11" style="text-align:center;padding:30px">
+                <div class="skel" style="height:14px;margin:6px auto;width:60%"></div>
+                <div class="skel" style="height:14px;margin:6px auto;width:45%"></div>
+              </td></tr>
+            </tbody>
+          </table>
+        </div>
+        <div class="table-pagination">
+          <span id="cand-page-info">Loading…</span>
+          <div style="display:flex;gap:6px">
+            <button class="btn btn-muted btn-sm" id="prev-btn" onclick="changePage(-1)" disabled>← Prev</button>
+            <button class="btn btn-outline btn-sm" id="next-btn" onclick="changePage(1)">Next →</button>
+          </div>
+        </div>
+      </div>
+    </main>
+  </div>
+</div>
+
+<!-- Reject modal -->
+<div class="modal-overlay" id="rej-modal">
+  <div class="modal">
+    <div class="modal-title">Reject Candidate</div>
+    <div class="modal-body">
+      <p style="margin-bottom:12px">Select a rejection reason for <b id="rej-name"></b>:</p>
+      <select class="fsel" id="rej-reason-sel" style="width:100%;font-size:12px;padding:8px">
+        <option value="">Select reason…</option>
+        <option>Low experience</option><option>Salary mismatch</option>
+        <option>Better candidate selected</option><option>Did not appear</option>
+        <option>Failed interview</option><option>Other</option>
+      </select>
+    </div>
+    <div class="modal-btns">
+      <button class="btn btn-muted" onclick="closeRejModal()">Cancel</button>
+      <button class="btn btn-red"   onclick="confirmReject()">Confirm Reject</button>
+    </div>
+  </div>
+</div>
+
+<script src="js/config.js"></script>
+<script src="js/shared.js"></script>
+<script>
+'use strict';
+initPage('candidates');
+
+const PAGE_SIZE = 10;
+let currentPage = 1;
+let allCandidates = [];
+let filtered = [];
+let activeStatus = 'all';
+let rejectTargetAppNo = '';
+
+// ── Load ──
+(async function load() {
+  const data = await API.getCandidates({ limit: 500 });
+  allCandidates = data.candidates || [];
+  buildKPIs();
+  buildPills();
+  applyFilters();
+})();
+
+function buildKPIs() {
+  const count = s => allCandidates.filter(c => c.status === s).length;
+  el('k-total').textContent = allCandidates.length;
+  el('k-new').textContent   = count('New');
+  el('k-short').textContent = count('Shortlisted');
+  el('k-int').textContent   = count('Interviewed');
+  el('k-sel').textContent   = count('Selected');
+  el('k-offer').textContent = count('Offer Sent');
+  el('k-hold').textContent  = count('Hold');
+  el('k-rej').textContent   = count('Rejected');
+}
+
+function buildPills() {
+  const count = s => allCandidates.filter(c => c.status === s).length;
+  el('p-all').textContent   = allCandidates.length;
+  el('p-new').textContent   = count('New');
+  el('p-short').textContent = count('Shortlisted');
+  el('p-int').textContent   = count('Interviewed');
+  el('p-sel').textContent   = count('Selected');
+  el('p-offer').textContent = count('Offer Sent');
+  el('p-hold').textContent  = count('Hold');
+  el('p-rej').textContent   = count('Rejected');
+  el('p-board').textContent = count('Onboarding');
+}
+
+// ── Filters ──
+function applyFilters() {
+  const q      = (el('cand-search').value || '').toLowerCase();
+  const desig  = el('f-desig').value;
+  const source = el('f-source').value;
+
+  filtered = allCandidates.filter(c => {
+    if (activeStatus !== 'all' && c.status !== activeStatus) return false;
+    if (desig  && c.desig  !== desig)  return false;
+    if (source && c.source !== source) return false;
+    if (q && !c.name.toLowerCase().includes(q) &&
+             !c.appNo.toLowerCase().includes(q) &&
+             !c.phone.includes(q)) return false;
+    return true;
+  });
+
+  currentPage = 1;
+  renderTable();
+}
+
+// ── Status pills ──
+initStatusPills(status => {
+  activeStatus = status;
+  applyFilters();
+});
+
+// ── Render table ──
+function renderTable() {
+  const start = (currentPage - 1) * PAGE_SIZE;
+  const page  = filtered.slice(start, start + PAGE_SIZE);
+  const total = filtered.length;
+
+  if (!page.length) {
+    el('cand-tbody').innerHTML = `<tr><td colspan="11"><div class="empty-state"><div class="empty-icon">🔍</div><div class="empty-title">No candidates found</div><div class="empty-sub">Try adjusting filters</div></div></td></tr>`;
+    el('cand-page-info').textContent = 'No results';
+    el('prev-btn').disabled = true;
+    el('next-btn').disabled = true;
+    return;
+  }
+
+  el('cand-tbody').innerHTML = page.map(c => {
+    const rowCls = c.status === 'Hold' ? 'row-hold' : c.status === 'Rejected' ? 'row-rejected' : c.status === 'Onboarding' ? 'row-onboarding' : '';
+    const phone  = `<span class="phone-mask" data-real="${c.phone}">${maskPhone(c.phone)}</span>`;
+    const ref    = c.referrer || '—';
+    const rejRow = c.status === 'Rejected' && c.rejReason ? `<span class="rej-reason">${c.rejReason}</span>` : '';
+    return `
+      <tr class="${rowCls}">
+        <td><input type="checkbox" class="row-chk" data-appno="${c.appNo}" onchange="rowCheck()"></td>
+        <td style="font-size:10px;white-space:nowrap">${c.appNo}</td>
+        <td><div class="td-name"><div class="av av-${c.color}">${c.initials}</div><b>${c.name}</b></div></td>
+        <td>${phone}</td>
+        <td style="white-space:nowrap">${c.desig}</td>
+        <td>${c.source}</td>
+        <td style="color:var(--muted)">${ref}</td>
+        <td style="white-space:nowrap;font-size:10.5px">${c.date}</td>
+        <td>${statusBadge(c.status)}</td>
+        <td>${daysChip(c.daysIn)}</td>
+        <td><div class="td-actions">${actionBtns(c)}${rejRow}</div></td>
+      </tr>`;
+  }).join('');
+
+  el('cand-page-info').textContent = `Showing ${start+1}–${Math.min(start+PAGE_SIZE, total)} of ${total}`;
+  el('prev-btn').disabled = currentPage === 1;
+  el('next-btn').disabled = start + PAGE_SIZE >= total;
+}
+
+function actionBtns(c) {
+  const map = {
+    'New':        `<div style="display:flex;gap:4px"><button class="btn btn-outline btn-sm" onclick="quickStatus('${c.appNo}','Shortlisted')">Shortlist</button><button class="btn btn-outline-red btn-sm" onclick="openReject('${c.appNo}','${c.name}')">Reject</button></div>`,
+    'Shortlisted':`<button class="btn btn-outline-gold btn-sm" onclick="goInterview('${c.appNo}')">Schedule Interview</button>`,
+    'Interviewed':`<button class="btn btn-outline btn-sm" onclick="goInterview('${c.appNo}')">View Score</button>`,
+    'Selected':   `<button class="btn btn-outline-green btn-sm" onclick="goOffer('${c.appNo}')">Send Offer</button>`,
+    'Offer Sent': `<button class="btn btn-outline btn-sm" onclick="goOffer('${c.appNo}')">Track Offer</button>`,
+    'Hold':       `<button class="btn btn-outline-gold btn-sm" onclick="quickStatus('${c.appNo}','New')">Reactivate</button>`,
+    'Rejected':   `<button class="btn btn-muted btn-sm" onclick="quickStatus('${c.appNo}','New')">Re-engage</button>`,
+    'Onboarding': `<button class="btn btn-outline-green btn-sm" onclick="goOnboarding('${c.appNo}')">Checklist</button>`,
+  };
+  return map[c.status] || `<button class="btn btn-muted btn-sm">View</button>`;
+}
+
+function changePage(dir) { currentPage += dir; renderTable(); }
+
+// ── Quick status change ──
+async function quickStatus(appNo, status) {
+  const label = { Shortlisted:'Shortlist', New:'Reactivate' }[status] || status;
+  showModal({
+    title:`${label} candidate?`,
+    body:`App No: <b>${appNo}</b><br>Status will change to <b>${status}</b>.`,
+    confirmText: label, confirmClass:'btn-primary',
+    onConfirm: async () => {
+      await API.updateCandidate(appNo, { status });
+      allCandidates = allCandidates.map(c => c.appNo === appNo ? {...c, status} : c);
+      buildKPIs(); buildPills(); applyFilters();
+      toast(`${label} successful`, 'success');
+    }
+  });
+}
+
+// ── Reject flow ──
+function openReject(appNo, name) {
+  rejectTargetAppNo = appNo;
+  el('rej-name').textContent = name;
+  el('rej-reason-sel').value = '';
+  el('rej-modal').classList.add('show');
+}
+function closeRejModal() { el('rej-modal').classList.remove('show'); }
+async function confirmReject() {
+  const reason = el('rej-reason-sel').value;
+  if (!reason) { toast('Select a rejection reason', 'error'); return; }
+  await API.updateCandidate(rejectTargetAppNo, { status:'Rejected', q4: reason });
+  allCandidates = allCandidates.map(c => c.appNo === rejectTargetAppNo ? {...c, status:'Rejected', rejReason:reason} : c);
+  buildKPIs(); buildPills(); applyFilters();
+  closeRejModal();
+  toast('Candidate rejected', 'warn');
+}
+
+// ── Bulk actions ──
+function rowCheck() {
+  const checked = document.querySelectorAll('.row-chk:checked').length;
+  el('bulk-bar').classList.toggle('show', checked > 0);
+  el('bulk-count').textContent = `${checked} selected`;
+}
+function toggleAll(chk) { document.querySelectorAll('.row-chk').forEach(c => c.checked = chk.checked); rowCheck(); }
+function clearBulk() { document.querySelectorAll('.row-chk, #chk-all').forEach(c => c.checked = false); rowCheck(); }
+async function bulkAction(status) {
+  const checked = [...document.querySelectorAll('.row-chk:checked')].map(c => c.dataset.appno);
+  if (!checked.length) return;
+  showModal({
+    title:`Bulk ${status}`,
+    body:`Change <b>${checked.length}</b> candidates to <b>${status}</b>?`,
+    confirmText:`Apply ${status}`, confirmClass:'btn-primary',
+    onConfirm: async () => {
+      await Promise.all(checked.map(appNo => API.updateCandidate(appNo, { status })));
+      allCandidates = allCandidates.map(c => checked.includes(c.appNo) ? {...c, status} : c);
+      buildKPIs(); buildPills(); applyFilters(); clearBulk();
+      toast(`${checked.length} candidates updated`, 'success');
+    }
+  });
+}
+
+// ── Navigation ──
+function goInterview(appNo)  { sessionStorage.setItem('bsc_focus_appno', appNo); window.location.href = 'interview-panel.html'; }
+function goOffer(appNo)      { sessionStorage.setItem('bsc_focus_appno', appNo); window.location.href = 'offer-process.html'; }
+function goOnboarding(appNo) { sessionStorage.setItem('bsc_focus_appno', appNo); window.location.href = 'onboarding.html'; }
+
+// ── Export CSV ──
+function exportCSV() {
+  const headers = ['App No','Name','Phone','Designation','Source','Referrer','Date','Status','Days In'];
+  const rows = filtered.map(c => [c.appNo, c.name, c.phone, c.desig, c.source, c.referrer, c.date, c.status, c.daysIn]);
+  const csv = [headers, ...rows].map(r => r.map(v => `"${v}"`).join(',')).join('\n');
+  const a = document.createElement('a');
+  a.href = 'data:text/csv;charset=utf-8,' + encodeURIComponent(csv);
+  a.download = `BSC_Candidates_${new Date().toISOString().slice(0,10)}.csv`;
+  a.click();
+}
+</script>
+</body>
+</html>
