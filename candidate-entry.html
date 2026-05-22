@@ -145,7 +145,8 @@ body{display:flex;align-items:flex-start;justify-content:center;padding:20px;min
           <div class="fg">
             <label>Designation Applied <span class="req">*</span></label>
             <select id="f-desig" onchange="onDesigChange();clearErr('desig')">
-              <option value="">Select designation</option>
+  <option value="">Select designation</option>
+</select>
               <option>Sales Executive</option><option>Floor Manager</option>
               <option>Cashier</option><option>Billing Executive</option><option>Store Keeper</option>
             </select>
@@ -495,6 +496,15 @@ function resetForm() {
   document.getElementById('main-wrap').style.display = '';
   goStep1();
 }
+  // Load designations from sheet
+API.call('getDesignations').then(res => {
+  const sel = document.getElementById('f-desig');
+  (res.designations || []).forEach(d => {
+    const opt = document.createElement('option');
+    opt.value = d; opt.textContent = d;
+    sel.appendChild(opt);
+  });
+});
 </script>
 </body>
 </html>
