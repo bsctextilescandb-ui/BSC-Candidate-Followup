@@ -4,233 +4,212 @@
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 <title>BSC Candidate CRM — Login</title>
-<link rel="stylesheet" href="css/shared.css">
 <style>
-/* ── LOGIN-SPECIFIC STYLES ── */
-body { display: flex; align-items: center; justify-content: center; min-height: 100vh; padding: 20px; }
+/* ── All styles embedded — no external CSS needed ── */
+*{box-sizing:border-box;margin:0;padding:0}
+body{font-family:'Segoe UI',system-ui,-apple-system,sans-serif;background:#EDE8DE;min-height:100vh;display:flex;align-items:center;justify-content:center;padding:20px}
 
-.login-card {
-  background: var(--card);
-  border-radius: var(--radius-lg);
-  overflow: hidden;
-  width: 400px;
-  box-shadow: var(--shadow-lg);
-}
+.card{background:#fff;border-radius:16px;overflow:hidden;width:100%;max-width:400px;box-shadow:0 4px 32px rgba(30,45,78,.15)}
 
-.login-header {
-  background: var(--navy);
-  padding: 22px 26px;
-  display: flex; align-items: center; gap: 14px;
-}
-.login-logo {
-  width: 48px; height: 48px;
-  border-radius: 10px;
-  background: #fff;
-  display: flex; align-items: center; justify-content: center;
-  font-size: 12px; font-weight: 800; color: var(--red);
-  flex-shrink: 0;
-}
-.login-title { color: #fff; font-size: 17px; font-weight: 800; }
-.login-sub   { color: rgba(255,255,255,.4); font-size: 10px; letter-spacing: .05em; margin-top: 2px; }
+/* Header */
+.hd{background:#1E2D4E;padding:24px 28px;display:flex;align-items:center;gap:14px}
+.hd-logo{width:48px;height:48px;border-radius:10px;background:#fff;display:flex;align-items:center;justify-content:center;font-size:12px;font-weight:800;color:#C0272D;flex-shrink:0;letter-spacing:.5px}
+.hd-title{color:#fff;font-size:17px;font-weight:800;letter-spacing:.01em}
+.hd-sub{color:rgba(255,255,255,.38);font-size:9.5px;letter-spacing:.08em;margin-top:3px;text-transform:uppercase}
 
-.login-body { padding: 26px; }
-.login-welcome { font-size: 22px; font-weight: 800; color: var(--navy); margin-bottom: 4px; }
-.login-desc    { font-size: 12px; color: #888; margin-bottom: 20px; }
+/* Body */
+.body{padding:28px}
+.welcome{font-size:22px;font-weight:800;color:#1E2D4E;margin-bottom:4px}
+.desc{font-size:12px;color:#999;margin-bottom:26px}
 
-.role-label { font-size: 9px; font-weight: 700; letter-spacing: .09em; text-transform: uppercase; color: #888; margin-bottom: 7px; }
-.role-selector { display: grid; grid-template-columns: repeat(2,1fr); gap: 8px; margin-bottom: 18px; }
-.role-btn {
-  padding: 10px 8px;
-  border: 1.5px solid var(--border);
-  border-radius: var(--radius-sm);
-  cursor: pointer; text-align: center;
-  transition: all .15s;
-  background: var(--input-bg);
-}
-.role-btn:hover { border-color: var(--navy); background: #EDE8DE; }
-.role-btn.sel   { border-color: var(--navy); background: var(--navy); color: #fff; }
-.role-btn:not(.sel) { color: #555; }
-.role-btn-name { font-size: 12px; font-weight: 700; }
-.role-btn-desc { font-size: 9px; opacity: .6; margin-top: 2px; }
+/* Form fields */
+.fg{margin-bottom:16px}
+.fg label{display:block;font-size:9px;font-weight:800;letter-spacing:.1em;text-transform:uppercase;color:#888;margin-bottom:6px}
+.fg input{width:100%;font-size:14px;padding:11px 14px;border:1.5px solid #e0ddd8;border-radius:9px;background:#F9F7F4;color:#1E2D4E;transition:border .15s,background .15s;font-family:inherit}
+.fg input:focus{outline:none;border-color:#1E2D4E;background:#fff}
+.fg input.err{border-color:#C0272D;background:#FFF5F5}
 
-.lf-group { margin-bottom: 13px; }
-.lf-label {
-  display: block; font-size: 9px; font-weight: 700;
-  letter-spacing: .09em; text-transform: uppercase; color: #888; margin-bottom: 5px;
-}
-.lf-input {
-  width: 100%; font-size: 13px; padding: 10px 13px;
-  border: 1.5px solid var(--border); border-radius: 9px;
-  background: var(--input-bg); color: var(--navy);
-  transition: border .15s;
-}
-.lf-input:focus { outline: none; border-color: var(--navy); background: #fff; }
-.lf-input.err   { border-color: var(--red); background: #FFF5F5; }
+/* Error message */
+.field-err{font-size:10px;color:#C0272D;margin-top:4px;display:none}
+.field-err.show{display:block}
 
-.lf-foot { display: flex; justify-content: flex-end; margin-bottom: 14px; }
-.lf-forgot { font-size: 11.5px; color: var(--gold); cursor: pointer; background: none; border: none; }
-.lf-forgot:hover { text-decoration: underline; }
+/* Form foot */
+.foot{display:flex;justify-content:flex-end;margin-bottom:18px}
+.forgot{font-size:11.5px;color:#C9952A;cursor:pointer;background:none;border:none;font-family:inherit;padding:0}
+.forgot:hover{text-decoration:underline}
 
-.lf-submit {
-  width: 100%; background: var(--navy); color: #fff;
-  border: none; padding: 13px; border-radius: 9px;
-  font-size: 13.5px; font-weight: 700; cursor: pointer;
-  transition: background .15s; display: flex; align-items: center; justify-content: center; gap: 8px;
-}
-.lf-submit:hover { background: var(--navy2); }
-.lf-submit:disabled { opacity: .5; cursor: not-allowed; }
+/* Submit button */
+.submit-btn{width:100%;background:#1E2D4E;color:#fff;border:none;padding:13px;border-radius:10px;font-size:14px;font-weight:700;cursor:pointer;transition:background .15s;display:flex;align-items:center;justify-content:center;gap:8px;font-family:inherit;letter-spacing:.02em}
+.submit-btn:hover{background:#162340}
+.submit-btn:disabled{opacity:.5;cursor:not-allowed}
 
-.lf-note { text-align: center; font-size: 9.5px; color: #ccc; margin-top: 12px; }
-.lf-err  { font-size: 11px; color: var(--red); text-align: center; margin-top: 8px; display: none; }
-.lf-err.show { display: block; }
+/* Spinner */
+.spinner{width:16px;height:16px;border-radius:50%;border:2px solid rgba(255,255,255,.3);border-top-color:#fff;animation:spin .6s linear infinite;display:inline-block;flex-shrink:0}
+@keyframes spin{to{transform:rotate(360deg)}}
+
+/* Login error banner */
+.login-err{font-size:11.5px;color:#C0272D;background:#FFF5F5;border:1px solid #f5c6c8;border-radius:7px;padding:9px 12px;text-align:center;margin-top:12px;display:none}
+.login-err.show{display:block}
+
+/* Footer note */
+.note{text-align:center;font-size:9.5px;color:#ccc;margin-top:14px}
+
+/* Responsive */
+@media(max-width:440px){.body{padding:22px}.welcome{font-size:19px}}
 </style>
 </head>
 <body>
 
-<div class="login-card">
-  <div class="login-header">
-    <div class="login-logo">BSC</div>
+<div class="card">
+  <!-- Header -->
+  <div class="hd">
+    <div class="hd-logo">BSC</div>
     <div>
-      <div class="login-title">Candidate Portal</div>
-      <div class="login-sub">BSC THE TEXTILE MALL · SINCE 1938</div>
+      <div class="hd-title">Candidate Portal</div>
+      <div class="hd-sub">BSC The Textile Mall · Since 1938</div>
     </div>
   </div>
 
-  <div class="login-body">
-    <div class="login-welcome">Welcome back</div>
-    <div class="login-desc">Sign in to access the HR portal</div>
+  <!-- Body -->
+  <div class="body">
+    <div class="welcome">Welcome back</div>
+    <div class="desc">Sign in to access the HR portal</div>
 
-    <div class="role-label">Sign in as</div>
-    <div class="role-selector" id="role-selector">
-      <div class="role-btn sel" data-role="HR" data-desc="Human Resources" onclick="selectRole(this)">
-        <div class="role-btn-name">HR</div>
-        <div class="role-btn-desc">Full candidate access</div>
-      </div>
-      <div class="role-btn" data-role="Floor Manager" data-desc="Interview Panel" onclick="selectRole(this)">
-        <div class="role-btn-name">Floor Manager</div>
-        <div class="role-btn-desc">Interview panel</div>
-      </div>
-      <div class="role-btn" data-role="Manager" data-desc="Selection Authority" onclick="selectRole(this)">
-        <div class="role-btn-name">Manager</div>
-        <div class="role-btn-desc">Selection authority</div>
-      </div>
-      <div class="role-btn" data-role="Admin" data-desc="Full System Access" onclick="selectRole(this)">
-        <div class="role-btn-name">Admin</div>
-        <div class="role-btn-desc">Full system access</div>
-      </div>
+    <div class="fg">
+      <label for="li-user">Username / Email</label>
+      <input type="text" id="li-user" placeholder="your@email.com"
+             autocomplete="username" onkeydown="if(event.key==='Enter')doLogin()">
+      <div class="field-err" id="err-user">Please enter your username</div>
     </div>
 
-    <div class="lf-group">
-      <label class="lf-label" for="li-user">Username / Email</label>
-      <input class="lf-input" id="li-user" type="text" placeholder="hr@bsctextiles.com" autocomplete="username">
+    <div class="fg">
+      <label for="li-pass">Password</label>
+      <input type="password" id="li-pass" placeholder="••••••••••"
+             autocomplete="current-password" onkeydown="if(event.key==='Enter')doLogin()">
+      <div class="field-err" id="err-pass">Please enter your password</div>
     </div>
 
-    <div class="lf-group">
-      <label class="lf-label" for="li-pass">Password</label>
-      <input class="lf-input" id="li-pass" type="password" placeholder="••••••••" autocomplete="current-password"
-             onkeydown="if(event.key==='Enter')doLogin()">
+    <div class="foot">
+      <button class="forgot" onclick="forgotPass()">Forgot password?</button>
     </div>
 
-    <div class="lf-foot">
-      <button class="lf-forgot" onclick="forgotPass()">Forgot password?</button>
-    </div>
-
-    <button class="lf-submit" id="li-btn" onclick="doLogin()">
-      <span id="li-btn-text">Sign In</span>
-      <span id="li-spinner" class="spinner" style="display:none"></span>
+    <button class="submit-btn" id="li-btn" onclick="doLogin()">
+      <span id="li-text">Sign In</span>
+      <span id="li-spin" class="spinner" style="display:none"></span>
     </button>
 
-    <div class="lf-err" id="li-err">Incorrect username or password. Please try again.</div>
-    <div class="lf-note">Authorised personnel only · All access is logged</div>
+    <div class="login-err" id="login-err">Incorrect username or password. Please try again.</div>
+    <div class="note">Authorised personnel only · Access is logged</div>
   </div>
 </div>
 
-<!-- Scripts -->
-<script src="js/config.js"></script>
-<script src="js/shared.js"></script>
+<!-- ── Inline config (no external js/config.js dependency) ── -->
 <script>
 'use strict';
 
-// Redirect if already logged in
-if (Auth.check()) {
-  const session = Auth.get();
-  window.location.href = CONFIG.ROLE_HOME[session.role] || 'dashboard.html';
-}
+/* ── CONFIG ── paste your Apps Script URL here ── */
+const SCRIPT_URL = 'https://script.google.com/macros/s/YOUR_SCRIPT_ID/exec';
+const SESSION_KEY = 'bsc_crm_session';
 
-let selectedRole = 'HR';
-let selectedDesc = 'Human Resources';
+/* ── Role home pages ── */
+const ROLE_HOME = {
+  'HR':           'dashboard.html',
+  'Floor Manager':'interview-panel.html',
+  'Manager':      'interview-panel.html',
+  'Admin':        'dashboard.html'
+};
 
-function selectRole(btn) {
-  document.querySelectorAll('.role-btn').forEach(b => b.classList.remove('sel'));
-  btn.classList.add('sel');
-  selectedRole = btn.dataset.role;
-  selectedDesc  = btn.dataset.desc;
-  // Pre-fill username placeholder per role
-  const userEl = el('li-user');
-  const placeholders = {
-    HR:            'hr@bsctextiles.com',
-    'Floor Manager':'fm@bsctextiles.com',
-    Manager:       'manager@bsctextiles.com',
-    Admin:         'admin@bsctextiles.com'
-  };
-  userEl.placeholder = placeholders[selectedRole] || 'username@bsctextiles.com';
-}
+/* ── Redirect if already logged in ── */
+try {
+  const existing = JSON.parse(sessionStorage.getItem(SESSION_KEY));
+  if (existing && existing.role) {
+    window.location.href = ROLE_HOME[existing.role] || 'dashboard.html';
+  }
+} catch(e){}
 
+/* ── Helpers ── */
+function el(id){ return document.getElementById(id); }
+
+function showErr(id){ el(id).classList.add('show'); el(id.replace('err-','li-')).classList.add('err'); }
+function clearErr(id){ el(id).classList.remove('show'); el(id.replace('err-','li-')).classList.remove('err'); }
+
+/* ── Login ── */
 async function doLogin() {
   const username = el('li-user').value.trim();
   const password = el('li-pass').value;
-  const errEl    = el('li-err');
-  const btn      = el('li-btn');
-  const spinner  = el('li-spinner');
-  const btnText  = el('li-btn-text');
 
-  // Clear previous errors
-  errEl.classList.remove('show');
-  el('li-user').classList.remove('err');
-  el('li-pass').classList.remove('err');
+  /* Reset errors */
+  clearErr('err-user'); clearErr('err-pass');
+  el('login-err').classList.remove('show');
 
-  // Basic validation
-  if (!username) { el('li-user').classList.add('err'); el('li-user').focus(); return; }
-  if (!password) { el('li-pass').classList.add('err'); el('li-pass').focus(); return; }
+  /* Validate */
+  let hasErr = false;
+  if (!username){ showErr('err-user'); hasErr = true; }
+  if (!password){ showErr('err-pass'); hasErr = true; }
+  if (hasErr) return;
 
-  // Show loading state
-  btn.disabled    = true;
-  spinner.style.display = '';
-  btnText.textContent   = 'Signing in…';
+  /* Loading state */
+  const btn  = el('li-btn');
+  btn.disabled = true;
+  el('li-text').textContent = 'Signing in…';
+  el('li-spin').style.display = '';
 
   try {
-    const result = await API.verifyUser(username, password, selectedRole);
+    const result = await verifyUser(username, password);
 
     if (result.success) {
-      // Save session
-      const displayName = selectedRole === 'HR' ? 'HR Admin' :
-                          selectedRole === 'Floor Manager' ? 'Floor Manager' :
-                          selectedRole;
-      Auth.save(selectedRole, displayName);
-
-      // Redirect to role home page
-      window.location.href = CONFIG.ROLE_HOME[selectedRole] || 'dashboard.html';
+      /* Save session — role comes from the sheet */
+      sessionStorage.setItem(SESSION_KEY, JSON.stringify({
+        username: result.displayName || username,
+        role:     result.role,
+        loginAt:  Date.now()
+      }));
+      window.location.href = ROLE_HOME[result.role] || 'dashboard.html';
     } else {
-      throw new Error('Invalid credentials');
+      throw new Error('invalid');
     }
-  } catch (err) {
-    errEl.classList.add('show');
+  } catch(e) {
+    el('login-err').classList.add('show');
     el('li-pass').classList.add('err');
     el('li-pass').value = '';
     el('li-pass').focus();
     btn.disabled = false;
-    spinner.style.display = 'none';
-    btnText.textContent   = 'Sign In';
+    el('li-text').textContent = 'Sign In';
+    el('li-spin').style.display = 'none';
   }
 }
 
-function forgotPass() {
-  showModal({
-    title: 'Forgot Password',
-    body: 'Please contact your system administrator to reset your password.<br><br><b>Admin:</b> admin@bsctextiles.com',
-    confirmText: 'OK',
-    confirmClass: 'btn-primary'
+/* ── API call to Apps Script ── */
+async function verifyUser(username, password) {
+  /* Demo mode — works before Apps Script is connected */
+  if (!SCRIPT_URL || SCRIPT_URL.includes('YOUR_SCRIPT_ID')) {
+    return demoVerify(username, password);
+  }
+  const res = await fetch(SCRIPT_URL, {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify({ action: 'verifyUser', username, password })
   });
+  return res.json();
+}
+
+/* ── Demo credentials (remove after connecting Apps Script) ── */
+const DEMO_USERS = [
+  { username:'hr@bsctextiles.com',       password:'bsc@2026', role:'HR',           displayName:'HR Admin'    },
+  { username:'fm@bsctextiles.com',        password:'bsc@2026', role:'Floor Manager', displayName:'Floor Manager'},
+  { username:'manager@bsctextiles.com',   password:'bsc@2026', role:'Manager',      displayName:'Store Manager'},
+  { username:'admin@bsctextiles.com',     password:'bsc@2026', role:'Admin',         displayName:'Admin'       },
+];
+function demoVerify(username, password) {
+  const u = DEMO_USERS.find(d =>
+    d.username.toLowerCase() === username.toLowerCase() && d.password === password
+  );
+  return Promise.resolve(u ? { success:true, role:u.role, displayName:u.displayName } : { success:false });
+}
+
+/* ── Forgot password ── */
+function forgotPass() {
+  alert('Please contact your system administrator to reset your password.\n\nEmail: admin@bsctextiles.com');
 }
 </script>
 </body>
