@@ -461,3 +461,12 @@ function initPage(pageKey) {
   });
   return session;
 }
+async function updateNavBadges() {
+  try {
+    const kpis = await API.getKPIs();
+    const newCount = el('nb-cand');
+    const offerCount = el('nb-offer');
+    if (newCount)   newCount.textContent   = kpis.newCandidates || 0;
+    if (offerCount) offerCount.textContent = kpis.pendingOffers  || 0;
+  } catch(e) {}
+}
