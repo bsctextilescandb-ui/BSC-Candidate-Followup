@@ -4,7 +4,7 @@
  */
 const CONFIG = {
   // ── PASTE YOUR APPS SCRIPT WEB APP URL HERE ──
-  SCRIPT_URL: 'https://script.google.com/macros/s/YOUR_SCRIPT_ID/exec',
+  SCRIPT_URL: 'https://script.google.com/macros/s/AKfycbwolTclzyP2skiQi4ndcPs4y4z0s0gRglN0fUK3jmBq-w8RAxBUltcw47QqyjGGRF-3/exec',
 
   // App metadata
   APP_NAME:    'BSC Candidate CRM',
