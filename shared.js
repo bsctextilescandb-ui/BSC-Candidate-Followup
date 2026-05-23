@@ -126,6 +126,8 @@ const API = {
       getOnboarding:      {candidates:[]},
       tickChecklist:      {success:true},
       getExits:           {exits:[]},
+      getInterviews:      {interviews:[]},
+      scheduleInterview:  {success:true},
       initiateExit:       {success:true},
       saveExitChecklist:  {success:true},
       verifyUser:         {success:true,username:params.username,role:'HR',displayName:'HR Admin'}
@@ -253,27 +255,6 @@ async function updateNavBadges(){
   }catch(e){}
 }
 
-
-// ── Load designations dynamically from Roles_Config sheet ──
-async function loadDesigDropdowns() {
-  try {
-    const res   = await API.call('getDesignations');
-    const desigs = res.designations || [];
-    if (!desigs.length) return;
-    // Update every designation select on this page
-    document.querySelectorAll('select[data-desig-source]').forEach(sel => {
-      const hasAll = sel.dataset.desigSource === 'filter';
-      // Keep first option (placeholder / "All Designations")
-      while (sel.options.length > 1) sel.remove(1);
-      desigs.forEach(d => {
-        const opt = document.createElement('option');
-        opt.value = d; opt.textContent = d;
-        sel.appendChild(opt);
-      });
-    });
-  } catch(e) { console.warn('Designation load failed:', e.message); }
-}
-
 /* ═══ PAGE INIT — single definition ═══ */
 function initPage(pageKey){
   const session=Auth.guard();
@@ -283,7 +264,6 @@ function initPage(pageKey){
   highlightNav(pageKey);
   initPhoneReveal();
   updateNavBadges();
-  loadDesigDropdowns();
   const lb=el('logout-btn');
   if(lb)lb.addEventListener('click',()=>showModal({
     title:'Sign out?',body:'You will be returned to the login screen.',
