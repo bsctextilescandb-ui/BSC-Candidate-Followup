@@ -372,14 +372,13 @@ let schedTarget = null;
 function openSchedModal(appNo) {
   schedTarget = allCandidates.find(c => c.appNo === appNo);
   if (!schedTarget) return;
-  // Set defaults
-  const today = new Date();
-  document.getElementById('sched-date').value = today.toISOString().slice(0,10);
-  document.getElementById('sched-time').value = '10:00';
+  const today = new Date().toISOString().slice(0,10);
+  document.getElementById('sched-call1').value     = '';
+  document.getElementById('sched-call2').value     = '';
+  document.getElementById('sched-interview').value = today;
+  document.getElementById('sched-int-err').style.display = 'none';
   document.getElementById('sched-cand-info').innerHTML =
-    'Scheduling interview for <b>' + schedTarget.name + '</b> · ' + schedTarget.desig;
-  document.getElementById('sched-date-err').style.display = 'none';
-  document.getElementById('sched-time-err').style.display = 'none';
+    'Scheduling interview for <b>' + schedTarget.name + '</b> &nbsp;·&nbsp; ' + schedTarget.desig;
   document.getElementById('sched-modal').classList.add('show');
 }
 
@@ -389,28 +388,31 @@ function closeSchedModal() {
 }
 
 async function confirmSchedule() {
-  const date = document.getElementById('sched-date').value;
-  const time = document.getElementById('sched-time').value;
-  let err = false;
-  if (!date) { document.getElementById('sched-date-err').style.display='block'; err=true; }
-  if (!time) { document.getElementById('sched-time-err').style.display='block'; err=true; }
-  if (err) return;
+  const call1     = document.getElementById('sched-call1').value;
+  const call2     = document.getElementById('sched-call2').value;
+  const intDate   = document.getElementById('sched-interview').value;
+  const errEl     = document.getElementById('sched-int-err');
 
-  const btn = document.querySelector('#sched-modal .btn-primary');
+  errEl.style.display = intDate ? 'none' : 'block';
+  if (!intDate) return;
+
+  const btn = document.getElementById('sched-confirm-btn');
   btn.textContent = 'Scheduling…'; btn.disabled = true;
 
   try {
     await API.call('scheduleInterview', {
-      appNo:     schedTarget.appNo,
-      candidate: schedTarget.name,
-      desig:     schedTarget.desig,
-      date:      date,
-      time:      time
+      appNo:         schedTarget.appNo,
+      candidate:     schedTarget.name,
+      desig:         schedTarget.desig,
+      call1Date:     call1,
+      call2Date:     call2,
+      interviewDate: intDate
     });
     closeSchedModal();
-    toast('Interview scheduled for ' + schedTarget.name + ' on ' + new Date(date).toLocaleDateString('en-IN',{day:'2-digit',month:'short',year:'numeric'}) + ' at ' + time, 'success');
+    toast(schedTarget.name + ' interview scheduled for ' +
+      new Date(intDate).toLocaleDateString('en-IN',{day:'2-digit',month:'short',year:'numeric'}), 'success');
   } catch(e) {
-    toast('Failed to schedule: ' + e.message, 'error');
+    toast('Failed: ' + e.message, 'error');
   } finally {
     btn.textContent = 'Confirm Schedule'; btn.disabled = false;
   }
@@ -420,24 +422,31 @@ async function confirmSchedule() {
 
 <!-- Schedule Interview Modal -->
 <div class="modal-overlay" id="sched-modal">
-  <div class="modal">
-    <div class="modal-title">Schedule Interview</div>
+  <div class="modal" style="max-width:460px">
+    <div class="modal-title">📅 Schedule Interview</div>
     <div class="modal-body">
-      <p id="sched-cand-info" style="margin-bottom:14px;font-size:12px;color:#555"></p>
-      <div class="fg" style="margin-bottom:12px">
-        <label>Interview Date <span class="req">*</span></label>
-        <input type="date" id="sched-date" style="width:100%;font-size:14px;padding:9px 11px;border:1.5px solid #ddd;border-radius:8px;background:#F9F7F4;font-family:inherit">
-        <div style="font-size:10px;color:#C0272D;margin-top:3px;display:none" id="sched-date-err">Please select a date</div>
+      <p id="sched-cand-info" style="margin-bottom:16px;font-size:12px;color:#555;background:#F9F7F4;padding:8px 12px;border-radius:7px"></p>
+
+      <div style="font-size:9px;font-weight:800;color:#1E2D4E;text-transform:uppercase;letter-spacing:.08em;margin-bottom:10px">Follow-up Calls (for tracking)</div>
+
+      <div style="display:grid;grid-template-columns:1fr 1fr;gap:10px;margin-bottom:14px">
+        <div class="fg">
+          <label style="font-size:9px;font-weight:700;color:#888;text-transform:uppercase;letter-spacing:.06em;display:block;margin-bottom:5px">1st Call Date</label>
+          <input type="date" id="sched-call1" style="width:100%;font-size:13px;padding:8px 10px;border:1.5px solid #ddd;border-radius:8px;background:#F9F7F4;font-family:inherit">
+        </div>
+        <div class="fg">
+          <label style="font-size:9px;font-weight:700;color:#888;text-transform:uppercase;letter-spacing:.06em;display:block;margin-bottom:5px">2nd Call Date</label>
+          <input type="date" id="sched-call2" style="width:100%;font-size:13px;padding:8px 10px;border:1.5px solid #ddd;border-radius:8px;background:#F9F7F4;font-family:inherit">
+        </div>
       </div>
-      <div class="fg">
-        <label>Interview Time <span class="req">*</span></label>
-        <input type="time" id="sched-time" style="width:100%;font-size:14px;padding:9px 11px;border:1.5px solid #ddd;border-radius:8px;background:#F9F7F4;font-family:inherit">
-        <div style="font-size:10px;color:#C0272D;margin-top:3px;display:none" id="sched-time-err">Please select a time</div>
-      </div>
+
+      <div style="font-size:9px;font-weight:800;color:#1E2D4E;text-transform:uppercase;letter-spacing:.08em;margin-bottom:10px">Interview Date <span style="color:#C0272D">*</span></div>
+      <input type="date" id="sched-interview" style="width:100%;font-size:14px;padding:9px 11px;border:1.5px solid #ddd;border-radius:8px;background:#F9F7F4;font-family:inherit;margin-bottom:4px">
+      <div style="font-size:10px;color:#C0272D;margin-top:3px;display:none" id="sched-int-err">Interview date is required</div>
     </div>
     <div class="modal-btns">
       <button class="btn btn-muted" onclick="closeSchedModal()">Cancel</button>
-      <button class="btn btn-primary" onclick="confirmSchedule()">Confirm Schedule</button>
+      <button class="btn btn-primary" id="sched-confirm-btn" onclick="confirmSchedule()">Confirm Schedule</button>
     </div>
   </div>
 </div>
