@@ -144,10 +144,8 @@ body{display:flex;align-items:flex-start;justify-content:center;padding:20px;min
         <div class="fg-row" style="margin-bottom:12px">
           <div class="fg">
             <label>Designation Applied <span class="req">*</span></label>
-            <select id="f-desig" onchange="onDesigChange();clearErr('desig')">
+            <select id="f-desig" onchange="onDesigChange();clearErr('desig')" data-desig-source="form">
               <option value="">Select designation</option>
-              <option>Sales Executive</option><option>Floor Manager</option>
-              <option>Cashier</option><option>Billing Executive</option><option>Store Keeper</option>
             </select>
             <div class="err-msg" id="err-desig">Please select a designation</div>
           </div>
@@ -496,6 +494,29 @@ function resetForm() {
   document.getElementById('main-wrap').style.display = '';
   goStep1();
 }
+
+// ── Load designations from Roles_Config via Apps Script ──
+(async function loadEntryDesigs() {
+  try {
+    const SURL = (typeof CONFIG !== 'undefined' && CONFIG.SCRIPT_URL)
+      ? CONFIG.SCRIPT_URL
+      : 'https://script.google.com/macros/s/AKfycbwolTclzyP2skiQi4ndcPs4y4z0s0gRglN0fUK3jmBq-w8RAxBUltcw47QqyjGGRF-3/exec';
+    if (SURL.includes('YOUR_SCRIPT_ID')) return;
+    const res  = await fetch(SURL, { method:'POST', body:JSON.stringify({action:'getDesignations'}) });
+    const data = await res.json();
+    const desigs = data.designations || [];
+    if (!desigs.length) return;
+    const sel = document.getElementById('f-desig');
+    if (!sel) return;
+    while (sel.options.length > 1) sel.remove(1);
+    desigs.forEach(d => {
+      const opt = document.createElement('option');
+      opt.value = d; opt.textContent = d; sel.appendChild(opt);
+    });
+    console.log('[BSC] Designations loaded:', desigs.length);
+  } catch(e) { console.warn('[BSC] Designation load failed:', e.message); }
+})();
+
 </script>
 
 <div style="text-align:center;padding:14px;margin-top:8px">

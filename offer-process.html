@@ -94,10 +94,8 @@
           <option value="">All Status</option>
           <option>Pending Accept</option><option>Accepted</option><option>Declined</option>
         </select>
-        <select class="fsel" id="f-desig" onchange="applyFilters()">
+        <select class="fsel" id="f-desig" onchange="applyFilters()" data-desig-source="filter">
           <option value="">All Designations</option>
-          <option>Sales Executive</option><option>Floor Manager</option>
-          <option>Cashier</option><option>Billing Executive</option><option>Store Keeper</option>
         </select>
         <input class="search-input" id="offer-search" placeholder="🔍 Search…" oninput="applyFilters()">
       </div>

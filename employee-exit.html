@@ -87,7 +87,7 @@
             <span class="card-title">Exit Management</span>
             <div style="display:flex;gap:7px;flex-wrap:wrap">
               <select class="fsel" id="f-ff"    onchange="applyFilters()"><option value="">All FF Status</option><option>Settled</option><option>Pending</option></select>
-              <select class="fsel" id="f-desig" onchange="applyFilters()"><option value="">All Designations</option><option>Sales Executive</option><option>Floor Manager</option><option>Cashier</option><option>Billing Executive</option></select>
+              <select class="fsel" id="f-desig" onchange="applyFilters()" data-desig-source="filter"><option value="">All Designations</option></select>
               <input class="search-input" id="exit-search" placeholder="🔍 Search…" oninput="applyFilters()">
               <button class="btn btn-red btn-sm" onclick="openInitiateExit()">＋ Initiate Exit</button>
             </div>
