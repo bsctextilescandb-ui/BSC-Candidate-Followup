@@ -558,3 +558,10 @@ tr.row-danger td { background: #FFF8F8; }
   .kpi-grid  { grid-template-columns: 1fr 1fr; }
   .content   { padding: 12px 14px; }
 }
+
+/* ── Sidebar logo (new white-bg BSC logo) ── */
+.sb-logo-img{padding:10px 12px 8px;border-bottom:1px solid rgba(255,255,255,.1)}
+.sb-logo-img img{width:100%;height:auto;display:block;border-radius:5px;background:#fff}
+/* ── C&B footer ── */
+.sb-cnb{margin-top:8px;padding-top:8px;border-top:1px solid rgba(255,255,255,.08);text-align:center}
+.sb-cnb img{height:15px;opacity:.4;object-fit:contain}
