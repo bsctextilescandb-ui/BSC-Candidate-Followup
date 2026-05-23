@@ -131,13 +131,14 @@
           <table>
             <thead>
               <tr>
-                <th>Candidate</th><th>Designation</th><th>Scheduled</th>
+                <th>Candidate</th><th>Designation</th>
+                <th>1st Call</th><th>2nd Call</th><th>Interview Date</th>
                 <th>HR Round</th><th>FM Round</th><th>MGR Round</th>
                 <th>Overall</th><th>Action</th>
               </tr>
             </thead>
             <tbody id="int-tbody">
-              <tr><td colspan="8" style="text-align:center;padding:30px">
+              <tr><td colspan="10" style="text-align:center;padding:30px">
                 <div class="skel" style="height:14px;margin:6px auto;width:50%"></div>
                 <div class="skel" style="height:14px;margin:6px auto;width:38%"></div>
               </td></tr>
@@ -233,7 +234,7 @@ function renderTable() {
   const total = filtered.length;
 
   if (!page.length) {
-    el('int-tbody').innerHTML = '<tr><td colspan="8"><div class="no-int">' +
+    el('int-tbody').innerHTML = '<tr><td colspan="10"><div class="no-int">' +
       '<div class="no-int-icon">📋</div>' +
       '<div class="no-int-title">No interviews found</div>' +
       '<div style="font-size:11px;color:#aaa">Add rows to the Interview_Schedule sheet in Google Sheets</div>' +
@@ -255,7 +256,9 @@ function renderTable() {
         '<div><b>' + iv.candidate + '</b><div style="font-size:9.5px;color:#aaa">' + iv.appNo + '</div></div>' +
       '</div></td>' +
       '<td style="white-space:nowrap">' + iv.desig + '</td>' +
-      '<td style="white-space:nowrap;font-size:10.5px">' + iv.schedDate + '<br><span style="color:#aaa;font-size:9.5px">' + iv.schedTime + '</span></td>' +
+      '<td style="font-size:10.5px;white-space:nowrap">' + (iv.call1Date||'—') + '</td>' +
+      '<td style="font-size:10.5px;white-space:nowrap">' + (iv.call2Date||'—') + '</td>' +
+      '<td style="font-size:10.5px;white-space:nowrap;font-weight:600">' + (iv.interviewDate||'—') + '</td>' +
       '<td>' + hrC + '</td>' +
       '<td>' + fmC + '</td>' +
       '<td>' + mgrC + '</td>' +
@@ -329,7 +332,7 @@ async function openPanel(appNo, round) {
   el('sp-overlay').classList.add('show');
   el('sp-panel').classList.add('open');
 
-  const qData = await API.getInterviewQuestions(iv.desig);
+  const qData = await API.call('getInterviewQuestions', {desig: iv.desig, round: round});
   questions   = qData.questions || [];
 
   const canEdit = canEditRound(round, iv);
