@@ -6,45 +6,67 @@
 <title>Interview Panel — BSC Candidate CRM</title>
 <link rel="stylesheet" href="shared.css">
 <style>
-.round-tabs{display:flex;gap:8px;flex-wrap:wrap;align-items:center;margin-bottom:14px}
-.rt-tab{font-size:11px;padding:7px 16px;border:1.5px solid #ddd;border-radius:7px;cursor:pointer;background:#fff;color:#888;font-weight:600;transition:all .15s;display:flex;align-items:center;gap:5px}
-.rt-tab.active{background:var(--navy);color:#fff;border-color:var(--navy)}
-.rt-tab.locked{color:#ccc;cursor:not-allowed;background:#fafafa}
-.score-card{background:#fff;border-radius:var(--radius);padding:18px}
-.cand-info{display:flex;justify-content:space-between;align-items:flex-start;margin-bottom:14px;padding-bottom:12px;border-bottom:1px solid #f0ede8}
-.cand-name{font-size:15px;font-weight:800;color:var(--navy)}
-.cand-meta{font-size:10px;color:#888;margin-top:3px}
-.q-row{display:grid;grid-template-columns:1fr 100px;align-items:center;gap:12px;padding:10px 0;border-bottom:1px solid #f9f8f5}
-.q-row:last-of-type{border-bottom:none}
-.q-name{font-size:12px;color:#333;font-weight:500}
-.q-max{font-size:9.5px;color:#bbb;margin-top:2px}
-.score-wrap{display:flex;flex-direction:column;align-items:center;gap:4px}
-.score-inp{width:58px;padding:5px 6px;font-size:14px;border:1.5px solid #ddd;border-radius:7px;text-align:center;background:#F9F7F4;font-weight:700;color:var(--navy);transition:all .2s}
-.score-inp:focus{outline:none;border-color:var(--gold)}
-.score-inp.s-green{border-color:var(--green);background:#F5FDF9;color:var(--green)}
-.score-inp.s-amber{border-color:var(--gold);background:#FFFBF0;color:#854F0B}
-.score-inp.s-red{border-color:var(--red);background:#FFF5F5;color:var(--red)}
-.mini-bar{width:58px;height:4px;background:#f0ede8;border-radius:3px;overflow:hidden}
-.mb-fill{height:100%;border-radius:3px;transition:width .3s}
-.score-lbl{font-size:8px;font-weight:700}
-.total-bar{display:flex;align-items:center;gap:10px;margin-top:14px;padding-top:12px;border-top:2px solid #f0ede8}
-.total-prog{flex:1;background:#f0ede8;border-radius:6px;height:10px;overflow:hidden}
+.role-badge{display:inline-flex;align-items:center;gap:6px;padding:5px 13px;border-radius:20px;font-size:10.5px;font-weight:700}
+.rb-hr{background:#E6F1FB;color:#185FA5}.rb-fm{background:#FFF8E1;color:#854F0B}
+.rb-mgr{background:#EEEDFE;color:#534AB7}.rb-admin{background:#EAF3DE;color:#3B6D11}
+.itabs{display:flex;gap:7px;margin-bottom:14px;flex-wrap:wrap}
+.itab{padding:6px 16px;border:1.5px solid #ddd;border-radius:7px;font-size:11px;cursor:pointer;background:#fff;color:#888;font-weight:600;transition:all .15s}
+.itab.active{background:var(--navy);color:#fff;border-color:var(--navy)}
+.sc-chip{font-size:10px;padding:3px 9px;border-radius:5px;font-weight:700;white-space:nowrap}
+.sc-done{background:#EAF3DE;color:#3B6D11}.sc-pending{background:#F9F7F4;color:#aaa}
+.sc-fail{background:#FCEBEB;color:#A32D2D}
+.ib-score{font-size:10px;padding:5px 13px;border-radius:6px;border:none;background:var(--navy);color:#fff;cursor:pointer;font-weight:700;white-space:nowrap}
+.ib-score:hover{background:#162340}
+.ib-view{font-size:10px;padding:5px 13px;border-radius:6px;border:1px solid #ddd;background:#fff;color:#888;cursor:pointer;font-weight:600;white-space:nowrap}
+.ib-locked{font-size:10px;padding:5px 13px;border-radius:6px;background:#f5f5f5;color:#ccc;font-weight:600;white-space:nowrap}
+.sp-overlay{position:fixed;inset:0;background:rgba(0,0,0,.38);z-index:500;display:none;backdrop-filter:blur(2px)}
+.sp-overlay.show{display:block}
+.sp-panel{position:fixed;top:0;right:-560px;width:540px;max-width:95vw;height:100vh;background:#fff;z-index:501;display:flex;flex-direction:column;transition:right .3s ease;box-shadow:-4px 0 28px rgba(0,0,0,.14)}
+.sp-panel.open{right:0}
+.sp-head{background:var(--navy);padding:16px 20px;display:flex;align-items:center;gap:12px;flex-shrink:0}
+.sp-av{width:44px;height:44px;border-radius:50%;display:flex;align-items:center;justify-content:center;font-size:15px;font-weight:800;color:#fff;flex-shrink:0}
+.sp-name{color:#fff;font-size:14px;font-weight:800}
+.sp-meta{color:rgba(255,255,255,.5);font-size:10px;margin-top:2px}
+.sp-close{margin-left:auto;width:28px;height:28px;border-radius:6px;background:rgba(255,255,255,.12);border:none;color:#fff;font-size:16px;cursor:pointer;display:flex;align-items:center;justify-content:center}
+.sp-close:hover{background:rgba(255,255,255,.22)}
+.sp-body{flex:1;overflow-y:auto;padding:16px 20px}
+.prev-card{background:#F9F7F4;border-radius:9px;padding:12px 14px;margin-bottom:12px;border-left:4px solid #ddd}
+.prev-title{font-size:9px;font-weight:800;text-transform:uppercase;letter-spacing:.1em;color:#aaa;margin-bottom:8px}
+.prev-score{font-size:22px;font-weight:800;color:var(--navy)}
+.prev-verdict{font-size:10px;padding:3px 9px;border-radius:4px;font-weight:700;margin-left:8px;vertical-align:middle}
+.prev-remarks{font-size:10.5px;color:#777;margin-top:6px;font-style:italic}
+.prev-qrow{display:flex;justify-content:space-between;font-size:10.5px;padding:3px 0;border-bottom:.5px solid #e8e4dd;color:#555}
+.prev-qrow:last-child{border-bottom:none}
+.round-title{font-size:11px;font-weight:800;color:var(--navy);text-transform:uppercase;letter-spacing:.08em;margin:14px 0 10px;padding-bottom:6px;border-bottom:2px solid var(--cream)}
+.q-score-row{display:grid;grid-template-columns:1fr 110px;align-items:center;gap:12px;padding:10px 0;border-bottom:1px solid #f9f8f5}
+.q-score-row:last-of-type{border-bottom:none}
+.q-text{font-size:12px;color:#333;font-weight:500}
+.q-maxpts{font-size:9.5px;color:#bbb;margin-top:2px}
+.q-inp-wrap{display:flex;flex-direction:column;align-items:center;gap:4px}
+.q-inp{width:60px;padding:6px;font-size:15px;border:1.5px solid #ddd;border-radius:7px;text-align:center;background:#F9F7F4;font-weight:700;color:var(--navy);transition:all .2s}
+.q-inp:focus{outline:none;border-color:var(--gold)}
+.q-inp.s-green{border-color:var(--green);background:#F5FDF9;color:var(--green)}
+.q-inp.s-amber{border-color:var(--gold);background:#FFFBF0;color:#854F0B}
+.q-inp.s-red{border-color:var(--red);background:#FFF5F5;color:var(--red)}
+.q-minibar{width:60px;height:4px;background:#f0ede8;border-radius:3px;overflow:hidden}
+.q-mb-fill{height:100%;border-radius:3px;transition:width .3s}
+.q-lbl{font-size:8px;font-weight:700}
+.total-wrap{background:#F9F7F4;border-radius:9px;padding:12px 14px;margin-top:14px;display:flex;align-items:center;gap:12px}
+.total-prog{flex:1;background:#e8e4dd;border-radius:6px;height:10px;overflow:hidden}
 .total-prog-fill{height:100%;border-radius:6px;transition:width .4s}
-.total-num{font-size:24px;font-weight:800;color:var(--navy);line-height:1}
-.compare-bar{display:grid;grid-template-columns:repeat(4,1fr);gap:8px;margin-top:12px;background:#F9F7F4;border-radius:8px;padding:10px}
-.cb-item{text-align:center}
-.cb-label{font-size:8.5px;color:#888;margin-bottom:3px;text-transform:uppercase;letter-spacing:.05em}
-.cb-val{font-size:16px;font-weight:800;color:var(--navy)}
-.remarks-area{width:100%;font-size:12px;padding:9px 11px;border:1px solid var(--border);border-radius:7px;background:#F9F7F4;resize:none;height:70px;color:#333;margin-top:14px;font-family:inherit;transition:border .15s}
-.remarks-area:focus{outline:none;border-color:var(--navy);background:#fff}
-.char-count{font-size:9.5px;color:#bbb;text-align:right;margin-top:3px}
-.round-actions{display:flex;gap:9px;margin-top:14px;flex-wrap:wrap}
-.strong-hire-btn{display:flex;align-items:center;gap:6px;font-size:11px;padding:8px 13px;background:#FFF8E1;border:1.5px solid var(--gold);border-radius:8px;cursor:pointer;color:#854F0B;font-weight:600;transition:all .15s}
-.strong-hire-btn.flagged{background:#C9952A;color:#fff;border-color:#C9952A}
-.no-candidate{text-align:center;padding:50px 20px;color:var(--muted)}
-
-.sb-logo-wrap{width:40px;height:40px;border-radius:8px;background:#fff;display:flex;align-items:center;justify-content:center;overflow:hidden;flex-shrink:0}
-
+.total-num{font-size:26px;font-weight:800;color:var(--navy)}
+.total-verdict{font-size:10px;padding:4px 12px;border-radius:5px;font-weight:700}
+.remarks-ta{width:100%;font-size:12px;padding:10px 12px;border:1px solid var(--border);border-radius:8px;background:var(--input-bg);resize:none;height:70px;font-family:inherit;margin-top:12px;transition:border .15s}
+.remarks-ta:focus{outline:none;border-color:var(--navy);background:#fff}
+.char-ct{font-size:9px;color:#bbb;text-align:right;margin-top:3px}
+.sp-foot{padding:14px 20px;border-top:1px solid #f0ede8;background:#FAFAF8;flex-shrink:0;display:flex;gap:9px}
+.sp-save{flex:1;background:var(--navy);color:#fff;border:none;padding:12px;border-radius:9px;font-size:13px;font-weight:700;cursor:pointer;transition:background .15s}
+.sp-save:hover{background:#162340}
+.sp-save:disabled{opacity:.4;cursor:not-allowed}
+.sp-reject{padding:12px 16px;background:#fff;border:1.5px solid var(--red);color:var(--red);border-radius:9px;font-size:12px;cursor:pointer;font-weight:600}
+.no-int{text-align:center;padding:50px 20px;color:var(--muted)}
+.no-int-icon{font-size:42px;margin-bottom:12px}
+.no-int-title{font-size:13px;font-weight:600;color:#888;margin-bottom:5px}
 </style>
 </head>
 <body>
@@ -74,302 +96,425 @@
       </div>
     </div>
   </aside>
-
   <div class="main">
     <header class="topbar">
       <div class="topbar-left">
         <div class="topbar-title">Interview Panel</div>
-        <div class="breadcrumb" id="breadcrumb">
-          <a class="bc-link" href="dashboard.html">Dashboard</a><span class="bc-sep">›</span>
-          <a class="bc-link" href="candidates.html">Candidates</a><span class="bc-sep">›</span>
-          <span id="bc-name">Select Candidate</span><span class="bc-sep" id="bc-sep2" style="display:none">›</span>
-          <span id="bc-panel" style="display:none">Interview Panel</span>
+        <div class="breadcrumb">
+          <a class="bc-link" href="dashboard.html">Dashboard</a>
+          <span class="bc-sep">›</span><span>Interview Panel</span>
         </div>
       </div>
       <div class="topbar-right">
+        <span id="role-badge" class="role-badge rb-hr">HR Round Access</span>
         <span class="topbar-time" id="live-clock"></span>
         <span class="live-ind"><span class="live-dot"></span>Live</span>
         <div class="bell-btn">🔔<div class="bell-dot"></div></div>
       </div>
     </header>
-
     <main class="content">
-      <!-- Candidate search -->
-      <div style="display:flex;gap:10px;align-items:center;margin-bottom:14px;flex-wrap:wrap">
-        <input type="text" id="cand-search" placeholder="🔍 Search candidate name or app no…"
-               style="font-size:12px;padding:8px 12px;border:1.5px solid #ddd;border-radius:8px;background:#fff;color:#333;width:300px"
-               oninput="searchCandidates(this.value)">
-        <div id="search-results" style="display:none;position:absolute;z-index:200;background:#fff;border:1px solid #ddd;border-radius:8px;box-shadow:var(--shadow);width:300px;max-height:200px;overflow-y:auto;top:auto"></div>
-        <span id="sched-info" style="font-size:11px;color:#888"></span>
-        <span id="interviewer-badge" style="display:none;margin-left:auto;font-size:11px;color:var(--green);background:#EAF3DE;padding:4px 10px;border-radius:5px;font-weight:600"></span>
+      <div class="itabs">
+        <div class="itab active" data-filter="all"        onclick="setTab(this)">All Interviews</div>
+        <div class="itab"        data-filter="pending"    onclick="setTab(this)">Not Started</div>
+        <div class="itab"        data-filter="inprogress" onclick="setTab(this)">In Progress</div>
+        <div class="itab"        data-filter="completed"  onclick="setTab(this)">Completed</div>
       </div>
-
-      <!-- Round tabs -->
-      <div class="round-tabs" id="round-tabs" style="display:none">
-        <span style="font-size:10.5px;color:#888">Round:</span>
-        <div class="rt-tab active" data-round="HR" onclick="switchRound(this,'HR')">HR Round</div>
-        <div class="rt-tab locked" data-round="FM"  id="tab-FM">🔒 Floor Manager</div>
-        <div class="rt-tab locked" data-round="MGR" id="tab-MGR">🔒 Manager Round</div>
-        <span style="margin-left:auto;font-size:10.5px;color:#888">
-          Pass cutoff: <b style="color:var(--navy)" id="cutoff-label">36 / 60</b>
-        </span>
-      </div>
-
-      <!-- Score card -->
-      <div id="score-area">
-        <div class="no-candidate">
-          <div style="font-size:40px;margin-bottom:10px">🎯</div>
-          <div style="font-size:13px;font-weight:600;color:#888;margin-bottom:5px">No candidate selected</div>
-          <div style="font-size:11px">Search for a candidate above to begin scoring</div>
+      <div class="table-card" style="padding:0">
+        <div style="padding:12px 16px;border-bottom:1px solid #f0ede8;display:flex;align-items:center;justify-content:space-between;flex-wrap:wrap;gap:8px">
+          <span class="card-title">Scheduled Interviews</span>
+          <div style="display:flex;gap:8px;align-items:center">
+            <input class="search-input" id="int-search" placeholder="🔍 Search candidate…" oninput="filterTable()">
+            <span style="font-size:10px;color:var(--muted)" id="int-count">Loading…</span>
+          </div>
+        </div>
+        <div class="table-wrap">
+          <table>
+            <thead>
+              <tr>
+                <th>Candidate</th><th>Designation</th><th>Scheduled</th>
+                <th>HR Round</th><th>FM Round</th><th>MGR Round</th>
+                <th>Overall</th><th>Action</th>
+              </tr>
+            </thead>
+            <tbody id="int-tbody">
+              <tr><td colspan="8" style="text-align:center;padding:30px">
+                <div class="skel" style="height:14px;margin:6px auto;width:50%"></div>
+                <div class="skel" style="height:14px;margin:6px auto;width:38%"></div>
+              </td></tr>
+            </tbody>
+          </table>
+        </div>
+        <div class="table-pagination">
+          <span id="int-page-info">—</span>
+          <div style="display:flex;gap:6px">
+            <button class="btn btn-muted btn-sm" id="int-prev" onclick="changePage(-1)" disabled>← Prev</button>
+            <button class="btn btn-outline btn-sm" id="int-next" onclick="changePage(1)">Next →</button>
+          </div>
         </div>
       </div>
     </main>
   </div>
 </div>
-
+<div class="sp-overlay" id="sp-overlay" onclick="closePanel()"></div>
+<div class="sp-panel" id="sp-panel">
+  <div class="sp-head">
+    <div class="sp-av" id="sp-av"></div>
+    <div><div class="sp-name" id="sp-name">—</div><div class="sp-meta" id="sp-meta">—</div></div>
+    <button class="sp-close" onclick="closePanel()">✕</button>
+  </div>
+  <div class="sp-body" id="sp-body">
+    <div class="no-int"><div class="no-int-icon">⏳</div><div class="no-int-title">Loading…</div></div>
+  </div>
+  <div class="sp-foot" id="sp-foot" style="display:none">
+    <button class="sp-save" id="sp-save-btn" onclick="saveScore()">Save Score</button>
+    <button class="sp-reject" onclick="rejectCandidate()">Reject</button>
+  </div>
+</div>
 <script src="shared.js"></script>
-
 <script>
 'use strict';
-const session = initPage('interview');
+const session  = initPage('interview');
+const userRole = session ? session.role : 'HR';
 
-let currentCandidate = null;
-let currentRound     = 'HR';
-let scoreData        = {};  // { HR: {scores:[],total,remarks}, FM: ..., MGR: ... }
-let strongHire       = false;
+const RB_MAP = {'HR':'rb-hr','Floor Manager':'rb-fm','Manager':'rb-mgr','Admin':'rb-admin'};
+const RL_MAP = {'HR':'HR Round Access','Floor Manager':'FM Round Access','Manager':'Manager Round Access','Admin':'Full Access'};
+const AV_BG  = {navy:'#1E2D4E',gold:'#C9952A',green:'#2d8a4e',red:'#C0272D',purple:'#7c4dbd',teal:'#1a8a84'};
 
-// ── Load candidate from sessionStorage (if navigated from candidates page) ──
-(async function init() {
-  const focusAppNo = sessionStorage.getItem('bsc_focus_appno');
-  if (focusAppNo) {
-    sessionStorage.removeItem('bsc_focus_appno');
-    const data = await API.getCandidates({ q: focusAppNo, limit: 1 });
-    if (data.candidates && data.candidates[0]) loadCandidate(data.candidates[0]);
-  }
+const badge = el('role-badge');
+badge.className   = 'role-badge ' + (RB_MAP[userRole] || 'rb-hr');
+badge.textContent = RL_MAP[userRole] || 'HR Round Access';
+
+let allInterviews = [], filtered = [], currentPage = 1;
+const PAGE_SIZE   = 10;
+let activeFilter  = 'all';
+let currentIV = null, currentRound = null, questions = [];
+
+// ── Load ─────────────────────────────────────────────────────
+(async function load() {
+  const data = await API.call('getInterviews');
+  allInterviews = data.interviews || [];
+  applyFilter();
 })();
 
-// ── Search ──
-async function searchCandidates(q) {
-  if (q.length < 2) { document.getElementById('search-results').style.display = 'none'; return; }
-  const data = await API.getCandidates({ q, limit: 8 });
-  const results = data.candidates || [];
-  const box = document.getElementById('search-results');
-  if (!results.length) { box.style.display = 'none'; return; }
-  const inp = document.getElementById('cand-search');
-  const rect = inp.getBoundingClientRect();
-  box.style.top  = (rect.bottom + window.scrollY + 4) + 'px';
-  box.style.left = rect.left + 'px';
-  box.style.width = rect.width + 'px';
-  box.innerHTML = results.map(c => `
-    <div onclick="selectCandidate('${c.appNo}')" style="padding:8px 12px;cursor:pointer;border-bottom:1px solid #f5f5f5;font-size:11px;display:flex;align-items:center;gap:8px" onmouseover="this.style.background='#f5f5f5'" onmouseout="this.style.background=''">
-      <div class="av av-${c.color}" style="width:24px;height:24px;font-size:9px">${c.initials}</div>
-      <div><b>${c.name}</b> · ${c.desig}<br><span style="color:#aaa">${c.appNo}</span></div>
-      <div style="margin-left:auto">${statusBadge(c.status)}</div>
-    </div>`).join('');
-  box.style.display = 'block';
-  document.addEventListener('click', () => box.style.display = 'none', { once: true });
+// ── Filter / Tabs ─────────────────────────────────────────────
+function setTab(btn) {
+  document.querySelectorAll('.itab').forEach(t => t.classList.remove('active'));
+  btn.classList.add('active');
+  activeFilter = btn.dataset.filter;
+  currentPage  = 1;
+  applyFilter();
+}
+function filterTable() { currentPage = 1; applyFilter(); }
+function changePage(d) { currentPage += d; renderTable(); }
+
+function isFullyDone(iv) { return !!(iv.hrScore && iv.fmScore && iv.mgrScore); }
+
+function applyFilter() {
+  const q = (el('int-search').value || '').toLowerCase();
+  filtered = allInterviews.filter(iv => {
+    const mQ = !q || iv.candidate.toLowerCase().includes(q) || iv.appNo.toLowerCase().includes(q);
+    let mF   = true;
+    if (activeFilter === 'pending')    mF = !iv.hrScore && !iv.fmScore && !iv.mgrScore;
+    if (activeFilter === 'inprogress') mF = (iv.hrScore || iv.fmScore) && !isFullyDone(iv);
+    if (activeFilter === 'completed')  mF = isFullyDone(iv);
+    // Role-based row visibility
+    if (userRole === 'Floor Manager' && !iv.hrScore)  return false;
+    if (userRole === 'Manager'       && !iv.fmScore)  return false;
+    return mQ && mF;
+  });
+  currentPage = 1;
+  renderTable();
 }
 
-async function selectCandidate(appNo) {
-  const data = await API.getCandidates({ q: appNo, limit: 1 });
-  if (data.candidates && data.candidates[0]) {
-    loadCandidate(data.candidates[0]);
-    document.getElementById('cand-search').value = data.candidates[0].name;
+// ── Render table ──────────────────────────────────────────────
+function renderTable() {
+  const start = (currentPage - 1) * PAGE_SIZE;
+  const page  = filtered.slice(start, start + PAGE_SIZE);
+  const total = filtered.length;
+
+  if (!page.length) {
+    el('int-tbody').innerHTML = '<tr><td colspan="8"><div class="no-int">' +
+      '<div class="no-int-icon">📋</div>' +
+      '<div class="no-int-title">No interviews found</div>' +
+      '<div style="font-size:11px;color:#aaa">Add rows to the Interview_Schedule sheet in Google Sheets</div>' +
+      '</div></td></tr>';
+    el('int-count').textContent     = '0 interviews';
+    el('int-page-info').textContent = '—';
+    el('int-prev').disabled = true;
+    el('int-next').disabled = true;
+    return;
   }
+
+  el('int-tbody').innerHTML = page.map(iv => {
+    const hrC  = scoreChip(iv.hrScore);
+    const fmC  = scoreChip(iv.fmScore);
+    const mgrC = scoreChip(iv.mgrScore);
+    return '<tr>' +
+      '<td><div class="td-name">' +
+        '<div class="av av-' + iv.color + '">' + iv.initials + '</div>' +
+        '<div><b>' + iv.candidate + '</b><div style="font-size:9.5px;color:#aaa">' + iv.appNo + '</div></div>' +
+      '</div></td>' +
+      '<td style="white-space:nowrap">' + iv.desig + '</td>' +
+      '<td style="white-space:nowrap;font-size:10.5px">' + iv.schedDate + '<br><span style="color:#aaa;font-size:9.5px">' + iv.schedTime + '</span></td>' +
+      '<td>' + hrC + '</td>' +
+      '<td>' + fmC + '</td>' +
+      '<td>' + mgrC + '</td>' +
+      '<td>' + overallBadge(iv) + '</td>' +
+      '<td>' + actionBtn(iv) + '</td>' +
+    '</tr>';
+  }).join('');
+
+  el('int-count').textContent     = total + ' interview' + (total !== 1 ? 's' : '');
+  el('int-page-info').textContent = 'Showing ' + (start+1) + '–' + Math.min(start+PAGE_SIZE,total) + ' of ' + total;
+  el('int-prev').disabled = currentPage === 1;
+  el('int-next').disabled = start + PAGE_SIZE >= total;
 }
 
-async function loadCandidate(c) {
-  currentCandidate = c;
-  currentRound = 'HR';
-  strongHire = false;
-
-  // Update breadcrumb
-  el('bc-name').textContent = c.name;
-  el('bc-sep2').style.display = '';
-  el('bc-panel').style.display = '';
-  el('sched-info').textContent = 'Scheduled: ' + new Date().toLocaleDateString('en-IN',{day:'2-digit',month:'short',year:'numeric'}) + ', 3:00 PM';
-  el('interviewer-badge').textContent = 'Conducted by: ' + session.username + ' (You)';
-  el('interviewer-badge').style.display = '';
-  el('round-tabs').style.display = 'flex';
-
-  // Load existing scores
-  scoreData = {};
-  const saved = await API.getScores(c.appNo);
-  if (saved.rounds) scoreData = saved.rounds;
-
-  // Load questions and render
-  const qData = await API.getInterviewQuestions(c.desig);
-  renderScoreCard(c, qData.questions || [], 'HR');
-  updateRoundTabs();
+function scoreChip(score) {
+  if (!score) return '<span class="sc-chip sc-pending">—</span>';
+  const t    = score.total || 0;
+  const pass = t >= CONFIG.INTERVIEW_CUTOFF;
+  return '<span class="sc-chip ' + (pass ? 'sc-done' : 'sc-fail') + '">' + t + '/60 ' + (pass ? '✓' : '✗') + '</span>';
 }
 
-function renderScoreCard(c, questions, round) {
-  const existing = scoreData[round] || {};
-  const scores   = existing.scores || [];
-  const maxTotal = questions.reduce((s, q) => s + (q.max || 10), 0);
-
-  el('score-area').innerHTML = `
-    <div class="score-card">
-      <div class="cand-info">
-        <div>
-          <div class="cand-name">${c.name}</div>
-          <div class="cand-meta">${c.desig} · ${c.appNo} · Applied ${c.date}</div>
-        </div>
-        <div style="display:flex;flex-direction:column;align-items:flex-end;gap:6px">
-          <span class="badge b-short">${round === 'HR' ? 'HR' : round === 'FM' ? 'Floor Manager' : 'Manager'} Round</span>
-          <button class="strong-hire-btn ${strongHire ? 'flagged' : ''}" id="sh-btn" onclick="toggleStrongHire()">
-            ⭐ ${strongHire ? 'Strong Hire — Flagged' : 'Flag as Strong Hire'}
-          </button>
-        </div>
-      </div>
-
-      ${questions.map((q, i) => {
-        const saved = scores[i] || 0;
-        const pct   = (saved / q.max) * 100;
-        const cls   = pct >= 70 ? 's-green' : pct >= 50 ? 's-amber' : (saved ? 's-red' : '');
-        const color = pct >= 70 ? '#2d8a4e' : pct >= 50 ? '#C9952A' : '#C0272D';
-        const lbl   = pct >= 70 ? 'Good' : pct >= 50 ? 'Average' : (saved ? 'Weak' : '—');
-        return `
-          <div class="q-row">
-            <div><div class="q-name">${q.text}</div><div class="q-max">Max ${q.max} pts</div></div>
-            <div class="score-wrap">
-              <input class="score-inp ${cls}" id="si-${i}" type="number" min="0" max="${q.max}"
-                     value="${saved || ''}" placeholder="0"
-                     oninput="onScore(this,${i},${q.max})" data-max="${q.max}">
-              <div class="mini-bar"><div class="mb-fill" id="mb-${i}" style="width:${saved ? pct : 0}%;background:${color}"></div></div>
-              <div class="score-lbl" id="sl-${i}" style="color:${color}">${lbl}</div>
-            </div>
-          </div>`;
-      }).join('')}
-
-      <div class="total-bar">
-        <div class="total-prog"><div class="total-prog-fill" id="total-fill" style="width:0%;background:var(--green)"></div></div>
-        <span class="total-num" id="total-score">${scores.reduce((a,b)=>a+b,0)}</span>
-        <span style="font-size:13px;color:#bbb">/ ${maxTotal}</span>
-        <span class="badge" id="pass-tag" style="padding:5px 14px;font-size:10px"></span>
-      </div>
-
-      <div class="compare-bar">
-        <div class="cb-item"><div class="cb-label">HR Round</div><div class="cb-val" id="cb-HR" style="color:var(--navy)">—</div></div>
-        <div class="cb-item"><div class="cb-label">Floor Mgr</div><div class="cb-val" id="cb-FM" style="color:#aaa">—</div></div>
-        <div class="cb-item"><div class="cb-label">Manager</div><div class="cb-val" id="cb-MGR" style="color:#aaa">—</div></div>
-        <div class="cb-item"><div class="cb-label">Grand Total</div><div class="cb-val" id="cb-GRAND" style="color:#aaa">—</div></div>
-      </div>
-
-      <textarea class="remarks-area" id="remarks-area" placeholder="Add interviewer remarks (max 500 chars)…"
-                maxlength="500" oninput="el('char-count').textContent=this.value.length">${existing.remarks||''}</textarea>
-      <div class="char-count"><span id="char-count">${(existing.remarks||'').length}</span> / 500</div>
-
-      <div class="round-actions">
-        <button class="btn btn-primary" style="flex:1" onclick="saveRound()">Save &amp; Advance to Next Round →</button>
-        <button class="btn btn-outline-red" onclick="rejectCandidate()">Reject Candidate</button>
-      </div>
-    </div>`;
-
-  updateTotalBar(maxTotal, scores.reduce((a,b)=>a+b,0));
-  updateCompareBar();
+function overallBadge(iv) {
+  if (isFullyDone(iv)) {
+    const g    = (iv.hrScore.total||0) + (iv.fmScore.total||0) + (iv.mgrScore.total||0);
+    const pass = g >= (CONFIG.INTERVIEW_CUTOFF * 3 * 0.6);
+    return '<span class="badge ' + (pass?'b-sel':'b-rej') + '">' + g + '/180</span>';
+  }
+  if (iv.hrScore && iv.fmScore) return '<span class="badge b-int">MGR Pending</span>';
+  if (iv.hrScore)               return '<span class="badge b-short">FM Pending</span>';
+  return '<span class="badge b-new">Not Started</span>';
 }
 
-function onScore(inp, idx, max) {
+function actionBtn(iv) {
+  const r = userRole;
+  if (r === 'Admin') {
+    if (!iv.hrScore)  return '<button class="ib-score" onclick="openPanel(\'' + iv.appNo + '\',\'HR\')">Score HR</button>';
+    if (!iv.fmScore)  return '<button class="ib-score" onclick="openPanel(\'' + iv.appNo + '\',\'FM\')">Score FM</button>';
+    if (!iv.mgrScore) return '<button class="ib-score" onclick="openPanel(\'' + iv.appNo + '\',\'MGR\')">Score MGR</button>';
+    return '<button class="ib-view" onclick="openPanel(\'' + iv.appNo + '\',\'HR\')">View Scores</button>';
+  }
+  if (r === 'HR') {
+    if (!iv.hrScore) return '<button class="ib-score" onclick="openPanel(\'' + iv.appNo + '\',\'HR\')">Score Now</button>';
+    return '<button class="ib-view" onclick="openPanel(\'' + iv.appNo + '\',\'HR\')">View Score</button>';
+  }
+  if (r === 'Floor Manager') {
+    if (!iv.hrScore) return '<span class="ib-locked">🔒 Awaiting HR</span>';
+    if (!iv.fmScore) return '<button class="ib-score" onclick="openPanel(\'' + iv.appNo + '\',\'FM\')">Score Now</button>';
+    return '<button class="ib-view" onclick="openPanel(\'' + iv.appNo + '\',\'FM\')">View Score</button>';
+  }
+  if (r === 'Manager') {
+    if (!iv.fmScore)  return '<span class="ib-locked">🔒 Awaiting FM</span>';
+    if (!iv.mgrScore) return '<button class="ib-score" onclick="openPanel(\'' + iv.appNo + '\',\'MGR\')">Score Now</button>';
+    return '<button class="ib-view" onclick="openPanel(\'' + iv.appNo + '\',\'MGR\')">View Score</button>';
+  }
+  return '<span class="ib-locked">—</span>';
+}
+
+// ── Score Panel ───────────────────────────────────────────────
+async function openPanel(appNo, round) {
+  currentIV    = allInterviews.find(iv => iv.appNo === appNo);
+  currentRound = round;
+  if (!currentIV) return;
+  const iv = currentIV;
+
+  el('sp-av').textContent      = iv.initials;
+  el('sp-av').style.background = AV_BG[iv.color] || '#1E2D4E';
+  el('sp-name').textContent    = iv.candidate;
+  el('sp-meta').textContent    = iv.desig + ' · ' + iv.appNo + ' · ' + iv.schedDate;
+  el('sp-body').innerHTML      = '<div class="no-int"><div class="no-int-icon">⏳</div><div class="no-int-title">Loading…</div></div>';
+  el('sp-foot').style.display  = 'none';
+  el('sp-overlay').classList.add('show');
+  el('sp-panel').classList.add('open');
+
+  const qData = await API.getInterviewQuestions(iv.desig);
+  questions   = qData.questions || [];
+
+  const canEdit = canEditRound(round, iv);
+  el('sp-body').innerHTML      = buildBody(iv, round, canEdit);
+  el('sp-foot').style.display  = canEdit ? 'flex' : 'none';
+
+  if (canEdit) {
+    document.querySelectorAll('.q-inp').forEach(inp => inp.addEventListener('input', () => onScoreInput(inp)));
+    updateTotal();
+  }
+  document.addEventListener('keydown', escCb);
+}
+
+function canEditRound(round, iv) {
+  const r = userRole;
+  if (r === 'Admin')        return true;
+  if (r === 'HR'           && round === 'HR'  && !iv.hrScore)               return true;
+  if (r === 'Floor Manager'&& round === 'FM'  && !iv.fmScore && iv.hrScore)  return true;
+  if (r === 'Manager'      && round === 'MGR' && !iv.mgrScore && iv.fmScore) return true;
+  return false;
+}
+
+function buildBody(iv, activeRound, canEdit) {
+  let html = '';
+  const ROUND_DEFS = [
+    {key:'HR',  scoreKey:'hrScore',  label:'HR Round'},
+    {key:'FM',  scoreKey:'fmScore',  label:'FM Round'},
+    {key:'MGR', scoreKey:'mgrScore', label:'Manager Round'}
+  ];
+
+  // Previous rounds — read only
+  ROUND_DEFS.forEach(function(rd) {
+    if (rd.key === activeRound) return;
+    const sc = iv[rd.scoreKey];
+    if (!sc) return;
+    const pass = sc.total >= CONFIG.INTERVIEW_CUTOFF;
+    const bdrColor = pass ? 'var(--green)' : 'var(--red)';
+    const bgColor  = pass ? '#EAF3DE' : '#FCEBEB';
+    const txtColor = pass ? '#3B6D11' : '#A32D2D';
+    let qRows = '';
+    if (sc.scores && questions.length) {
+      questions.forEach(function(q, i) {
+        qRows += '<div class="prev-qrow"><span>' + q.text + '</span><b>' + (sc.scores[i]||0) + '/' + (q.max||10) + '</b></div>';
+      });
+    }
+    html += '<div class="prev-card" style="border-left-color:' + bdrColor + '">' +
+      '<div class="prev-title">' + rd.label + ' — Read Only</div>' +
+      '<div>' +
+        '<span class="prev-score">' + sc.total + '<span style="font-size:13px;font-weight:400;color:#aaa">/60</span></span>' +
+        '<span class="prev-verdict" style="background:' + bgColor + ';color:' + txtColor + '">' + (pass?'PASS ✓':'FAIL ✗') + '</span>' +
+      '</div>' +
+      (sc.remarks ? '<div class="prev-remarks">"' + sc.remarks + '"</div>' : '') +
+      (qRows ? '<div style="margin-top:8px">' + qRows + '</div>' : '') +
+    '</div>';
+  });
+
+  // Current round
+  const existing = iv[{HR:'hrScore',FM:'fmScore',MGR:'mgrScore'}[activeRound]];
+  const rdLabel  = {HR:'HR Round',FM:'FM Round',MGR:'Manager Round'}[activeRound];
+  html += '<div class="round-title">' + rdLabel + (canEdit ? '' : ' — View Only') + '</div>';
+
+  if (questions.length) {
+    questions.forEach(function(q, i) {
+      const saved = existing && existing.scores ? (existing.scores[i] || 0) : 0;
+      const max   = q.max || 10;
+      const pct   = max ? (saved / max) * 100 : 0;
+      const cls   = pct>=70?'s-green':pct>=50?'s-amber':saved?'s-red':'';
+      const color = pct>=70?'var(--green)':pct>=50?'var(--gold)':'var(--red)';
+      const lbl   = pct>=70?'Good':pct>=50?'Avg':saved?'Weak':'—';
+      const ro    = canEdit ? '' : ' readonly style="background:#f5f5f5;cursor:not-allowed"';
+      html += '<div class="q-score-row">' +
+        '<div><div class="q-text">' + q.text + '</div><div class="q-maxpts">Max ' + max + ' pts</div></div>' +
+        '<div class="q-inp-wrap">' +
+          '<input class="q-inp ' + (canEdit?cls:'') + '" data-idx="' + i + '" data-max="' + max + '"' +
+                 ' type="number" min="0" max="' + max + '" value="' + (saved||'') + '" placeholder="0"' + ro + '>' +
+          '<div class="q-minibar"><div class="q-mb-fill" id="mb-' + i + '" style="width:' + (saved?pct:0) + '%;background:' + color + '"></div></div>' +
+          '<div class="q-lbl" id="ql-' + i + '" style="color:' + color + '">' + (saved?lbl:'—') + '</div>' +
+        '</div></div>';
+    });
+  } else {
+    html += '<div style="font-size:11px;color:#aaa;padding:10px 0">No questions configured. Add to Interview_Questions sheet.</div>';
+  }
+
+  if (questions.length) {
+    const tot   = existing ? (existing.total || 0) : 0;
+    const maxT  = questions.reduce(function(s,q){return s+(q.max||10);}, 0);
+    const prog  = maxT ? Math.round(tot/maxT*100) : 0;
+    const pass  = tot >= CONFIG.INTERVIEW_CUTOFF;
+    html += '<div class="total-wrap" id="total-wrap">' +
+      '<div class="total-prog"><div class="total-prog-fill" id="total-fill" style="width:' + prog + '%;background:' + (pass?'var(--green)':'var(--red)') + '"></div></div>' +
+      '<span class="total-num" id="total-num">' + tot + '</span>' +
+      '<span style="font-size:13px;color:#bbb">/ ' + maxT + '</span>' +
+      '<span class="total-verdict" id="total-verdict" style="background:' + (pass?'#EAF3DE':'#FCEBEB') + ';color:' + (pass?'#3B6D11':'#A32D2D') + '">' + (tot>0?(pass?'PASS ✓':'FAIL ✗'):'—') + '</span>' +
+    '</div>' +
+    '<textarea class="remarks-ta" id="remarks-ta" maxlength="500" placeholder="Add remarks…" ' +
+              'oninput="el('char-ct').textContent=this.value.length"' +
+              (canEdit?'':' readonly style="background:#f5f5f5"') + '>' +
+              (existing && existing.remarks ? existing.remarks : '') +
+    '</textarea>' +
+    '<div class="char-ct"><span id="char-ct">' + (existing&&existing.remarks?existing.remarks.length:0) + '</span>/500</div>';
+  }
+  return html;
+}
+
+function onScoreInput(inp) {
   let v = parseInt(inp.value) || 0;
+  const max = parseInt(inp.dataset.max) || 10;
   if (v > max) { v = max; inp.value = max; }
   if (v < 0)   { v = 0;   inp.value = 0; }
-  const pct = (v / max) * 100;
-  const mb  = el('mb-' + idx);
-  const sl  = el('sl-' + idx);
-  if (pct >= 70)    { inp.className='score-inp s-green'; mb.style.cssText=`width:${pct}%;background:var(--green)`;  sl.textContent='Good';    sl.style.color='var(--green)'; }
-  else if (pct>=50) { inp.className='score-inp s-amber'; mb.style.cssText=`width:${pct}%;background:var(--gold)`;   sl.textContent='Average'; sl.style.color='#854F0B'; }
-  else              { inp.className='score-inp s-red';   mb.style.cssText=`width:${pct}%;background:var(--red)`;    sl.textContent='Weak';    sl.style.color='var(--red)'; }
-
-  const allInputs = document.querySelectorAll('.score-inp');
-  const total = [...allInputs].reduce((s, i) => s + (parseInt(i.value) || 0), 0);
-  const maxT  = [...allInputs].reduce((s, i) => s + parseInt(i.dataset.max || 10), 0);
-  updateTotalBar(maxT, total);
+  const pct = max ? (v / max) * 100 : 0;
+  let color, cls, lbl;
+  if (pct >= 70)     { color='var(--green)'; cls='s-green'; lbl='Good'; }
+  else if (pct >= 50){ color='var(--gold)';  cls='s-amber'; lbl='Avg';  }
+  else               { color='var(--red)';   cls='s-red';   lbl='Weak'; }
+  inp.className = 'q-inp ' + cls;
+  const mb = el('mb-' + inp.dataset.idx);
+  const ql = el('ql-' + inp.dataset.idx);
+  if (mb) { mb.style.width = pct + '%'; mb.style.background = color; }
+  if (ql) { ql.textContent = lbl; ql.style.color = color; }
+  updateTotal();
 }
 
-function updateTotalBar(maxT, total) {
-  const fill = el('total-fill');
-  const tag  = el('pass-tag');
-  const num  = el('total-score');
-  if (!fill) return;
-  const pct  = (total / maxT) * 100;
-  fill.style.width      = pct + '%';
-  fill.style.background = total >= CONFIG.INTERVIEW_CUTOFF ? 'var(--green)' : 'var(--red)';
-  num.textContent = total;
-  if (tag) {
-    if (total >= CONFIG.INTERVIEW_CUTOFF) { tag.textContent='PASS ✓'; tag.style.background='#EAF3DE'; tag.style.color='#3B6D11'; }
-    else                                  { tag.textContent='FAIL ✗'; tag.style.background='#FCEBEB'; tag.style.color='#A32D2D'; }
+function updateTotal() {
+  const inputs = document.querySelectorAll('.q-inp');
+  if (!inputs.length) return;
+  const tot   = Array.from(inputs).reduce(function(s,i){return s+(parseInt(i.value)||0);}, 0);
+  const maxT  = Array.from(inputs).reduce(function(s,i){return s+(parseInt(i.dataset.max)||10);}, 0);
+  const prog  = maxT ? Math.round(tot/maxT*100) : 0;
+  const pass  = tot >= CONFIG.INTERVIEW_CUTOFF;
+  const fill  = el('total-fill');
+  const num   = el('total-num');
+  const verd  = el('total-verdict');
+  if (fill) { fill.style.width = prog + '%'; fill.style.background = pass?'var(--green)':'var(--red)'; }
+  if (num)  num.textContent = tot;
+  if (verd) {
+    verd.textContent       = tot > 0 ? (pass ? 'PASS ✓' : 'FAIL ✗') : '—';
+    verd.style.background  = pass ? '#EAF3DE' : '#FCEBEB';
+    verd.style.color       = pass ? '#3B6D11' : '#A32D2D';
   }
-  el('cb-' + currentRound) && (el('cb-' + currentRound).textContent = total + '/' + maxT);
 }
 
-function updateCompareBar() {
-  ['HR','FM','MGR'].forEach(r => {
-    const saved = scoreData[r];
-    if (saved && saved.total !== undefined) {
-      const cbEl = el('cb-' + r);
-      if (cbEl) { cbEl.textContent = saved.total + '/60'; cbEl.style.color = saved.total >= CONFIG.INTERVIEW_CUTOFF ? 'var(--green)' : 'var(--red)'; }
-    }
-  });
-  const totals = ['HR','FM','MGR'].map(r => scoreData[r]?.total || 0);
-  const grand  = totals.reduce((a,b)=>a+b,0);
-  if (el('cb-GRAND')) el('cb-GRAND').textContent = totals.some(t=>t>0) ? grand + '/180' : '—';
+async function saveScore() {
+  const inputs  = Array.from(document.querySelectorAll('.q-inp'));
+  const scores  = inputs.map(function(i){return parseInt(i.value)||0;});
+  const total   = scores.reduce(function(a,b){return a+b;}, 0);
+  const remarks = el('remarks-ta') ? el('remarks-ta').value : '';
+  const saveBtn = el('sp-save-btn');
+  saveBtn.disabled = true; saveBtn.textContent = 'Saving…';
+  try {
+    await API.saveScore(currentIV.appNo, currentRound, {scores, total, remarks});
+    const scoreKey = {HR:'hrScore',FM:'fmScore',MGR:'mgrScore'}[currentRound];
+    currentIV[scoreKey] = {scores, total, remarks};
+    allInterviews = allInterviews.map(function(iv){return iv.appNo===currentIV.appNo?currentIV:iv;});
+    await API.updateCandidate(currentIV.appNo, {status:'Interviewed'});
+    toast('Score saved — ' + (total >= CONFIG.INTERVIEW_CUTOFF ? 'PASS ✓' : 'FAIL ✗'),
+          total >= CONFIG.INTERVIEW_CUTOFF ? 'success' : 'warn');
+    closePanel();
+    applyFilter();
+  } catch(e) {
+    toast('Save failed: ' + e.message, 'error');
+    saveBtn.disabled = false; saveBtn.textContent = 'Save Score';
+  }
 }
 
-function updateRoundTabs() {
-  const hrDone  = !!(scoreData['HR']?.total);
-  const fmDone  = !!(scoreData['FM']?.total);
-  const tabFM   = el('tab-FM');
-  const tabMGR  = el('tab-MGR');
-  if (tabFM)  { tabFM.className  = 'rt-tab' + (hrDone ? '' : ' locked'); tabFM.textContent  = (hrDone ? '' : '🔒 ') + 'Floor Manager'; if (hrDone)  tabFM.setAttribute('onclick', "switchRound(this,'FM')");  }
-  if (tabMGR) { tabMGR.className = 'rt-tab' + (fmDone ? '' : ' locked'); tabMGR.textContent = (fmDone ? '' : '🔒 ') + 'Manager Round'; if (fmDone) tabMGR.setAttribute('onclick', "switchRound(this,'MGR')"); }
-}
-
-function switchRound(btn, round) {
-  if (btn.classList.contains('locked')) return;
-  document.querySelectorAll('.rt-tab').forEach(t => t.classList.remove('active'));
-  btn.classList.add('active');
-  currentRound = round;
-  API.getInterviewQuestions(currentCandidate.desig).then(qData => renderScoreCard(currentCandidate, qData.questions || [], round));
-}
-
-function toggleStrongHire() {
-  strongHire = !strongHire;
-  const btn = el('sh-btn');
-  if (btn) { btn.className = 'strong-hire-btn' + (strongHire ? ' flagged' : ''); btn.textContent = '⭐ ' + (strongHire ? 'Strong Hire — Flagged' : 'Flag as Strong Hire'); }
-}
-
-async function saveRound() {
-  const inputs = document.querySelectorAll('.score-inp');
-  const scores = [...inputs].map(i => parseInt(i.value) || 0);
-  const maxT   = [...inputs].reduce((s, i) => s + parseInt(i.dataset.max || 10), 0);
-  const total  = scores.reduce((a,b)=>a+b,0);
-  const remarks = el('remarks-area') ? el('remarks-area').value : '';
-
-  await API.saveScore(currentCandidate.appNo, currentRound, { scores, total, remarks, strongHire });
-  scoreData[currentRound] = { scores, total, remarks };
-
-  // Advance status
-  const statusMap = { HR:'Interviewed', FM:'Interviewed', MGR:'Selected' };
-  await API.updateCandidate(currentCandidate.appNo, { status: statusMap[currentRound] });
-
-  toast(`${currentRound} round saved! ${total >= CONFIG.INTERVIEW_CUTOFF ? '✓ PASS' : '✗ FAIL'}`, total >= CONFIG.INTERVIEW_CUTOFF ? 'success' : 'warn');
-  updateCompareBar();
-  updateRoundTabs();
-}
-
-async function rejectCandidate() {
+function rejectCandidate() {
+  if (!currentIV) return;
   showModal({
     title: 'Reject Candidate',
-    body: `Reject <b>${currentCandidate.name}</b> and send rejection notice?<br><br>This action will mark them as Rejected and cannot be easily undone.`,
-    confirmText: 'Confirm Reject', confirmClass: 'btn-red',
-    onConfirm: async () => {
-      await API.updateCandidate(currentCandidate.appNo, { status: 'Rejected' });
+    body:  'Reject <b>' + currentIV.candidate + '</b> from the interview process?',
+    confirmText:'Confirm Reject', confirmClass:'btn-red',
+    onConfirm: async function() {
+      await API.updateCandidate(currentIV.appNo, {status:'Rejected'});
       toast('Candidate rejected', 'warn');
-      window.location.href = 'candidates.html';
+      closePanel(); applyFilter();
     }
   });
 }
+
+function closePanel() {
+  el('sp-overlay').classList.remove('show');
+  el('sp-panel').classList.remove('open');
+  document.removeEventListener('keydown', escCb);
+  currentIV = null; currentRound = null;
+}
+function escCb(e) { if (e.key === 'Escape') closePanel(); }
 </script>
 </body>
 </html>
