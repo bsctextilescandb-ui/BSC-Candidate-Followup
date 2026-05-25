@@ -280,13 +280,16 @@ function clickRejectIV(btn) {
   if (!iv) return;
   showModal({
     title: 'Reject Candidate',
-    body:  'Reject <b>'+iv.candidate+'</b> after interview? This will mark them as Rejected.',
+    body: 'Reject <b>'+iv.candidate+'</b> after interview?<br>This will mark them as <b>Rejected</b>.',
     confirmText:'Confirm Reject', confirmClass:'btn-red',
     onConfirm: async function() {
-      await API.updateCandidate(iv.appNo,{status:'Rejected'});
-      allInterviews = allInterviews.map(function(x){return x.appNo===iv.appNo?Object.assign({},x,{status:'Rejected'}):x;});
-      toast('Candidate rejected','warn');
-      applyFilter();
+      try {
+        await API.updateCandidate(iv.appNo, {status:'Rejected'});
+        // Remove from interview list
+        allInterviews = allInterviews.filter(function(x){ return x.appNo !== iv.appNo; });
+        applyFilter();
+        toast(iv.candidate+' rejected','warn');
+      } catch(e) { toast('Error: '+e.message,'error'); }
     }
   });
 }
@@ -298,31 +301,24 @@ function clickApprove(btn) {
   var g = (iv.hrScore.total||0)+(iv.fmScore.total||0)+(iv.mgrScore.total||0);
   showModal({
     title: '&#x2713; Approve Selection',
-    body:  '<div style="margin-bottom:10px">Approve <b>'+iv.candidate+'</b> for <b>'+iv.desig+'</b>?</div>' +
-           '<div style="background:#F9F7F4;border-radius:8px;padding:10px 12px;font-size:11.5px">' +
-             '<div style="display:flex;justify-content:space-between;margin-bottom:4px"><span>HR Round</span><b>'+(iv.hrScore.total||0)+'/60</b></div>' +
-             '<div style="display:flex;justify-content:space-between;margin-bottom:4px"><span>FM Round</span><b>'+(iv.fmScore.total||0)+'/60</b></div>' +
-             '<div style="display:flex;justify-content:space-between;margin-bottom:6px"><span>MGR Round</span><b>'+(iv.mgrScore.total||0)+'/60</b></div>' +
-             '<div style="display:flex;justify-content:space-between;border-top:1px solid #e8e4dd;padding-top:6px"><span><b>Grand Total</b></span><b style="color:var(--green)">'+g+'/180</b></div>' +
-           '</div>' +
-           '<div style="margin-top:10px;font-size:11px;color:#888">This will move the candidate to <b>Selected</b> status and add them to the Offer Process.</div>',
+    body: '<div style="margin-bottom:10px">Approve <b>'+iv.candidate+'</b> for <b>'+iv.desig+'</b>?</div>' +
+          '<div style="background:#F9F7F4;border-radius:8px;padding:10px 12px;font-size:11.5px">' +
+            '<div style="display:flex;justify-content:space-between;margin-bottom:4px"><span>HR Round</span><b>'+(iv.hrScore.total||0)+'/60</b></div>' +
+            '<div style="display:flex;justify-content:space-between;margin-bottom:4px"><span>FM Round</span><b>'+(iv.fmScore.total||0)+'/60</b></div>' +
+            '<div style="display:flex;justify-content:space-between;margin-bottom:6px"><span>MGR Round</span><b>'+(iv.mgrScore.total||0)+'/60</b></div>' +
+            '<div style="display:flex;justify-content:space-between;border-top:1px solid #e8e4dd;padding-top:6px"><span><b>Grand Total</b></span><b style="color:var(--green)">'+g+'/180</b></div>' +
+          '</div>' +
+          '<div style="margin-top:10px;font-size:11px;color:#888">This will move the candidate to <b>Selected</b> and add to Offer Process.</div>',
     confirmText: 'Approve & Select',
     confirmClass: 'btn-green',
     onConfirm: async function() {
       try {
-        await API.call('approveSelection', {
-          appNo:     iv.appNo,
-          candidate: iv.candidate,
-          desig:     iv.desig
-        });
-        toast(iv.candidate+' approved and moved to Offer Process!','success');
-        // Refresh interviews list
-        var d = await API.getInterviews();
-        allInterviews = d.interviews || [];
+        await API.call('approveSelection', { appNo:iv.appNo, candidate:iv.candidate, desig:iv.desig });
+        // Remove from interview list — candidate is now in Offer Process
+        allInterviews = allInterviews.filter(function(x){ return x.appNo !== iv.appNo; });
         applyFilter();
-      } catch(e) {
-        toast('Error: '+e.message,'error');
-      }
+        toast(iv.candidate+' approved \u2014 moved to Offer Process!','success');
+      } catch(e) { toast('Error: '+e.message,'error'); }
     }
   });
 }
