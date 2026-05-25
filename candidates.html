@@ -173,190 +173,352 @@ tr.row-rejected td{background:#FFF8F8}
 'use strict';
 const session = initPage('candidates');
 const PAGE_SIZE = 10;
-let currentPage=1, allCandidates=[], filtered=[], activeStatus='all', rejectTargetAppNo='', schedTarget=null;
-const AV_BG={navy:'#1E2D4E',gold:'#C9952A',green:'#2d8a4e',red:'#C0272D',purple:'#7c4dbd',teal:'#1a8a84'};
+let currentPage = 1, allCandidates = [], filtered = [], activeStatus = 'all';
+let rejectTargetAppNo = '', rejectTargetName = '', schedTarget = null;
+const AV_BG = {navy:'#1E2D4E',gold:'#C9952A',green:'#2d8a4e',red:'#C0272D',purple:'#7c4dbd',teal:'#1a8a84'};
 
-(async function load(){
-  const data = await API.getCandidates({limit:500});
-  allCandidates = data.candidates||[];
-  buildKPIs(); buildPills(); applyFilters();
+// ── Load ──────────────────────────────────────────────────────
+(async function load() {
+  try {
+    const data = await API.getCandidates({limit: 500});
+    allCandidates = data.candidates || [];
+  } catch(e) {
+    console.error('[Candidates]', e);
+    allCandidates = [];
+  }
+  buildKPIs();
+  buildPills();
+  applyFilters();
 })();
 
-function buildKPIs(){
-  const c=s=>allCandidates.filter(x=>x.status===s).length;
-  el('k-total').textContent=allCandidates.length; el('k-new').textContent=c('New');
-  el('k-short').textContent=c('Shortlisted'); el('k-int').textContent=c('Interviewed');
-  el('k-sel').textContent=c('Selected'); el('k-offer').textContent=c('Offer Sent');
-  el('k-hold').textContent=c('Hold'); el('k-rej').textContent=c('Rejected');
+// ── KPIs & Pills ──────────────────────────────────────────────
+function buildKPIs() {
+  const c = s => allCandidates.filter(x => x.status === s).length;
+  el('k-total').textContent = allCandidates.length;
+  el('k-new').textContent   = c('New');
+  el('k-short').textContent = c('Shortlisted');
+  el('k-int').textContent   = c('Interviewed');
+  el('k-sel').textContent   = c('Selected');
+  el('k-offer').textContent = c('Offer Sent');
+  el('k-hold').textContent  = c('Hold');
+  el('k-rej').textContent   = c('Rejected');
 }
-function buildPills(){
-  const c=s=>allCandidates.filter(x=>x.status===s).length;
-  el('p-all').textContent=allCandidates.length; el('p-new').textContent=c('New');
-  el('p-short').textContent=c('Shortlisted'); el('p-int').textContent=c('Interviewed');
-  el('p-sel').textContent=c('Selected'); el('p-offer').textContent=c('Offer Sent');
-  el('p-hold').textContent=c('Hold'); el('p-rej').textContent=c('Rejected');
-  el('p-board').textContent=c('Onboarding');
+
+function buildPills() {
+  const c = s => allCandidates.filter(x => x.status === s).length;
+  el('p-all').textContent   = allCandidates.length;
+  el('p-new').textContent   = c('New');
+  el('p-short').textContent = c('Shortlisted');
+  el('p-int').textContent   = c('Interviewed');
+  el('p-sel').textContent   = c('Selected');
+  el('p-offer').textContent = c('Offer Sent');
+  el('p-hold').textContent  = c('Hold');
+  el('p-rej').textContent   = c('Rejected');
+  el('p-board').textContent = c('Onboarding');
 }
-function applyFilters(){
-  const q=(el('cand-search').value||'').toLowerCase();
-  const desig=el('f-desig').value, source=el('f-source').value;
-  filtered=allCandidates.filter(c=>{
-    if(activeStatus!=='all'&&c.status!==activeStatus)return false;
-    if(desig&&c.desig!==desig)return false;
-    if(source&&c.source!==source)return false;
-    if(q&&!c.name.toLowerCase().includes(q)&&!c.appNo.toLowerCase().includes(q)&&!c.phone.includes(q))return false;
+
+// ── Filters ───────────────────────────────────────────────────
+function applyFilters() {
+  const q     = (el('cand-search').value || '').toLowerCase();
+  const desig = el('f-desig')  ? el('f-desig').value  : '';
+  const src   = el('f-source') ? el('f-source').value : '';
+
+  filtered = allCandidates.filter(function(c) {
+    if (activeStatus !== 'all' && c.status !== activeStatus) return false;
+    if (desig && c.desig  !== desig) return false;
+    if (src   && c.source !== src)   return false;
+    if (q && !c.name.toLowerCase().includes(q) &&
+             !c.appNo.toLowerCase().includes(q) &&
+             !String(c.phone).includes(q)) return false;
     return true;
   });
-  currentPage=1; renderTable();
+  currentPage = 1;
+  renderTable();
 }
-initStatusPills(s=>{activeStatus=s;applyFilters();});
 
-function renderTable(){
-  const start=(currentPage-1)*PAGE_SIZE, page=filtered.slice(start,start+PAGE_SIZE), total=filtered.length;
-  if(!page.length){
-    el('cand-tbody').innerHTML='<tr><td colspan="11"><div class="empty-state"><div class="empty-icon">🔍</div><div class="empty-title">No candidates found</div></div></td></tr>';
-    el('cand-page-info').textContent='No results';
-    el('prev-btn').disabled=true;el('next-btn').disabled=true;return;
+initStatusPills(function(s) { activeStatus = s; applyFilters(); });
+
+// ── Render Table ──────────────────────────────────────────────
+function renderTable() {
+  const start = (currentPage - 1) * PAGE_SIZE;
+  const page  = filtered.slice(start, start + PAGE_SIZE);
+  const total = filtered.length;
+
+  if (!page.length) {
+    el('cand-tbody').innerHTML = '<tr><td colspan="11"><div class="empty-state">' +
+      '<div class="empty-icon">&#x1F50D;</div>' +
+      '<div class="empty-title">No candidates found</div>' +
+      '</div></td></tr>';
+    el('cand-page-info').textContent = '0 results';
+    el('prev-btn').disabled = true;
+    el('next-btn').disabled = true;
+    return;
   }
-  el('cand-tbody').innerHTML=page.map(c=>{
-    const rc=c.status==='Hold'?'row-hold':c.status==='Rejected'?'row-rejected':'';
-    const ph='<span class="phone-mask" data-real="'+c.phone+'">'+maskPhone(c.phone)+'</span>';
-    const rej=c.status==='Rejected'&&c.rejReason?'<span class="rej-reason">'+c.rejReason+'</span>':'';
-    return '<tr class="'+rc+'"><td><input type="checkbox" class="row-chk" data-appno="'+c.appNo+'" onchange="rowCheck()"></td>'
-      +'<td style="font-size:10px;white-space:nowrap">'+c.appNo+'</td>'
-      +'<td><div class="td-name" onclick="openDrawer(''+c.appNo+'')" style="cursor:pointer" title="View details"><div class="av av-'+c.color+'">'+c.initials+'</div><b style="color:var(--blue);text-decoration:underline dotted">'+c.name+'</b></div></td>'
-      +'<td>'+ph+'</td><td style="white-space:nowrap">'+c.desig+'</td><td>'+c.source+'</td>'
-      +'<td style="color:var(--muted)">'+(c.referrer||'—')+'</td>'
-      +'<td style="white-space:nowrap;font-size:10.5px">'+c.date+'</td>'
-      +'<td>'+statusBadge(c.status)+'</td><td>'+daysChip(c.daysIn)+'</td>'
-      +'<td><div style="display:flex;flex-direction:column;gap:3px">'+actionBtns(c)+rej+'</div></td></tr>';
+
+  el('cand-tbody').innerHTML = page.map(function(c, i) {
+    // Use data-idx to avoid quote-escaping issues in onclick
+    const idx    = start + i;
+    const ph     = '<span class="phone-mask" data-real="' + c.phone + '">' + maskPhone(c.phone) + '</span>';
+    const rejTag = (c.status === 'Rejected' && c.rejReason)
+                 ? '<span class="rej-reason">' + c.rejReason + '</span>' : '';
+    const rowCls = c.status === 'Hold' ? 'row-hold' : c.status === 'Rejected' ? 'row-rejected' : '';
+
+    return '<tr class="' + rowCls + '">' +
+      '<td><input type="checkbox" class="row-chk" data-idx="' + idx + '" onchange="rowCheck()"></td>' +
+      '<td style="font-size:10px;white-space:nowrap">' + c.appNo + '</td>' +
+      '<td><div class="td-name" style="cursor:pointer" onclick="openDrawer(' + idx + ')" title="View details">' +
+        '<div class="av av-' + c.color + '">' + c.initials + '</div>' +
+        '<b style="color:var(--blue);text-decoration:underline dotted">' + c.name + '</b>' +
+      '</div></td>' +
+      '<td>' + ph + '</td>' +
+      '<td>' + c.desig + '</td>' +
+      '<td>' + c.source + '</td>' +
+      '<td style="color:var(--muted)">' + (c.referrer || '—') + '</td>' +
+      '<td style="font-size:10.5px;white-space:nowrap">' + c.date + '</td>' +
+      '<td>' + statusBadge(c.status) + '</td>' +
+      '<td>' + daysChip(c.daysIn) + '</td>' +
+      '<td><div style="display:flex;flex-direction:column;gap:3px">' +
+        actionBtns(c, idx) + rejTag +
+      '</div></td>' +
+    '</tr>';
   }).join('');
-  el('cand-page-info').textContent='Showing '+(start+1)+'–'+Math.min(start+PAGE_SIZE,total)+' of '+total;
-  el('prev-btn').disabled=currentPage===1;el('next-btn').disabled=start+PAGE_SIZE>=total;
+
+  el('cand-page-info').textContent = 'Showing ' + (start + 1) + '–' + Math.min(start + PAGE_SIZE, total) + ' of ' + total;
+  el('prev-btn').disabled = currentPage === 1;
+  el('next-btn').disabled = start + PAGE_SIZE >= total;
 }
 
-function actionBtns(c){
-  const m={'New':'<div style="display:flex;gap:4px"><button class="btn btn-outline btn-sm" onclick="quickStatus(''+c.appNo+'','Shortlisted')">Shortlist</button><button class="btn btn-outline-red btn-sm" onclick="openReject(''+c.appNo+'',''+c.name+'')">Reject</button></div>',
-    'Shortlisted':'<button class="btn btn-outline-gold btn-sm" onclick="openSchedModal(''+c.appNo+'')">Schedule Interview</button>',
-    'Interviewed':'<button class="btn btn-outline btn-sm" onclick="window.location.href='interview-panel.html'">View Scores</button>',
-    'Selected':'<button class="btn btn-outline-green btn-sm" onclick="window.location.href='offer-process.html'">Send Offer</button>',
-    'Offer Sent':'<button class="btn btn-outline btn-sm" onclick="window.location.href='offer-process.html'">Track Offer</button>',
-    'Hold':'<button class="btn btn-outline-gold btn-sm" onclick="quickStatus(''+c.appNo+'','New')">Reactivate</button>',
-    'Rejected':'<button class="btn btn-muted btn-sm" onclick="quickStatus(''+c.appNo+'','New')">Re-engage</button>',
-    'Onboarding':'<button class="btn btn-outline-green btn-sm" onclick="window.location.href='onboarding.html'">Checklist</button>'};
-  return m[c.status]||'<button class="btn btn-muted btn-sm">View</button>';
+// ── Action Buttons — uses data-idx to avoid quote nesting ─────
+function actionBtns(c, idx) {
+  // All onclick handlers use data-idx only — no appNo string in onclick
+  const s = c.status;
+  if (s === 'New')
+    return '<div style="display:flex;gap:4px">' +
+      '<button class="btn btn-outline btn-sm" data-idx="' + idx + '" onclick="clickShortlist(this)">Shortlist</button>' +
+      '<button class="btn btn-outline-red btn-sm" data-idx="' + idx + '" onclick="clickReject(this)">Reject</button>' +
+    '</div>';
+  if (s === 'Shortlisted')
+    return '<button class="btn btn-outline-gold btn-sm" data-idx="' + idx + '" onclick="clickSched(this)">Schedule Interview</button>';
+  if (s === 'Interviewed')
+    return '<button class="btn btn-outline btn-sm" onclick="window.location.href=\'interview-panel.html\'">View Scores</button>';
+  if (s === 'Selected')
+    return '<button class="btn btn-outline-green btn-sm" onclick="window.location.href=\'offer-process.html\'">Send Offer</button>';
+  if (s === 'Offer Sent')
+    return '<button class="btn btn-outline btn-sm" onclick="window.location.href=\'offer-process.html\'">Track Offer</button>';
+  if (s === 'Hold')
+    return '<button class="btn btn-outline-gold btn-sm" data-idx="' + idx + '" onclick="clickReactivate(this)">Reactivate</button>';
+  if (s === 'Rejected')
+    return '<button class="btn btn-muted btn-sm" data-idx="' + idx + '" onclick="clickReactivate(this)">Re-engage</button>';
+  if (s === 'Onboarding')
+    return '<button class="btn btn-outline-green btn-sm" onclick="window.location.href=\'onboarding.html\'">Checklist</button>';
+  return '<button class="btn btn-muted btn-sm">View</button>';
 }
 
-function changePage(d){currentPage+=d;renderTable();}
+function changePage(d) { currentPage += d; renderTable(); }
 
-async function quickStatus(appNo,status){
-  await API.updateCandidate(appNo,{status});
-  allCandidates=allCandidates.map(c=>c.appNo===appNo?{...c,status}:c);
-  buildKPIs();buildPills();applyFilters();toast('Status updated','success');
+// ── Click handlers using data-idx ─────────────────────────────
+function clickShortlist(btn) {
+  const c = getByIdx(btn);
+  if (c) quickStatus(c.appNo, 'Shortlisted');
+}
+function clickReject(btn) {
+  const c = getByIdx(btn);
+  if (c) openReject(c.appNo, c.name);
+}
+function clickSched(btn) {
+  const c = getByIdx(btn);
+  if (c) openSchedModal(c.appNo);
+}
+function clickReactivate(btn) {
+  const c = getByIdx(btn);
+  if (c) quickStatus(c.appNo, 'New');
+}
+function getByIdx(btn) {
+  return filtered[parseInt(btn.dataset.idx)];
 }
 
-// Reject
-function openReject(appNo,name){rejectTargetAppNo=appNo;el('rej-name').textContent=name;el('rej-reason-sel').value='';el('rej-modal').classList.add('show');}
-function closeRejModal(){el('rej-modal').classList.remove('show');}
-async function confirmReject(){
-  const reason=el('rej-reason-sel').value;if(!reason){toast('Select a reason','error');return;}
-  await API.updateCandidate(rejectTargetAppNo,{status:'Rejected',q4:reason});
-  allCandidates=allCandidates.map(c=>c.appNo===rejectTargetAppNo?{...c,status:'Rejected',rejReason:reason}:c);
-  buildKPIs();buildPills();applyFilters();closeRejModal();toast('Candidate rejected','warn');
+async function quickStatus(appNo, status) {
+  await API.updateCandidate(appNo, {status: status});
+  allCandidates = allCandidates.map(function(c) {
+    return c.appNo === appNo ? Object.assign({}, c, {status: status}) : c;
+  });
+  buildKPIs(); buildPills(); applyFilters();
+  toast('Status updated', 'success');
 }
 
-// Bulk
-function rowCheck(){const n=document.querySelectorAll('.row-chk:checked').length;el('bulk-bar').classList.toggle('show',n>0);el('bulk-count').textContent=n+' selected';}
-function toggleAll(chk){document.querySelectorAll('.row-chk').forEach(c=>c.checked=chk.checked);rowCheck();}
-function clearBulk(){document.querySelectorAll('.row-chk,#chk-all').forEach(c=>c.checked=false);rowCheck();}
-async function bulkAction(status){
-  const checked=[...document.querySelectorAll('.row-chk:checked')].map(c=>c.dataset.appno);
-  if(!checked.length)return;
-  showModal({title:'Bulk '+status,body:'Change <b>'+checked.length+'</b> candidates to <b>'+status+'</b>?',confirmText:'Apply',confirmClass:'btn-primary',
-    onConfirm:async()=>{
-      await Promise.all(checked.map(appNo=>API.updateCandidate(appNo,{status})));
-      allCandidates=allCandidates.map(c=>checked.includes(c.appNo)?{...c,status}:c);
-      buildKPIs();buildPills();applyFilters();clearBulk();toast(checked.length+' updated','success');
-    }});
+// ── Reject Modal ──────────────────────────────────────────────
+function openReject(appNo, name) {
+  rejectTargetAppNo = appNo;
+  rejectTargetName  = name;
+  el('rej-name').textContent = name;
+  el('rej-reason-sel').value = '';
+  el('rej-modal').classList.add('show');
+}
+function closeRejModal() { el('rej-modal').classList.remove('show'); }
+async function confirmReject() {
+  const reason = el('rej-reason-sel').value;
+  if (!reason) { toast('Select a reason', 'error'); return; }
+  await API.updateCandidate(rejectTargetAppNo, {status: 'Rejected', q4: reason});
+  allCandidates = allCandidates.map(function(c) {
+    return c.appNo === rejectTargetAppNo
+      ? Object.assign({}, c, {status: 'Rejected', rejReason: reason}) : c;
+  });
+  buildKPIs(); buildPills(); applyFilters();
+  closeRejModal();
+  toast('Candidate rejected', 'warn');
 }
 
-// Export CSV
-function exportCSV(){
-  const hdr=['App No','Name','Phone','Designation','Source','Referrer','Date','Status','Days In'];
-  const rows=filtered.map(c=>[c.appNo,c.name,c.phone,c.desig,c.source,c.referrer,c.date,c.status,c.daysIn]);
-  const csv=[hdr,...rows].map(r=>r.map(v=>'"'+v+'"').join(',')).join('\n');
-  const a=document.createElement('a');a.href='data:text/csv;charset=utf-8,'+encodeURIComponent(csv);
-  a.download='BSC_Candidates_'+new Date().toISOString().slice(0,10)+'.csv';a.click();
+// ── Bulk ──────────────────────────────────────────────────────
+function rowCheck() {
+  const n = document.querySelectorAll('.row-chk:checked').length;
+  el('bulk-bar').classList.toggle('show', n > 0);
+  el('bulk-count').textContent = n + ' selected';
+}
+function toggleAll(chk) {
+  document.querySelectorAll('.row-chk').forEach(function(c) { c.checked = chk.checked; });
+  rowCheck();
+}
+function clearBulk() {
+  document.querySelectorAll('.row-chk, #chk-all').forEach(function(c) { c.checked = false; });
+  rowCheck();
+}
+async function bulkAction(status) {
+  const idxs = Array.from(document.querySelectorAll('.row-chk:checked')).map(function(c) { return parseInt(c.dataset.idx); });
+  if (!idxs.length) return;
+  const appNos = idxs.map(function(i) { return filtered[i].appNo; }).filter(Boolean);
+  showModal({
+    title: 'Bulk ' + status,
+    body: 'Change <b>' + appNos.length + '</b> candidates to <b>' + status + '</b>?',
+    confirmText: 'Apply', confirmClass: 'btn-primary',
+    onConfirm: async function() {
+      await Promise.all(appNos.map(function(a) { return API.updateCandidate(a, {status: status}); }));
+      allCandidates = allCandidates.map(function(c) {
+        return appNos.includes(c.appNo) ? Object.assign({}, c, {status: status}) : c;
+      });
+      buildKPIs(); buildPills(); applyFilters(); clearBulk();
+      toast(appNos.length + ' updated', 'success');
+    }
+  });
 }
 
-// Drawer
-function openDrawer(appNo){
-  const c=allCandidates.find(x=>x.appNo===appNo);if(!c)return;
-  el('dr-av').textContent=c.initials;el('dr-av').style.background=AV_BG[c.color]||'#1E2D4E';
-  el('dr-name').textContent=c.name;el('dr-appno').textContent=c.appNo+' · Applied '+c.date;
-  const age=c.dob?calcAge(c.dob):'—';
-  el('drawer-body').innerHTML=
-    '<div class="drawer-section"><div class="ds-title">Status</div>'+statusBadge(c.status)+
-    (c.rejReason?'<span style="font-size:10px;color:var(--red);margin-left:6px;font-style:italic">'+c.rejReason+'</span>':'')+
-    '<span style="font-size:10px;color:#999;margin-left:8px">'+c.daysIn+'d in pipeline</span></div>'+
-    '<div class="drawer-section"><div class="ds-title">Personal Details</div>'+
-    '<div class="drow"><span class="drow-label">Full Name</span><span class="drow-val highlight">'+c.name+'</span></div>'+
-    '<div class="drow"><span class="drow-label">Date of Birth</span><span class="drow-val">'+(c.dob||'—')+(age!=='—'?' ('+age+' yrs)':'')+'</span></div>'+
-    '<div class="drow"><span class="drow-label">Phone</span><span class="drow-val">'+String(c.phone||'').replace(/(\d{5})(\d{5})/,'$1 $2')+'</span></div></div>'+
-    '<div class="drawer-section"><div class="ds-title">Application Details</div>'+
-    '<div class="drow"><span class="drow-label">Designation</span><span class="drow-val highlight">'+c.desig+'</span></div>'+
-    '<div class="drow"><span class="drow-label">Expected Salary</span><span class="drow-val salary">'+(c.salary?'₹'+Number(c.salary).toLocaleString('en-IN'):'—')+'</span></div>'+
-    '<div class="drow"><span class="drow-label">Source</span><span class="drow-val">'+(c.source||'—')+'</span></div>'+
-    '<div class="drow"><span class="drow-label">Referrer</span><span class="drow-val">'+(c.referrer||'—')+'</span></div>'+
-    '<div class="drow"><span class="drow-label">Resume</span><span class="drow-val">'+(c.resume||'—')+'</span></div></div>'+
-    ((c.q1||c.q2||c.q3||c.q4)?'<div class="drawer-section"><div class="ds-title">Designation Questions</div>'+
-    (c.q1?'<div class="q-ans"><div class="q-ans-label">Experience</div><div class="q-ans-val">'+c.q1+'</div></div>':'')+
-    (c.q2?'<div class="q-ans"><div class="q-ans-label">Textile Store</div><div class="q-ans-val">'+c.q2+'</div></div>':'')+
-    (c.q3?'<div class="q-ans"><div class="q-ans-label">Qualification</div><div class="q-ans-val">'+c.q3+'</div></div>':'')+
-    (c.q4&&c.status!=='Rejected'?'<div class="q-ans"><div class="q-ans-label">Join When</div><div class="q-ans-val">'+c.q4+'</div></div>':'')+
-    '</div>':'');
-  el('drawer-actions').innerHTML=buildDrawerActions(c);
-  el('drawer-overlay').classList.add('show');el('cand-drawer').classList.add('open');
+// ── Export CSV ────────────────────────────────────────────────
+function exportCSV() {
+  const hdr = ['App No','Name','Phone','Designation','Source','Referrer','Date','Status','Days In'];
+  const rows = filtered.map(function(c) {
+    return [c.appNo,c.name,c.phone,c.desig,c.source,c.referrer,c.date,c.status,c.daysIn];
+  });
+  const csv = [hdr].concat(rows).map(function(r) {
+    return r.map(function(v) { return '"' + v + '"'; }).join(',');
+  }).join('\n');
+  const a = document.createElement('a');
+  a.href = 'data:text/csv;charset=utf-8,' + encodeURIComponent(csv);
+  a.download = 'BSC_Candidates_' + new Date().toISOString().slice(0,10) + '.csv';
+  a.click();
 }
-function buildDrawerActions(c){
-  const s=c.status;
-  if(s==='New')return '<button class="da-btn da-shortlist" onclick="drawerQuick(''+c.appNo+'','Shortlisted')">✓ Shortlist</button><button class="da-btn da-hold" onclick="drawerQuick(''+c.appNo+'','Hold')">Hold</button><button class="da-btn da-reject" onclick="closeDrawer();openReject(''+c.appNo+'',''+c.name+'')">Reject</button>';
-  if(s==='Shortlisted')return '<button class="da-btn da-schedule" onclick="closeDrawer();openSchedModal(''+c.appNo+'')">🎯 Schedule Interview</button><button class="da-btn da-hold" onclick="drawerQuick(''+c.appNo+'','Hold')">Hold</button>';
-  if(s==='Selected')return '<button class="da-btn da-shortlist" onclick="closeDrawer();window.location.href='offer-process.html'">📄 Send Offer</button>';
-  if(s==='Hold')return '<button class="da-btn da-shortlist" onclick="drawerQuick(''+c.appNo+'','New')">Reactivate</button><button class="da-btn da-reject" onclick="closeDrawer();openReject(''+c.appNo+'',''+c.name+'')">Reject</button>';
-  if(s==='Rejected')return '<button class="da-btn da-shortlist" onclick="drawerQuick(''+c.appNo+'','New')">Re-engage</button>';
-  if(s==='Onboarding')return '<button class="da-btn da-schedule" onclick="closeDrawer();window.location.href='onboarding.html'">✅ View Onboarding</button>';
+
+// ── Candidate Detail Drawer ────────────────────────────────────
+function openDrawer(idx) {
+  const c = filtered[idx];
+  if (!c) return;
+  el('dr-av').textContent = c.initials;
+  el('dr-av').style.background = AV_BG[c.color] || '#1E2D4E';
+  el('dr-name').textContent  = c.name;
+  el('dr-appno').textContent = c.appNo + ' · Applied ' + c.date;
+
+  const age = c.dob ? calcAge(c.dob) : '—';
+
+  el('drawer-body').innerHTML =
+    '<div class="drawer-section">' +
+      '<div class="ds-title">Status</div>' +
+      statusBadge(c.status) +
+      (c.rejReason ? '<span style="font-size:10px;color:var(--red);margin-left:6px;font-style:italic">' + c.rejReason + '</span>' : '') +
+      '<span style="font-size:10px;color:#999;margin-left:8px">' + c.daysIn + 'd in pipeline</span>' +
+    '</div>' +
+    '<div class="drawer-section"><div class="ds-title">Personal Details</div>' +
+      '<div class="drow"><span class="drow-label">Full Name</span><span class="drow-val highlight">' + c.name + '</span></div>' +
+      '<div class="drow"><span class="drow-label">Date of Birth</span><span class="drow-val">' + (c.dob||'—') + (age!=='—'?' ('+age+' yrs)':'') + '</span></div>' +
+      '<div class="drow"><span class="drow-label">Phone</span><span class="drow-val">' + String(c.phone||'').replace(/(\d{5})(\d{5})/, '$1 $2') + '</span></div>' +
+    '</div>' +
+    '<div class="drawer-section"><div class="ds-title">Application Details</div>' +
+      '<div class="drow"><span class="drow-label">Designation</span><span class="drow-val highlight">' + c.desig + '</span></div>' +
+      '<div class="drow"><span class="drow-label">Expected Salary</span><span class="drow-val salary">' + (c.salary ? '&#x20B9;' + Number(c.salary).toLocaleString('en-IN') : '—') + '</span></div>' +
+      '<div class="drow"><span class="drow-label">Source</span><span class="drow-val">' + (c.source||'—') + '</span></div>' +
+      '<div class="drow"><span class="drow-label">Referrer</span><span class="drow-val">' + (c.referrer||'—') + '</span></div>' +
+      '<div class="drow"><span class="drow-label">Resume</span><span class="drow-val">' + (c.resume||'—') + '</span></div>' +
+    '</div>' +
+    ((c.q1||c.q2||c.q3||c.q4) ?
+      '<div class="drawer-section"><div class="ds-title">Designation Questions</div>' +
+      (c.q1 ? '<div class="q-ans"><div class="q-ans-label">Experience</div><div class="q-ans-val">' + c.q1 + '</div></div>' : '') +
+      (c.q2 ? '<div class="q-ans"><div class="q-ans-label">Textile Store</div><div class="q-ans-val">' + c.q2 + '</div></div>' : '') +
+      (c.q3 ? '<div class="q-ans"><div class="q-ans-label">Qualification</div><div class="q-ans-val">' + c.q3 + '</div></div>' : '') +
+      (c.q4&&c.status!=='Rejected' ? '<div class="q-ans"><div class="q-ans-label">Join When</div><div class="q-ans-val">' + c.q4 + '</div></div>' : '') +
+      '</div>' : '');
+
+  el('drawer-actions').innerHTML = buildDrawerActions(c, idx);
+  el('drawer-overlay').classList.add('show');
+  el('cand-drawer').classList.add('open');
+}
+
+function buildDrawerActions(c, idx) {
+  const s = c.status;
+  if (s === 'New')
+    return '<button class="da-btn da-shortlist" data-idx="' + idx + '" onclick="clickShortlist(this)">&#x2713; Shortlist</button>' +
+           '<button class="da-btn da-hold"      data-idx="' + idx + '" onclick="clickHold(this)">Hold</button>' +
+           '<button class="da-btn da-reject"    data-idx="' + idx + '" onclick="closeDrawer();clickReject(this)">Reject</button>';
+  if (s === 'Shortlisted')
+    return '<button class="da-btn da-schedule" data-idx="' + idx + '" onclick="closeDrawer();clickSched(this)">&#x1F3AF; Schedule Interview</button>' +
+           '<button class="da-btn da-hold"     data-idx="' + idx + '" onclick="clickHold(this)">Hold</button>';
+  if (s === 'Selected')
+    return '<button class="da-btn da-shortlist" onclick="closeDrawer();window.location.href=\'offer-process.html\'">&#x1F4C4; Send Offer</button>';
+  if (s === 'Hold')
+    return '<button class="da-btn da-shortlist" data-idx="' + idx + '" onclick="clickReactivate(this)">Reactivate</button>' +
+           '<button class="da-btn da-reject"    data-idx="' + idx + '" onclick="closeDrawer();clickReject(this)">Reject</button>';
+  if (s === 'Rejected')
+    return '<button class="da-btn da-shortlist" data-idx="' + idx + '" onclick="clickReactivate(this)">Re-engage</button>';
+  if (s === 'Onboarding')
+    return '<button class="da-btn da-schedule" onclick="closeDrawer();window.location.href=\'onboarding.html\'">&#x2705; Onboarding</button>';
   return '<span style="font-size:11px;color:#aaa;padding:8px">No actions available</span>';
 }
-async function drawerQuick(appNo,status){
-  await API.updateCandidate(appNo,{status});
-  allCandidates=allCandidates.map(c=>c.appNo===appNo?{...c,status}:c);
-  buildKPIs();buildPills();applyFilters();closeDrawer();toast('Status updated','success');
-}
-function closeDrawer(){el('drawer-overlay').classList.remove('show');el('cand-drawer').classList.remove('open');}
-document.addEventListener('keydown',e=>{if(e.key==='Escape')closeDrawer();});
 
-// Schedule Interview
-function openSchedModal(appNo){
-  schedTarget=allCandidates.find(c=>c.appNo===appNo);if(!schedTarget)return;
-  const today=new Date().toISOString().slice(0,10);
-  el('sched-call1').value='';el('sched-call2').value='';el('sched-interview').value=today;
-  el('sched-int-err').style.display='none';
-  el('sched-cand-info').innerHTML='Scheduling interview for <b>'+schedTarget.name+'</b> &nbsp;·&nbsp; '+schedTarget.desig;
+function clickHold(btn) { const c = getByIdx(btn); if (c) { quickStatus(c.appNo, 'Hold'); closeDrawer(); } }
+function closeDrawer() {
+  el('drawer-overlay').classList.remove('show');
+  el('cand-drawer').classList.remove('open');
+}
+document.addEventListener('keydown', function(e) { if (e.key === 'Escape') closeDrawer(); });
+
+// ── Schedule Interview Modal ───────────────────────────────────
+function openSchedModal(appNo) {
+  schedTarget = allCandidates.find(function(c) { return c.appNo === appNo; });
+  if (!schedTarget) return;
+  const today = new Date().toISOString().slice(0,10);
+  el('sched-call1').value     = '';
+  el('sched-call2').value     = '';
+  el('sched-interview').value = today;
+  el('sched-int-err').style.display = 'none';
+  el('sched-cand-info').innerHTML = 'Scheduling interview for <b>' + schedTarget.name + '</b> &nbsp;&middot;&nbsp; ' + schedTarget.desig;
   el('sched-modal').classList.add('show');
 }
-function closeSchedModal(){el('sched-modal').classList.remove('show');schedTarget=null;}
-async function confirmSchedule(){
-  const call1=el('sched-call1').value,call2=el('sched-call2').value,intDate=el('sched-interview').value;
-  el('sched-int-err').style.display=intDate?'none':'block';if(!intDate)return;
-  const btn=el('sched-confirm-btn');btn.textContent='Scheduling…';btn.disabled=true;
-  try{
-    await API.scheduleInterview({appNo:schedTarget.appNo,candidate:schedTarget.name,desig:schedTarget.desig,call1Date:call1,call2Date:call2,interviewDate:intDate});
+function closeSchedModal() { el('sched-modal').classList.remove('show'); schedTarget = null; }
+async function confirmSchedule() {
+  const call1   = el('sched-call1').value;
+  const call2   = el('sched-call2').value;
+  const intDate = el('sched-interview').value;
+  el('sched-int-err').style.display = intDate ? 'none' : 'block';
+  if (!intDate) return;
+  const btn = el('sched-confirm-btn');
+  btn.textContent = 'Scheduling…'; btn.disabled = true;
+  try {
+    await API.scheduleInterview({
+      appNo: schedTarget.appNo, candidate: schedTarget.name, desig: schedTarget.desig,
+      call1Date: call1, call2Date: call2, interviewDate: intDate
+    });
     closeSchedModal();
-    toast(schedTarget.name+' interview scheduled for '+new Date(intDate).toLocaleDateString('en-IN',{day:'2-digit',month:'short',year:'numeric'}),'success');
-  }catch(e){toast('Failed: '+e.message,'error');}
-  finally{btn.textContent='Confirm Schedule';btn.disabled=false;}
+    toast(schedTarget.name + ' interview scheduled', 'success');
+  } catch(e) { toast('Failed: ' + e.message, 'error'); }
+  finally { btn.textContent = 'Confirm Schedule'; btn.disabled = false; }
 }
+
 </script>
 </body>
 </html>
