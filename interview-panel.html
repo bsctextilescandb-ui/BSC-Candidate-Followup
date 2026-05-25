@@ -116,11 +116,11 @@ var RB = {'HR':'rb-hr','Floor Manager':'rb-fm','Manager':'rb-mgr','Admin':'rb-ad
 var RL = {'HR':'HR Round Access','Floor Manager':'FM Round Access','Manager':'Manager Round Access','Admin':'Full Access'};
 var AV_BG = {navy:'#1E2D4E',gold:'#C9952A',green:'#2d8a4e',red:'#C0272D',purple:'#7c4dbd',teal:'#1a8a84'};
 
-el('role-badge').className   = 'role-badge ' + (RB[userRole] || 'rb-hr');
-el('role-badge').textContent = RL[userRole]  || 'HR Round Access';
+el('role-badge').className   = 'role-badge '+(RB[userRole]||'rb-hr');
+el('role-badge').textContent = RL[userRole]||'HR Round Access';
 
-var allInterviews = [], filtered = [], currentPage = 1, activeFilter = 'all', PAGE_SIZE = 10;
-var currentIV = null, currentRound = null, questions = [];
+var allInterviews=[], filtered=[], currentPage=1, activeFilter='all', PAGE_SIZE=10;
+var currentIV=null, currentRound=null, questions=[];
 
 // ── Load ──────────────────────────────────────────────────────
 (async function load() {
@@ -128,133 +128,204 @@ var currentIV = null, currentRound = null, questions = [];
     var d = await API.getInterviews();
     allInterviews = d.interviews || [];
   } catch(e) {
-    console.error('[Interview Panel]', e);
+    console.error('[Interview Panel]',e);
     allInterviews = [];
   }
   applyFilter();
 })();
 
-// ── Tabs / Filter ─────────────────────────────────────────────
+// ── Tabs ──────────────────────────────────────────────────────
 function setTab(btn) {
-  document.querySelectorAll('.itab').forEach(function(t){ t.classList.remove('active'); });
+  document.querySelectorAll('.itab').forEach(function(t){t.classList.remove('active');});
   btn.classList.add('active');
   activeFilter = btn.dataset.filter;
   currentPage  = 1;
   applyFilter();
 }
-function filterTable() { currentPage = 1; applyFilter(); }
-function changePage(d) { currentPage += d; renderTable(); }
-function fullDone(iv) { return !!(iv.hrScore && iv.fmScore && iv.mgrScore); }
+function filterTable() { currentPage=1; applyFilter(); }
+function changePage(d) { currentPage+=d; renderTable(); }
+function fullDone(iv)  { return !!(iv.hrScore && iv.fmScore && iv.mgrScore); }
 
 function applyFilter() {
-  var q = (el('int-search').value || '').toLowerCase();
+  var q = (el('int-search').value||'').toLowerCase();
   filtered = allInterviews.filter(function(iv) {
-    var mq = !q || iv.candidate.toLowerCase().includes(q) || iv.appNo.toLowerCase().includes(q);
+    var mq = !q||iv.candidate.toLowerCase().includes(q)||iv.appNo.toLowerCase().includes(q);
     var mf = true;
-    if (activeFilter === 'pending')    mf = !iv.hrScore && !iv.fmScore && !iv.mgrScore;
-    if (activeFilter === 'inprogress') mf = (iv.hrScore || iv.fmScore) && !fullDone(iv);
-    if (activeFilter === 'completed')  mf = fullDone(iv);
-    if (userRole === 'Floor Manager' && !iv.hrScore) return false;
-    if (userRole === 'Manager'       && !iv.fmScore) return false;
-    return mq && mf;
+    if (activeFilter==='pending')    mf = !iv.hrScore&&!iv.fmScore&&!iv.mgrScore;
+    if (activeFilter==='inprogress') mf = (iv.hrScore||iv.fmScore)&&!fullDone(iv);
+    if (activeFilter==='completed')  mf = fullDone(iv);
+    if (userRole==='Floor Manager'&&!iv.hrScore) return false;
+    if (userRole==='Manager'&&!iv.fmScore)       return false;
+    return mq&&mf;
   });
-  currentPage = 1;
-  renderTable();
+  currentPage=1; renderTable();
 }
 
 // ── Render Table ──────────────────────────────────────────────
 function renderTable() {
-  var start = (currentPage - 1) * PAGE_SIZE;
-  var page  = filtered.slice(start, start + PAGE_SIZE);
+  var start = (currentPage-1)*PAGE_SIZE;
+  var page  = filtered.slice(start, start+PAGE_SIZE);
   var total = filtered.length;
 
   if (!page.length) {
     el('int-tbody').innerHTML =
-      '<tr><td colspan="10" style="text-align:center;padding:40px">' +
-        '<div style="font-size:36px;margin-bottom:10px">&#x1F4C5;</div>' +
-        '<div style="font-size:13px;font-weight:600;color:#888;margin-bottom:6px">No interviews scheduled yet</div>' +
-        '<div style="font-size:11px;color:#bbb">Go to <b>Candidates</b> &rarr; click <b>Schedule Interview</b> on a Shortlisted candidate</div>' +
+      '<tr><td colspan="10" style="text-align:center;padding:40px">'+
+        '<div style="font-size:36px;margin-bottom:10px">&#x1F4C5;</div>'+
+        '<div style="font-size:13px;font-weight:600;color:#888;margin-bottom:6px">No interviews scheduled yet</div>'+
+        '<div style="font-size:11px;color:#bbb">Go to <b>Candidates</b> &rarr; click <b>Schedule Interview</b> on a Shortlisted candidate</div>'+
       '</td></tr>';
     el('int-count').textContent     = '0 interviews';
-    el('int-page-info').textContent = '&mdash;';
+    el('int-page-info').textContent = '\u2014';
     el('int-prev').disabled = true;
     el('int-next').disabled = true;
     return;
   }
 
-  // Use data-idx on every action button — no appNo/round strings in onclick
-  el('int-tbody').innerHTML = page.map(function(iv, i) {
-    var idx = start + i;
-    return '<tr>' +
-      '<td><div class="td-name">' +
-        '<div class="av av-' + iv.color + '">' + iv.initials + '</div>' +
-        '<div><b>' + iv.candidate + '</b>' +
-          '<div style="font-size:9.5px;color:#aaa">' + iv.appNo + '</div>' +
-        '</div>' +
-      '</div></td>' +
-      '<td>' + iv.desig + '</td>' +
-      '<td style="font-size:10.5px;white-space:nowrap">' + (iv.call1Date     || '&mdash;') + '</td>' +
-      '<td style="font-size:10.5px;white-space:nowrap">' + (iv.call2Date     || '&mdash;') + '</td>' +
-      '<td style="font-size:10.5px;font-weight:600;white-space:nowrap">' + (iv.interviewDate || '&mdash;') + '</td>' +
-      '<td>' + scoreChip(iv.hrScore)  + '</td>' +
-      '<td>' + scoreChip(iv.fmScore)  + '</td>' +
-      '<td>' + scoreChip(iv.mgrScore) + '</td>' +
-      '<td>' + overallBadge(iv) + '</td>' +
-      '<td>' + actionBtn(iv, idx) + '</td>' +
+  el('int-tbody').innerHTML = page.map(function(iv,i) {
+    var idx = start+i;
+    return '<tr>'+
+      '<td><div class="td-name">'+
+        '<div class="av av-'+iv.color+'">'+iv.initials+'</div>'+
+        '<div><b>'+iv.candidate+'</b><div style="font-size:9.5px;color:#aaa">'+iv.appNo+'</div></div>'+
+      '</div></td>'+
+      '<td>'+iv.desig+'</td>'+
+      '<td style="font-size:10.5px;white-space:nowrap">'+(iv.call1Date||'\u2014')+'</td>'+
+      '<td style="font-size:10.5px;white-space:nowrap">'+(iv.call2Date||'\u2014')+'</td>'+
+      '<td style="font-size:10.5px;font-weight:600;white-space:nowrap">'+(iv.interviewDate||'\u2014')+'</td>'+
+      '<td>'+scoreChip(iv.hrScore)+'</td>'+
+      '<td>'+scoreChip(iv.fmScore)+'</td>'+
+      '<td>'+scoreChip(iv.mgrScore)+'</td>'+
+      '<td>'+overallBadge(iv)+'</td>'+
+      '<td>'+actionBtn(iv,idx)+'</td>'+
     '</tr>';
   }).join('');
 
-  el('int-count').textContent     = total + ' interview' + (total !== 1 ? 's' : '');
-  el('int-page-info').textContent = 'Showing ' + (start + 1) + '&ndash;' + Math.min(start + PAGE_SIZE, total) + ' of ' + total;
-  el('int-prev').disabled = currentPage === 1;
-  el('int-next').disabled = start + PAGE_SIZE >= total;
+  el('int-count').textContent     = total+' interview'+(total!==1?'s':'');
+  el('int-page-info').textContent = 'Showing '+(start+1)+'\u2013'+Math.min(start+PAGE_SIZE,total)+' of '+total;
+  el('int-prev').disabled = currentPage===1;
+  el('int-next').disabled = start+PAGE_SIZE>=total;
 }
 
 function scoreChip(sc) {
-  if (!sc) return '<span class="sc-chip sc-pending">&mdash;</span>';
-  var t = sc.total || 0, pass = t >= CONFIG.INTERVIEW_CUTOFF;
-  return '<span class="sc-chip ' + (pass ? 'sc-done' : 'sc-fail') + '">' + t + '/60 ' + (pass ? '&#x2713;' : '&#x2717;') + '</span>';
+  if (!sc) return '<span class="sc-chip sc-pending">\u2014</span>';
+  var t=sc.total||0, pass=t>=CONFIG.INTERVIEW_CUTOFF;
+  return '<span class="sc-chip '+(pass?'sc-done':'sc-fail')+'">'+t+'/60 '+(pass?'&#x2713;':'&#x2717;')+'</span>';
 }
 
 function overallBadge(iv) {
   if (fullDone(iv)) {
-    var g = (iv.hrScore.total || 0) + (iv.fmScore.total || 0) + (iv.mgrScore.total || 0);
-    return '<span class="badge ' + (g >= CONFIG.INTERVIEW_CUTOFF * 1.8 ? 'b-sel' : 'b-rej') + '">' + g + '/180</span>';
+    var g=(iv.hrScore.total||0)+(iv.fmScore.total||0)+(iv.mgrScore.total||0);
+    var pass = g>=(CONFIG.INTERVIEW_CUTOFF*1.8);
+    return '<span class="badge '+(pass?'b-sel':'b-rej')+'">'+g+'/180</span>';
   }
-  if (iv.hrScore && iv.fmScore) return '<span class="badge b-int">MGR Pending</span>';
-  if (iv.hrScore)               return '<span class="badge b-short">FM Pending</span>';
+  if (iv.hrScore&&iv.fmScore) return '<span class="badge b-int">MGR Pending</span>';
+  if (iv.hrScore)             return '<span class="badge b-short">FM Pending</span>';
   return '<span class="badge b-new">Not Started</span>';
 }
 
-// Action button — uses data-idx only, NO strings in onclick
+// ── Action Button — data-idx + data-round only, no strings in onclick ─
 function actionBtn(iv, idx) {
   var r = userRole;
 
-  if (r === 'Admin') {
-    if (!iv.hrScore)  return '<button class="ib-score" data-idx="' + idx + '" data-round="HR"  onclick="clickScore(this)">Score HR</button>';
-    if (!iv.fmScore)  return '<button class="ib-score" data-idx="' + idx + '" data-round="FM"  onclick="clickScore(this)">Score FM</button>';
-    if (!iv.mgrScore) return '<button class="ib-score" data-idx="' + idx + '" data-round="MGR" onclick="clickScore(this)">Score MGR</button>';
-    return '<button class="ib-view" data-idx="' + idx + '" data-round="HR" onclick="clickView(this)">View Scores</button>';
+  // All 3 rounds complete
+  if (fullDone(iv)) {
+    var g = (iv.hrScore.total||0)+(iv.fmScore.total||0)+(iv.mgrScore.total||0);
+    var pass = g>=(CONFIG.INTERVIEW_CUTOFF*1.8);
+
+    // Manager / Admin can approve or reject
+    if (r==='Manager'||r==='Admin') {
+      if (pass) {
+        return '<button class="ib-score" style="background:var(--green)" data-idx="'+idx+'" onclick="clickApprove(this)" title="All rounds passed — approve for offer">'+
+               '&#x2713; Approve &amp; Select</button>';
+      } else {
+        return '<div style="display:flex;gap:4px">'+
+          '<button class="ib-view" data-idx="'+idx+'" data-round="HR" onclick="clickView(this)">View Scores</button>'+
+          '<button class="ib-score" style="background:var(--red)" data-idx="'+idx+'" onclick="clickRejectIV(this)">Reject</button>'+
+        '</div>';
+      }
+    }
+    // HR / FM — view only when all done
+    return '<button class="ib-view" data-idx="'+idx+'" data-round="HR" onclick="clickView(this)">View Scores</button>';
   }
-  if (r === 'HR') {
-    if (!iv.hrScore) return '<button class="ib-score" data-idx="' + idx + '" data-round="HR" onclick="clickScore(this)">Score Now</button>';
-    return              '<button class="ib-view"  data-idx="' + idx + '" data-round="HR" onclick="clickView(this)">View Score</button>';
+
+  // Admin
+  if (r==='Admin') {
+    if (!iv.hrScore)  return '<button class="ib-score" data-idx="'+idx+'" data-round="HR"  onclick="clickScore(this)">Score HR</button>';
+    if (!iv.fmScore)  return '<button class="ib-score" data-idx="'+idx+'" data-round="FM"  onclick="clickScore(this)">Score FM</button>';
+    if (!iv.mgrScore) return '<button class="ib-score" data-idx="'+idx+'" data-round="MGR" onclick="clickScore(this)">Score MGR</button>';
   }
-  if (r === 'Floor Manager') {
+  // HR
+  if (r==='HR') {
+    if (!iv.hrScore) return '<button class="ib-score" data-idx="'+idx+'" data-round="HR" onclick="clickScore(this)">Score Now</button>';
+    return              '<button class="ib-view"  data-idx="'+idx+'" data-round="HR" onclick="clickView(this)">View Score</button>';
+  }
+  // Floor Manager
+  if (r==='Floor Manager') {
     if (!iv.hrScore) return '<span class="ib-locked">&#x1F512; Awaiting HR</span>';
-    if (!iv.fmScore) return '<button class="ib-score" data-idx="' + idx + '" data-round="FM" onclick="clickScore(this)">Score Now</button>';
-    return              '<button class="ib-view"  data-idx="' + idx + '" data-round="FM" onclick="clickView(this)">View Score</button>';
+    if (!iv.fmScore) return '<button class="ib-score" data-idx="'+idx+'" data-round="FM" onclick="clickScore(this)">Score Now</button>';
+    return              '<button class="ib-view"  data-idx="'+idx+'" data-round="FM" onclick="clickView(this)">View Score</button>';
   }
-  if (r === 'Manager') {
+  // Manager
+  if (r==='Manager') {
     if (!iv.fmScore)  return '<span class="ib-locked">&#x1F512; Awaiting FM</span>';
-    if (!iv.mgrScore) return '<button class="ib-score" data-idx="' + idx + '" data-round="MGR" onclick="clickScore(this)">Score Now</button>';
-    return               '<button class="ib-view"  data-idx="' + idx + '" data-round="MGR" onclick="clickView(this)">View Score</button>';
+    if (!iv.mgrScore) return '<button class="ib-score" data-idx="'+idx+'" data-round="MGR" onclick="clickScore(this)">Score Now</button>';
   }
-  return '<span class="ib-locked">&mdash;</span>';
+  return '<span class="ib-locked">\u2014</span>';
 }
 
-function clickScore(btn) { openPanel(parseInt(btn.dataset.idx), btn.dataset.round, true); }
-function clickView(btn)  { openPanel(parseInt(btn.dataset.idx), btn.dataset.round, false); }
+function clickScore(btn)  { openPanel(parseInt(btn.dataset.idx), btn.dataset.round, true); }
+function clickView(btn)   { openPanel(parseInt(btn.dataset.idx), btn.dataset.round||'HR', false); }
+function clickRejectIV(btn) {
+  var iv = filtered[parseInt(btn.dataset.idx)];
+  if (!iv) return;
+  showModal({
+    title: 'Reject Candidate',
+    body:  'Reject <b>'+iv.candidate+'</b> after interview? This will mark them as Rejected.',
+    confirmText:'Confirm Reject', confirmClass:'btn-red',
+    onConfirm: async function() {
+      await API.updateCandidate(iv.appNo,{status:'Rejected'});
+      allInterviews = allInterviews.map(function(x){return x.appNo===iv.appNo?Object.assign({},x,{status:'Rejected'}):x;});
+      toast('Candidate rejected','warn');
+      applyFilter();
+    }
+  });
+}
+
+// ── Manager Approve & Select ──────────────────────────────────
+function clickApprove(btn) {
+  var iv = filtered[parseInt(btn.dataset.idx)];
+  if (!iv) return;
+  var g = (iv.hrScore.total||0)+(iv.fmScore.total||0)+(iv.mgrScore.total||0);
+  showModal({
+    title: '&#x2713; Approve Selection',
+    body:  '<div style="margin-bottom:10px">Approve <b>'+iv.candidate+'</b> for <b>'+iv.desig+'</b>?</div>' +
+           '<div style="background:#F9F7F4;border-radius:8px;padding:10px 12px;font-size:11.5px">' +
+             '<div style="display:flex;justify-content:space-between;margin-bottom:4px"><span>HR Round</span><b>'+(iv.hrScore.total||0)+'/60</b></div>' +
+             '<div style="display:flex;justify-content:space-between;margin-bottom:4px"><span>FM Round</span><b>'+(iv.fmScore.total||0)+'/60</b></div>' +
+             '<div style="display:flex;justify-content:space-between;margin-bottom:6px"><span>MGR Round</span><b>'+(iv.mgrScore.total||0)+'/60</b></div>' +
+             '<div style="display:flex;justify-content:space-between;border-top:1px solid #e8e4dd;padding-top:6px"><span><b>Grand Total</b></span><b style="color:var(--green)">'+g+'/180</b></div>' +
+           '</div>' +
+           '<div style="margin-top:10px;font-size:11px;color:#888">This will move the candidate to <b>Selected</b> status and add them to the Offer Process.</div>',
+    confirmText: 'Approve & Select',
+    confirmClass: 'btn-green',
+    onConfirm: async function() {
+      try {
+        await API.call('approveSelection', {
+          appNo:     iv.appNo,
+          candidate: iv.candidate,
+          desig:     iv.desig
+        });
+        toast(iv.candidate+' approved and moved to Offer Process!','success');
+        // Refresh interviews list
+        var d = await API.getInterviews();
+        allInterviews = d.interviews || [];
+        applyFilter();
+      } catch(e) {
+        toast('Error: '+e.message,'error');
+      }
+    }
+  });
+}
 
 // ── Score Panel ───────────────────────────────────────────────
 async function openPanel(idx, round, canEdit) {
@@ -264,27 +335,25 @@ async function openPanel(idx, round, canEdit) {
 
   var iv = currentIV;
   el('sp-av').textContent      = iv.initials;
-  el('sp-av').style.background = AV_BG[iv.color] || '#1E2D4E';
+  el('sp-av').style.background = AV_BG[iv.color]||'#1E2D4E';
   el('sp-name').textContent    = iv.candidate;
-  el('sp-meta').textContent    = iv.desig + ' \u00b7 ' + iv.appNo + ' \u00b7 ' + (iv.interviewDate || '—');
+  el('sp-meta').textContent    = iv.desig+' \u00b7 '+iv.appNo+' \u00b7 '+(iv.interviewDate||'\u2014');
   el('sp-body').innerHTML      = '<div class="empty-state"><div class="empty-icon">&#x23F3;</div><div class="empty-title">Loading...</div></div>';
   el('sp-foot').style.display  = 'none';
   el('sp-overlay').classList.add('show');
   el('sp-panel').classList.add('open');
 
   try {
-    var qd   = await API.getInterviewQuestions(iv.desig, round);
-    questions = qd.questions || [];
-  } catch(e) {
-    questions = [];
-  }
+    var qd = await API.getInterviewQuestions(iv.desig, round);
+    questions = qd.questions||[];
+  } catch(e) { questions=[]; }
 
   el('sp-body').innerHTML     = buildPanelBody(iv, round, canEdit);
   el('sp-foot').style.display = canEdit ? 'flex' : 'none';
 
   if (canEdit) {
-    document.querySelectorAll('.q-inp').forEach(function(inp) {
-      inp.addEventListener('input', function() { onScoreInput(inp); });
+    document.querySelectorAll('.q-inp').forEach(function(inp){
+      inp.addEventListener('input',function(){onScoreInput(inp);});
     });
     updateTotal();
   }
@@ -293,164 +362,142 @@ async function openPanel(idx, round, canEdit) {
 
 function buildPanelBody(iv, activeRound, canEdit) {
   var html = '';
-
-  // Previous rounds — read only
   var RDEFS = [
-    {key:'HR',  sk:'hrScore',  lb:'HR Round'},
-    {key:'FM',  sk:'fmScore',  lb:'FM Round'},
-    {key:'MGR', sk:'mgrScore', lb:'Manager Round'}
+    {key:'HR', sk:'hrScore', lb:'HR Round'},
+    {key:'FM', sk:'fmScore', lb:'FM Round'},
+    {key:'MGR',sk:'mgrScore',lb:'Manager Round'}
   ];
+
+  // Previous rounds read-only
   RDEFS.forEach(function(rd) {
-    if (rd.key === activeRound) return;
-    var sc = iv[rd.sk];
-    if (!sc) return;
-    var pass = sc.total >= CONFIG.INTERVIEW_CUTOFF;
-    var bc   = pass ? 'var(--green)' : 'var(--red)';
-    var bg   = pass ? '#EAF3DE' : '#FCEBEB';
-    var tc   = pass ? '#3B6D11' : '#A32D2D';
-    var qrows = '';
-    if (sc.scores && questions.length) {
-      questions.forEach(function(q, i) {
-        qrows += '<div class="prev-qrow"><span>' + q.text + '</span><b>' + (sc.scores[i] || 0) + '/' + (q.max || 10) + '</b></div>';
+    if (rd.key===activeRound) return;
+    var sc=iv[rd.sk]; if(!sc) return;
+    var pass=sc.total>=CONFIG.INTERVIEW_CUTOFF;
+    var bc=pass?'var(--green)':'var(--red)', bg=pass?'#EAF3DE':'#FCEBEB', tc=pass?'#3B6D11':'#A32D2D';
+    var qrows='';
+    if (sc.scores&&questions.length) {
+      questions.forEach(function(q,i){
+        qrows+='<div class="prev-qrow"><span>'+q.text+'</span><b>'+(sc.scores[i]||0)+'/'+(q.max||10)+'</b></div>';
       });
     }
-    html += '<div class="prev-card" style="border-left-color:' + bc + '">' +
-      '<div class="prev-title">' + rd.lb + ' &mdash; Read Only</div>' +
-      '<div><span class="prev-score">' + sc.total + '<span style="font-size:13px;font-weight:400;color:#aaa">/60</span></span>' +
-        '<span class="prev-verdict" style="background:' + bg + ';color:' + tc + '">' + (pass ? 'PASS &#x2713;' : 'FAIL &#x2717;') + '</span>' +
-      '</div>' +
-      (sc.remarks ? '<div class="prev-remarks">"' + sc.remarks + '"</div>' : '') +
-      (qrows ? '<div style="margin-top:8px">' + qrows + '</div>' : '') +
-    '</div>';
+    html+=
+      '<div class="prev-card" style="border-left-color:'+bc+'">'+
+        '<div class="prev-title">'+rd.lb+' \u2014 Read Only</div>'+
+        '<div><span class="prev-score">'+sc.total+'<span style="font-size:13px;font-weight:400;color:#aaa">/60</span></span>'+
+          '<span class="prev-verdict" style="background:'+bg+';color:'+tc+'">'+(pass?'PASS &#x2713;':'FAIL &#x2717;')+'</span>'+
+        '</div>'+
+        (sc.remarks?'<div class="prev-remarks">"'+sc.remarks+'"</div>':'')+
+        (qrows?'<div style="margin-top:8px">'+qrows+'</div>':'')+
+      '</div>';
   });
 
   // Current round
-  var existing = iv[{HR:'hrScore',FM:'fmScore',MGR:'mgrScore'}[activeRound]];
-  var rdLabel  = {HR:'HR Round',FM:'FM Round',MGR:'Manager Round'}[activeRound];
-  html += '<div class="round-title">' + rdLabel + (canEdit ? '' : ' &mdash; View Only') + '</div>';
+  var existing=iv[{HR:'hrScore',FM:'fmScore',MGR:'mgrScore'}[activeRound]];
+  var rdLabel={HR:'HR Round',FM:'FM Round',MGR:'Manager Round'}[activeRound];
+  html+='<div class="round-title">'+rdLabel+(canEdit?'':' \u2014 View Only')+'</div>';
 
   if (questions.length) {
-    questions.forEach(function(q, i) {
-      var saved = existing && existing.scores ? (existing.scores[i] || 0) : 0;
-      var max   = q.max || 10;
-      var pct   = max ? (saved / max * 100) : 0;
-      var cls   = pct >= 70 ? 's-green' : pct >= 50 ? 's-amber' : saved ? 's-red' : '';
-      var color = pct >= 70 ? 'var(--green)' : pct >= 50 ? 'var(--gold)' : 'var(--red)';
-      var lbl   = pct >= 70 ? 'Good' : pct >= 50 ? 'Avg' : saved ? 'Weak' : '&mdash;';
-      var ro    = canEdit ? '' : ' readonly style="background:#f5f5f5;cursor:not-allowed"';
-      html +=
-        '<div class="q-score-row">' +
-          '<div><div class="q-text">' + q.text + '</div><div class="q-maxpts">Max ' + max + ' pts</div></div>' +
-          '<div class="q-inp-wrap">' +
-            '<input class="q-inp ' + (canEdit ? cls : '') + '" data-idx="' + i + '" data-max="' + max + '"' +
-              ' type="number" min="0" max="' + max + '" value="' + (saved || '') + '" placeholder="0"' + ro + '>' +
-            '<div class="q-minibar"><div class="q-mb-fill" id="mb-' + i + '" style="width:' + (saved ? pct : 0) + '%;background:' + color + '"></div></div>' +
-            '<div class="q-lbl" id="ql-' + i + '" style="color:' + color + '">' + (saved ? lbl : '&mdash;') + '</div>' +
-          '</div>' +
+    questions.forEach(function(q,i) {
+      var saved=existing&&existing.scores?existing.scores[i]||0:0;
+      var max=q.max||10, pct=max?saved/max*100:0;
+      var cls=pct>=70?'s-green':pct>=50?'s-amber':saved?'s-red':'';
+      var color=pct>=70?'var(--green)':pct>=50?'var(--gold)':'var(--red)';
+      var lbl=pct>=70?'Good':pct>=50?'Avg':saved?'Weak':'\u2014';
+      var ro=canEdit?'':' readonly style="background:#f5f5f5;cursor:not-allowed"';
+      html+=
+        '<div class="q-score-row">'+
+          '<div><div class="q-text">'+q.text+'</div><div class="q-maxpts">Max '+max+' pts</div></div>'+
+          '<div class="q-inp-wrap">'+
+            '<input class="q-inp '+(canEdit?cls:'')+'" data-idx="'+i+'" data-max="'+max+'"'+
+              ' type="number" min="0" max="'+max+'" value="'+(saved||'')+'" placeholder="0"'+ro+'>'+
+            '<div class="q-minibar"><div class="q-mb-fill" id="mb-'+i+'" style="width:'+(saved?pct:0)+'%;background:'+color+'"></div></div>'+
+            '<div class="q-lbl" id="ql-'+i+'" style="color:'+color+'">'+(saved?lbl:'\u2014')+'</div>'+
+          '</div>'+
         '</div>';
     });
   } else {
-    html += '<div style="font-size:11px;color:#aaa;padding:10px 0">No questions configured for this designation &amp; round. Add to the Interview_Questions sheet with the Round column (HR / FM / MGR).</div>';
+    html+='<div style="font-size:11px;color:#aaa;padding:10px 0">No questions configured. Add to Interview_Questions sheet with Round column (HR / FM / MGR).</div>';
   }
 
   if (questions.length) {
-    var tot  = existing ? (existing.total || 0) : 0;
-    var maxT = questions.reduce(function(s, q) { return s + (q.max || 10); }, 0);
-    var prog = maxT ? Math.round(tot / maxT * 100) : 0;
-    var pass = tot >= CONFIG.INTERVIEW_CUTOFF;
-    html +=
-      '<div class="total-wrap" id="total-wrap">' +
-        '<div class="total-prog"><div class="total-prog-fill" id="total-fill" style="width:' + prog + '%;background:' + (pass ? 'var(--green)' : 'var(--red)') + '"></div></div>' +
-        '<span class="total-num" id="total-num">' + tot + '</span>' +
-        '<span style="font-size:13px;color:#bbb">/ ' + maxT + '</span>' +
-        '<span class="total-verdict" id="total-verdict" style="background:' + (pass ? '#EAF3DE' : '#FCEBEB') + ';color:' + (pass ? '#3B6D11' : '#A32D2D') + '">' +
-          (tot > 0 ? (pass ? 'PASS &#x2713;' : 'FAIL &#x2717;') : '&mdash;') +
-        '</span>' +
-      '</div>' +
-      '<textarea class="remarks-ta" id="remarks-ta" maxlength="500" placeholder="Add remarks..."' +
-        ' oninput="el(\'char-ct\').textContent=this.value.length"' +
-        (canEdit ? '' : ' readonly style="background:#f5f5f5"') + '>' +
-        (existing && existing.remarks ? existing.remarks : '') +
-      '</textarea>' +
-      '<div class="char-ct"><span id="char-ct">' + (existing && existing.remarks ? existing.remarks.length : 0) + '</span>/500</div>';
+    var tot=existing?existing.total||0:0;
+    var maxT=questions.reduce(function(s,q){return s+(q.max||10);},0);
+    var prog=maxT?Math.round(tot/maxT*100):0, pass=tot>=CONFIG.INTERVIEW_CUTOFF;
+    html+=
+      '<div class="total-wrap" id="total-wrap">'+
+        '<div class="total-prog"><div class="total-prog-fill" id="total-fill" style="width:'+prog+'%;background:'+(pass?'var(--green)':'var(--red)')+'"></div></div>'+
+        '<span class="total-num" id="total-num">'+tot+'</span>'+
+        '<span style="font-size:13px;color:#bbb">/ '+maxT+'</span>'+
+        '<span class="total-verdict" id="total-verdict" style="background:'+(pass?'#EAF3DE':'#FCEBEB')+';color:'+(pass?'#3B6D11':'#A32D2D')+'">'+
+          (tot>0?(pass?'PASS &#x2713;':'FAIL &#x2717;'):'\u2014')+
+        '</span>'+
+      '</div>'+
+      '<textarea class="remarks-ta" id="remarks-ta" maxlength="500" placeholder="Add remarks..."'+
+        ' oninput="el(\'char-ct\').textContent=this.value.length"'+
+        (canEdit?'':' readonly style="background:#f5f5f5"')+'>'+
+        (existing&&existing.remarks?existing.remarks:'')+
+      '</textarea>'+
+      '<div class="char-ct"><span id="char-ct">'+(existing&&existing.remarks?existing.remarks.length:0)+'</span>/500</div>';
   }
   return html;
 }
 
 function onScoreInput(inp) {
-  var v = parseInt(inp.value) || 0, max = parseInt(inp.dataset.max) || 10;
-  if (v > max) { v = max; inp.value = max; }
-  if (v < 0)   { v = 0;   inp.value = 0; }
-  var pct = max ? (v / max * 100) : 0, color, cls, lbl;
-  if (pct >= 70)     { color = 'var(--green)'; cls = 's-green'; lbl = 'Good'; }
-  else if (pct >= 50){ color = 'var(--gold)';  cls = 's-amber'; lbl = 'Avg';  }
-  else               { color = 'var(--red)';   cls = 's-red';   lbl = 'Weak'; }
-  inp.className = 'q-inp ' + cls;
-  var mb = el('mb-' + inp.dataset.idx), ql = el('ql-' + inp.dataset.idx);
-  if (mb) { mb.style.width = pct + '%'; mb.style.background = color; }
-  if (ql) { ql.textContent = lbl; ql.style.color = color; }
+  var v=parseInt(inp.value)||0, max=parseInt(inp.dataset.max)||10;
+  if(v>max){v=max;inp.value=max;} if(v<0){v=0;inp.value=0;}
+  var pct=max?v/max*100:0, color,cls,lbl;
+  if(pct>=70){color='var(--green)';cls='s-green';lbl='Good';}
+  else if(pct>=50){color='var(--gold)';cls='s-amber';lbl='Avg';}
+  else{color='var(--red)';cls='s-red';lbl='Weak';}
+  inp.className='q-inp '+cls;
+  var mb=el('mb-'+inp.dataset.idx),ql=el('ql-'+inp.dataset.idx);
+  if(mb){mb.style.width=pct+'%';mb.style.background=color;}
+  if(ql){ql.textContent=lbl;ql.style.color=color;}
   updateTotal();
 }
 
 function updateTotal() {
-  var inputs = Array.from(document.querySelectorAll('.q-inp'));
-  if (!inputs.length) return;
-  var tot  = inputs.reduce(function(s, i) { return s + (parseInt(i.value) || 0); }, 0);
-  var maxT = inputs.reduce(function(s, i) { return s + (parseInt(i.dataset.max) || 10); }, 0);
-  var prog = maxT ? Math.round(tot / maxT * 100) : 0;
-  var pass = tot >= CONFIG.INTERVIEW_CUTOFF;
-  var fill = el('total-fill'), num = el('total-num'), verd = el('total-verdict');
-  if (fill) { fill.style.width = prog + '%'; fill.style.background = pass ? 'var(--green)' : 'var(--red)'; }
-  if (num)  num.textContent = tot;
-  if (verd) {
-    verd.textContent      = tot > 0 ? (pass ? 'PASS \u2713' : 'FAIL \u2717') : '\u2014';
-    verd.style.background = pass ? '#EAF3DE' : '#FCEBEB';
-    verd.style.color      = pass ? '#3B6D11' : '#A32D2D';
+  var inputs=Array.from(document.querySelectorAll('.q-inp')); if(!inputs.length)return;
+  var tot=inputs.reduce(function(s,i){return s+(parseInt(i.value)||0);},0);
+  var maxT=inputs.reduce(function(s,i){return s+(parseInt(i.dataset.max)||10);},0);
+  var prog=maxT?Math.round(tot/maxT*100):0, pass=tot>=CONFIG.INTERVIEW_CUTOFF;
+  var fill=el('total-fill'),num=el('total-num'),verd=el('total-verdict');
+  if(fill){fill.style.width=prog+'%';fill.style.background=pass?'var(--green)':'var(--red)';}
+  if(num) num.textContent=tot;
+  if(verd){
+    verd.textContent=tot>0?(pass?'PASS \u2713':'FAIL \u2717'):'\u2014';
+    verd.style.background=pass?'#EAF3DE':'#FCEBEB';
+    verd.style.color=pass?'#3B6D11':'#A32D2D';
   }
 }
 
 async function saveScore() {
-  var inputs  = Array.from(document.querySelectorAll('.q-inp'));
-  var scores  = inputs.map(function(i) { return parseInt(i.value) || 0; });
-  var total   = scores.reduce(function(a, b) { return a + b; }, 0);
-  var remarks = el('remarks-ta') ? el('remarks-ta').value : '';
-  var btn = el('sp-save-btn');
-  btn.disabled = true; btn.textContent = 'Saving...';
+  var inputs=Array.from(document.querySelectorAll('.q-inp'));
+  var scores=inputs.map(function(i){return parseInt(i.value)||0;});
+  var total=scores.reduce(function(a,b){return a+b;},0);
+  var remarks=el('remarks-ta')?el('remarks-ta').value:'';
+  var btn=el('sp-save-btn'); btn.disabled=true; btn.textContent='Saving...';
   try {
-    await API.saveScore(currentIV.appNo, currentRound, {scores: scores, total: total, remarks: remarks});
-    var sk = {HR:'hrScore', FM:'fmScore', MGR:'mgrScore'}[currentRound];
-    currentIV[sk] = {scores: scores, total: total, remarks: remarks};
-    allInterviews  = allInterviews.map(function(iv) { return iv.appNo === currentIV.appNo ? currentIV : iv; });
-    toast('Score saved \u2014 ' + (total >= CONFIG.INTERVIEW_CUTOFF ? 'PASS \u2713' : 'FAIL \u2717'),
-          total >= CONFIG.INTERVIEW_CUTOFF ? 'success' : 'warn');
+    await API.saveScore(currentIV.appNo, currentRound, {scores:scores,total:total,remarks:remarks});
+    var sk={HR:'hrScore',FM:'fmScore',MGR:'mgrScore'}[currentRound];
+    currentIV[sk]={scores:scores,total:total,remarks:remarks};
+    allInterviews=allInterviews.map(function(iv){return iv.appNo===currentIV.appNo?currentIV:iv;});
+    toast('Score saved \u2014 '+(total>=CONFIG.INTERVIEW_CUTOFF?'PASS \u2713':'FAIL \u2717'),
+          total>=CONFIG.INTERVIEW_CUTOFF?'success':'warn');
     closePanel(); applyFilter();
   } catch(e) {
-    toast('Save failed: ' + e.message, 'error');
-    btn.disabled = false; btn.textContent = 'Save Score';
+    toast('Save failed: '+e.message,'error');
+    btn.disabled=false; btn.textContent='Save Score';
   }
-}
-
-function rejectCandidate() {
-  if (!currentIV) return;
-  showModal({
-    title: 'Reject Candidate',
-    body: 'Reject <b>' + currentIV.candidate + '</b> from the interview process?',
-    confirmText: 'Confirm Reject', confirmClass: 'btn-red',
-    onConfirm: async function() {
-      await API.updateCandidate(currentIV.appNo, {status: 'Rejected'});
-      toast('Candidate rejected', 'warn');
-      closePanel(); applyFilter();
-    }
-  });
 }
 
 function closePanel() {
   el('sp-overlay').classList.remove('show');
   el('sp-panel').classList.remove('open');
-  document.removeEventListener('keydown', escCb);
-  currentIV = null; currentRound = null;
+  document.removeEventListener('keydown',escCb);
+  currentIV=null; currentRound=null;
 }
-function escCb(e) { if (e.key === 'Escape') closePanel(); }
+function escCb(e){if(e.key==='Escape')closePanel();}
 
 </script>
 </body>
