@@ -303,14 +303,27 @@ function openPanel(btn){
 }
 
 function renderCallRow(key, dateStr, remarks, callNo, label){
-  const done = dateStr&&dateStr!=='—';
-  const row  = el('dp-'+key);
+  const done   = !!(dateStr && dateStr !== '—');
+  const row    = el('dp-'+key);
   if(!row) return;
-  row.innerHTML=
+  // Build status HTML
+  var statusHtml = done
+    ? '<span style="color:var(--green)">&#x2713; '+dateStr+'</span>'
+      + (remarks ? '<div style="font-size:9.5px;color:#777;margin-top:2px;font-style:italic">"'+remarks+'"</div>' : '')
+    : '<span style="color:#bbb">Not logged</span>';
+  // Build button separately — no quotes inside attribute values
+  var btn = document.createElement('button');
+  btn.className = 'call-btn';
+  btn.id        = key+'-btn';
+  btn.dataset.callno = callNo;
+  btn.dataset.done   = done ? '1' : '0';
+  btn.textContent    = done ? 'Edit' : 'Log';
+  btn.onclick        = function(){ logCallClick(this); };
+  // Build container
+  row.innerHTML =
     '<div class="call-lbl">'+label+'</div>'
-    +'<div class="call-status" id="'+key+'-status">'+(done?'<span style="color:var(--green)">&#x2713; '+dateStr+'</span>'+(remarks?'<div style="font-size:9.5px;color:#777;margin-top:2px;font-style:italic">"'+remarks+'"</div>':''):'<span style="color:#bbb">Not logged</span>')+'</div>'
-    +'<button class="call-btn" id="'+key+'-btn" '+(done?'':'')
-      +' data-callno="'+callNo+'" data-done="'+(done?'1':'0')+'" onclick="logCallClick(this)">'+(done?'Edit':'Log')+'</button>';
+    +'<div class="call-status" id="'+key+'-status">'+statusHtml+'</div>';
+  row.appendChild(btn);
 }
 
 function closePanel(){ el('dp-overlay').classList.remove('show'); el('dp-panel').classList.remove('open'); }
