@@ -2,15 +2,26 @@
 <html lang="en">
 <head>
 <meta charset="UTF-8"><meta name="viewport" content="width=device-width,initial-scale=1">
-<title>Interview Panel — BSC Candidate CRM</title>
+<title>Settings — BSC Candidate CRM</title>
 <link rel="stylesheet" href="shared.css">
 <style>
-.role-badge{display:inline-flex;align-items:center;padding:5px 13px;border-radius:20px;font-size:10.5px;font-weight:700}
-.rb-hr{background:#E6F1FB;color:#185FA5}.rb-mgr{background:#EEEDFE;color:#534AB7}.rb-admin{background:#EAF3DE;color:#3B6D11}
-.assign-link-row{display:flex;gap:6px;margin-top:8px}
-.assign-link-row input{flex:1;font-size:11px;padding:7px 10px;border:1.5px solid #ddd;border-radius:7px;background:#F9F7F4;color:#555}
-.wa-btn{padding:7px 12px;background:#25D366;color:#fff;border:none;border-radius:7px;font-size:11px;cursor:pointer;font-weight:700;white-space:nowrap}
-.copy-btn{padding:7px 12px;background:var(--navy);color:#fff;border:none;border-radius:7px;font-size:11px;cursor:pointer;font-weight:700;white-space:nowrap}
+.s-tabs{display:flex;gap:6px;margin-bottom:18px;flex-wrap:wrap}
+.s-tab{padding:8px 18px;border:1.5px solid #ddd;border-radius:8px;font-size:11.5px;cursor:pointer;background:#fff;color:#666;font-weight:600;transition:all .15s}
+.s-tab.active{background:var(--navy);color:#fff;border-color:var(--navy)}
+.add-form{display:grid;grid-template-columns:1fr 1fr 1fr auto auto;gap:8px;align-items:end;background:#F9F7F4;padding:12px;border-radius:9px;margin-bottom:14px}
+@media(max-width:700px){.add-form{grid-template-columns:1fr 1fr}}
+.add-form input,.add-form select{font-size:12px;padding:8px 10px;border:1.5px solid #ddd;border-radius:7px;background:#fff;font-family:inherit}
+.pg-grid{width:100%;border-collapse:collapse}
+.pg-grid th{font-size:9px;color:#999;text-transform:uppercase;letter-spacing:.06em;padding:6px 8px;text-align:center;border-bottom:2px solid #f0ede8}
+.pg-grid th:first-child{text-align:left}
+.pg-grid td{padding:6px 8px;border-bottom:1px solid #f8f7f5}
+.toggle-sw{position:relative;display:inline-block;width:36px;height:20px;cursor:pointer}
+.toggle-sw input{opacity:0;width:0;height:0;position:absolute}
+.toggle-knob{position:absolute;inset:0;background:#ddd;border-radius:20px;transition:.2s}
+.toggle-knob::before{content:'';position:absolute;width:14px;height:14px;background:#fff;border-radius:50%;top:3px;left:3px;transition:.2s}
+.toggle-sw input:checked + .toggle-knob{background:var(--green)}
+.toggle-sw input:checked + .toggle-knob::before{transform:translateX(16px)}
+.q-add-form{display:grid;grid-template-columns:1fr auto auto auto;gap:8px;align-items:end;background:#F9F7F4;padding:12px;border-radius:9px;margin-top:12px}
 </style>
 </head>
 <body>
@@ -24,9 +35,9 @@
          <div class="sb-user-role" id="sb-userrole">Human Resources</div></div>
   </div>
   <div class="sb-section">Main</div>
-  <a class="nav-item" data-page="dashboard" href="dashboard.html"><span class="nav-icon">&#x1F4CA;</span> Dashboard </a>
+  <a class="nav-item active" data-page="dashboard" href="dashboard.html"><span class="nav-icon">&#x1F4CA;</span> Dashboard </a>
 <a class="nav-item" data-page="candidates" href="candidates.html"><span class="nav-icon">&#x1F465;</span> Candidates <span class="nav-badge" id="nb-cand">0</span></a>
-<a class="nav-item active" data-page="interview" href="interview-panel.html"><span class="nav-icon">&#x1F3AF;</span> Interview Panel </a>
+<a class="nav-item" data-page="interview" href="interview-panel.html"><span class="nav-icon">&#x1F3AF;</span> Interview Panel </a>
 <a class="nav-item" data-page="offer" href="offer-process.html"><span class="nav-icon">&#x1F4C4;</span> Offer Process <span class="nav-badge" id="nb-offer">0</span></a>
 
   <div class="sb-section">Public</div>
@@ -40,570 +51,265 @@
 </aside>
   <div class="main">
     <header class="topbar">
-      <div class="topbar-left">
-        <div class="topbar-title">Interview Panel</div>
-        <div class="breadcrumb"><a class="bc-link" href="dashboard.html">Dashboard</a><span class="bc-sep">›</span><span>Interview Panel</span></div>
-      </div>
-      <div class="topbar-right">
-        <span id="role-badge" class="role-badge rb-hr">HR Access</span>
-        <span class="topbar-time" id="live-clock"></span>
-        <span class="live-ind"><span class="live-dot"></span>Live</span>
-      </div>
+      <div class="topbar-left"><div class="topbar-title">Settings</div>
+        <div class="breadcrumb"><a class="bc-link" href="dashboard.html">Dashboard</a><span class="bc-sep">›</span><span>Settings</span></div></div>
+      <div class="topbar-right"><span class="topbar-time" id="live-clock"></span></div>
     </header>
     <main class="content">
-      <div class="itabs">
-        <div class="itab active" data-filter="all"         onclick="setTab(this)">All</div>
-        <div class="itab"        data-filter="pending"     onclick="setTab(this)">Not Started</div>
-        <div class="itab"        data-filter="inprogress"  onclick="setTab(this)">In Progress</div>
-        <div class="itab"        data-filter="completed"   onclick="setTab(this)">Completed</div>
+      <div class="s-tabs">
+        <div class="s-tab active" data-tab="users"      onclick="setTab('users')">&#x1F464; User Management</div>
+        <div class="s-tab"        data-tab="visibility"  onclick="setTab('visibility')">&#x1F441; Page Visibility</div>
+        <div class="s-tab"        data-tab="questions"   onclick="setTab('questions')">&#x2753; Interview Questions</div>
+        <div class="s-tab"        data-tab="roles"       onclick="setTab('roles')">&#x1F3F7; Designations</div>
       </div>
-      <div class="table-card" style="padding:0">
-        <div style="padding:12px 16px;border-bottom:1px solid #f0ede8;display:flex;align-items:center;justify-content:space-between;gap:8px;flex-wrap:wrap">
-          <span class="card-title">Scheduled Interviews <span style="font-size:9.5px;color:#bbb">(sorted by interview date)</span></span>
-          <div style="display:flex;gap:8px;align-items:center">
-            <input class="search-input" id="int-search" placeholder="Search candidate..." oninput="filterTable()">
-            <span style="font-size:10px;color:var(--muted)" id="int-count"></span>
+
+      <!-- USERS -->
+      <div class="s-panel" id="panel-users">
+        <div class="card" style="margin-bottom:12px">
+          <div class="card-title">Add New User</div>
+          <div class="card-sub">New user will appear in Google Sheet Users tab</div>
+          <div class="add-form">
+            <div><label style="font-size:9px;font-weight:700;color:#888;display:block;margin-bottom:4px">FULL NAME</label>
+              <input type="text" id="new-name" placeholder="Full name"></div>
+            <div><label style="font-size:9px;font-weight:700;color:#888;display:block;margin-bottom:4px">USERNAME / EMAIL</label>
+              <input type="email" id="new-uname" placeholder="user@bsctextiles.com"></div>
+            <div><label style="font-size:9px;font-weight:700;color:#888;display:block;margin-bottom:4px">PASSWORD</label>
+              <input type="text" id="new-pwd" placeholder="Initial password"></div>
+            <div><label style="font-size:9px;font-weight:700;color:#888;display:block;margin-bottom:4px">ROLE</label>
+              <select id="new-role"><option value="">Select role</option><option>HR</option><option>Manager</option><option>Admin</option></select></div>
+            <button class="btn btn-primary" onclick="addUser()" style="margin-top:0">Add User</button>
           </div>
         </div>
-        <div class="table-wrap">
-          <table>
-            <thead><tr>
-              <th>Candidate</th><th>Designation</th><th>Interview Date</th>
-              <th>HR Round</th><th>Round 2 (Assigned)</th>
-              <th>Overall</th><th>Action</th>
-            </tr></thead>
-            <tbody id="int-tbody"></tbody>
-          </table>
+        <div class="table-card" style="padding:0">
+          <div style="padding:12px 16px;border-bottom:1px solid #f0ede8"><span class="card-title">All Users</span></div>
+          <div class="table-wrap"><table>
+            <thead><tr><th>Name</th><th>Username</th><th>Role</th><th>Status</th><th>Actions</th></tr></thead>
+            <tbody id="users-tbody"><tr><td colspan="5" style="text-align:center;padding:20px"><div class="skel" style="height:12px;width:50%;margin:auto"></div></td></tr></tbody>
+          </table></div>
         </div>
-        <div class="table-pagination">
-          <span id="int-page-info">&mdash;</span>
-          <div style="display:flex;gap:6px">
-            <button class="btn btn-muted btn-sm" id="int-prev" onclick="changePage(-1)" disabled>&larr;</button>
-            <button class="btn btn-outline btn-sm" id="int-next" onclick="changePage(1)">&rarr;</button>
+      </div>
+
+      <!-- PAGE VISIBILITY -->
+      <div class="s-panel" id="panel-visibility" style="display:none">
+        <div class="card">
+          <div class="card-title">Page Visibility per Role</div>
+          <div class="card-sub">Toggle which pages each role can access. Changes save immediately.</div>
+          <div style="overflow-x:auto;margin-top:14px">
+            <table class="pg-grid">
+              <thead><tr><th>Page</th><th>HR</th><th>Store Manager</th><th>Admin</th></tr></thead>
+              <tbody id="page-settings-grid"></tbody>
+            </table>
+          </div>
+          <button class="btn btn-primary" style="margin-top:16px" onclick="savePageSettings()">Save Visibility Settings</button>
+        </div>
+      </div>
+
+      <!-- QUESTIONS -->
+      <div class="s-panel" id="panel-questions" style="display:none">
+        <div class="table-card" style="padding:0">
+          <div style="padding:12px 16px;border-bottom:1px solid #f0ede8"><span class="card-title">Interview Questions</span>
+            <span style="font-size:10px;color:#aaa;margin-left:8px">Edit in Google Sheet → Interview_Questions tab for full control</span></div>
+          <div class="table-wrap"><table>
+            <thead><tr><th>Question</th><th>Round</th><th>Max Score</th><th>Action</th></tr></thead>
+            <tbody id="q-tbody"></tbody>
+          </table></div>
+        </div>
+        <div class="card" style="margin-top:12px">
+          <div class="card-title">Add Question (saves to sheet on next deploy)</div>
+          <div class="q-add-form">
+            <div><label style="font-size:9px;font-weight:700;color:#888;display:block;margin-bottom:4px">QUESTION TEXT</label>
+              <input type="text" id="new-q-text" placeholder="Enter question..." style="width:100%;font-size:12px;padding:8px 10px;border:1.5px solid #ddd;border-radius:7px"></div>
+            <div><label style="font-size:9px;font-weight:700;color:#888;display:block;margin-bottom:4px">ROUND</label>
+              <select id="new-q-round" style="font-size:12px;padding:8px 10px;border:1.5px solid #ddd;border-radius:7px"><option value="HR">HR</option><option value="ASSIGNED">Assigned</option></select></div>
+            <div><label style="font-size:9px;font-weight:700;color:#888;display:block;margin-bottom:4px">MAX PTS</label>
+              <input type="number" id="new-q-max" value="10" min="5" max="20" style="width:70px;font-size:12px;padding:8px 10px;border:1.5px solid #ddd;border-radius:7px;text-align:center"></div>
+            <button class="btn btn-primary" onclick="addQuestion()" style="margin-top:0">Add</button>
           </div>
         </div>
       </div>
+
+      <!-- DESIGNATIONS -->
+      <div class="s-panel" id="panel-roles" style="display:none">
+        <div class="card">
+          <div class="card-title">Designations / Roles</div>
+          <div class="card-sub">These appear in candidate registration and interview forms</div>
+          <div id="desig-list" style="margin:14px 0"></div>
+          <div style="display:flex;gap:8px">
+            <input type="text" id="new-desig-input" placeholder="New designation..." style="flex:1;font-size:13px;padding:8px 11px;border:1.5px solid #ddd;border-radius:8px;font-family:inherit" onkeydown="if(event.key==='Enter')addDesig()">
+            <button class="btn btn-primary" onclick="addDesig()">Add</button>
+          </div>
+          <p style="font-size:10px;color:#aaa;margin-top:8px">&#x26A0; Manually update the <b>Roles_Config</b> sheet to permanently save changes.</p>
+        </div>
+      </div>
+
     </main>
   </div>
 </div>
-
-<!-- Score Panel -->
-<div class="sp-overlay" id="sp-overlay" onclick="closePanel()"></div>
-<div class="sp-panel" id="sp-panel">
-  <div class="sp-head">
-    <div class="sp-av" id="sp-av"></div>
-    <div><div class="sp-name" id="sp-name"></div><div class="sp-meta" id="sp-meta"></div></div>
-    <button class="sp-close" onclick="closePanel()">&#x2715;</button>
-  </div>
-  <div class="sp-body" id="sp-body"></div>
-  <div class="sp-foot" id="sp-foot" style="display:none">
-    <button class="sp-save" id="sp-save-btn" onclick="saveScore()">Save Score</button>
-  </div>
-</div>
-
-<!-- Assign Interviewer Modal -->
-<div class="modal-overlay" id="assign-modal">
-  <div class="modal" style="max-width:480px">
-    <div class="modal-title">&#x1F517; Assign Interviewer</div>
-    <div class="modal-body">
-      <p id="assign-cand" style="font-size:11.5px;color:#555;background:#F9F7F4;padding:8px 12px;border-radius:7px;margin-bottom:14px"></p>
-      <div style="display:grid;grid-template-columns:1fr 1fr;gap:10px;margin-bottom:12px">
-        <div>
-          <label style="display:block;font-size:9px;font-weight:700;color:#888;text-transform:uppercase;margin-bottom:5px">Interviewer Name <span style="color:var(--red)">*</span></label>
-          <input type="text" id="assign-name" style="width:100%;font-size:13px;padding:8px 10px;border:1.5px solid #ddd;border-radius:8px;background:#F9F7F4;font-family:inherit" placeholder="Full name">
-        </div>
-        <div>
-          <label style="display:block;font-size:9px;font-weight:700;color:#888;text-transform:uppercase;margin-bottom:5px">Designation <span style="color:var(--red)">*</span></label>
-          <input type="text" id="assign-desig" style="width:100%;font-size:13px;padding:8px 10px;border:1.5px solid #ddd;border-radius:8px;background:#F9F7F4;font-family:inherit" placeholder="e.g. Floor Supervisor">
-        </div>
-      </div>
-      <div id="assign-link-box" style="display:none">
-        <div style="font-size:9px;font-weight:700;color:#888;text-transform:uppercase;margin-bottom:6px">Shareable Interview Link</div>
-        <div class="assign-link-row">
-          <input type="text" id="assign-link-input" readonly placeholder="Link will appear here...">
-          <button class="copy-btn" onclick="copyLink()">Copy</button>
-          <button class="wa-btn" onclick="shareWhatsApp()">WhatsApp</button>
-        </div>
-        <div style="font-size:10px;color:#888;margin-top:6px">&#x26A0; Share this link with the interviewer. It is for one-time use only.</div>
-      </div>
-    </div>
-    <div class="modal-btns">
-      <button class="btn btn-muted" onclick="closeAssignModal()">Close</button>
-      <button class="btn btn-primary" id="assign-confirm-btn" onclick="confirmAssign()">Generate Link</button>
-    </div>
-  </div>
-</div>
-
-<!-- Approve Modal -->
-<div class="modal-overlay" id="approve-modal">
-  <div class="modal" style="max-width:440px">
-    <div class="modal-title" style="color:var(--green)">&#x2713; Approve Selection</div>
-    <div class="modal-body">
-      <p id="approve-cand" style="margin-bottom:12px;font-size:12px"></p>
-      <div style="background:#F9F7F4;border-radius:8px;padding:10px 14px;margin-bottom:14px" id="approve-scores"></div>
-      <label style="display:block;font-size:9px;font-weight:700;color:#888;text-transform:uppercase;margin-bottom:5px">REMARKS <span style="color:var(--red)">*</span></label>
-      <textarea id="approve-remarks" style="width:100%;font-size:13px;padding:9px 11px;border:1.5px solid #ddd;border-radius:8px;background:#F9F7F4;font-family:inherit;resize:none;height:70px" placeholder="Reason for approval..."></textarea>
-      <div style="font-size:10px;color:var(--red);margin-top:4px;display:none" id="approve-remarks-err">Remarks are required</div>
-    </div>
-    <div class="modal-btns">
-      <button class="btn btn-muted" onclick="closeApproveModal()">Cancel</button>
-      <button class="btn btn-green" id="approve-confirm-btn" onclick="confirmApprove()">Confirm Approval</button>
-    </div>
-  </div>
-</div>
-
-<!-- Reject Modal -->
-<div class="modal-overlay" id="reject-modal">
-  <div class="modal" style="max-width:420px">
-    <div class="modal-title" style="color:var(--red)">Reject Candidate</div>
-    <div class="modal-body">
-      <p style="margin-bottom:12px;font-size:12px">Reject <b id="reject-cand"></b> after all interview rounds?</p>
-      <label style="display:block;font-size:9px;font-weight:700;color:#888;text-transform:uppercase;margin-bottom:5px">REJECTION REASON <span style="color:var(--red)">*</span></label>
-      <textarea id="reject-remarks" style="width:100%;font-size:13px;padding:9px 11px;border:1.5px solid #ddd;border-radius:8px;background:#F9F7F4;font-family:inherit;resize:none;height:70px" placeholder="Reason for rejection (mandatory)..."></textarea>
-      <div style="font-size:10px;color:var(--red);margin-top:4px;display:none" id="reject-remarks-err">Rejection reason is required</div>
-    </div>
-    <div class="modal-btns">
-      <button class="btn btn-muted" onclick="closeRejectModal()">Cancel</button>
-      <button class="btn btn-red" id="reject-confirm-btn" onclick="confirmRejectIV()">Confirm Reject</button>
-    </div>
-  </div>
-</div>
-
 <script src="shared.js"></script>
 <script>
+function addQuestion(){
+  const text=el('new-q-text').value.trim(), round=el('new-q-round').value, max=parseInt(el('new-q-max').value)||10;
+  if(!text){ toast('Enter question text','error'); return; }
+  allQuestions.push({text,round,max}); renderQuestions();
+  el('new-q-text').value=''; toast('Added (update Interview_Questions sheet to save permanently)','success');
+}
+
 'use strict';
-var session  = initPage('interview');
-var userRole = session ? session.role : 'HR';
-var AV_BG    = {navy:'#1E2D4E',gold:'#C9952A',green:'#2d8a4e',red:'#C0272D',purple:'#7c4dbd',teal:'#1a8a84'};
+const session = initPage('settings');
+if(session && session.role !== 'Admin') window.location.replace('dashboard.html');
 
-// Role labels — no FM, Store Manager everywhere
-var ROLE_LABEL = {'HR':'HR Access','Manager':'Store Manager Access','Admin':'Full Access'};
-el('role-badge').textContent = ROLE_LABEL[userRole] || 'HR Access';
-el('role-badge').className   = 'role-badge ' + (userRole==='Manager'?'rb-mgr':userRole==='Admin'?'rb-admin':'rb-hr');
+let allUsers=[], allQuestions=[], allDesigs=[];
+let activeTab='users';
 
-var allInterviews=[], filtered=[], currentPage=1, activeFilter='all', PAGE_SIZE=10;
-var currentIV=null, currentRound=null, questions=[];
-
-// ── Load — sort by interview date ascending ───────────────────
-(async function load() {
-  try {
-    var d = await API.getInterviews();
-    allInterviews = (d.interviews||[]).sort(function(a,b){
-      return new Date(a.interviewDate||0) - new Date(b.interviewDate||0);
-    });
-  } catch(e) { allInterviews=[]; }
-  applyFilter();
+(async function load(){
+  await Promise.all([loadUsers(), loadQuestions(), loadDesigs()]);
 })();
 
-// ── Tabs ──────────────────────────────────────────────────────
-function setTab(btn) {
-  document.querySelectorAll('.itab').forEach(function(t){t.classList.remove('active');});
-  btn.classList.add('active');
-  activeFilter = btn.dataset.filter;
-  currentPage  = 1;
-  applyFilter();
-}
-function filterTable() { currentPage=1; applyFilter(); }
-function changePage(d) { currentPage+=d; renderTable(); }
-function hrDone(iv)    { return !!(iv.hrScore); }
-function allDone(iv)   { return !!(iv.hrScore && iv.assignedScore); }
-
-function applyFilter() {
-  var q = (el('int-search').value||'').toLowerCase();
-  filtered = allInterviews.filter(function(iv) {
-    var mq = !q||iv.candidate.toLowerCase().includes(q)||iv.appNo.toLowerCase().includes(q);
-    var mf = true;
-    if (activeFilter==='pending')    mf = !iv.hrScore;
-    if (activeFilter==='inprogress') mf = iv.hrScore && !allDone(iv);
-    if (activeFilter==='completed')  mf = allDone(iv);
-    // Manager only sees candidates where HR is done
-    if (userRole==='Manager' && !iv.hrScore) return false;
-    return mq && mf;
-  });
-  currentPage=1; renderTable();
+function setTab(tab){
+  activeTab=tab;
+  document.querySelectorAll('.s-tab').forEach(t=>t.classList.toggle('active',t.dataset.tab===tab));
+  document.querySelectorAll('.s-panel').forEach(p=>p.style.display=p.id==='panel-'+tab?'block':'none');
 }
 
-// ── Table ─────────────────────────────────────────────────────
-function renderTable() {
-  var start = (currentPage-1)*PAGE_SIZE;
-  var page  = filtered.slice(start, start+PAGE_SIZE);
-  var total = filtered.length;
+// ── Users ─────────────────────────────────────────────────────
+async function loadUsers(){
+  try{ const d=await API.getUsers(); allUsers=d.users||[]; renderUsers(); }
+  catch(e){ allUsers=[]; renderUsers(); }
+}
+function renderUsers(){
+  el('users-tbody').innerHTML=allUsers.length?allUsers.map(function(u,i){
+    return '<tr>'
+      +'<td><b>'+u.fullName+'</b></td>'
+      +'<td style="font-size:10.5px;color:#555">'+u.username+'</td>'
+      +'<td><span class="badge b-info" style="font-size:9px">'+u.role+'</span></td>'
+      +'<td><span class="badge '+(u.active?'b-sel':'b-rej')+'">'+(u.active?'Active':'Inactive')+'</span></td>'
+      +'<td><div style="display:flex;gap:4px">'
+        +'<button class="btn btn-outline btn-sm" data-idx="'+i+'" onclick="toggleUserStatus(this)">'+(u.active?'Deactivate':'Activate')+'</button>'
+        +'<button class="btn btn-muted btn-sm" data-idx="'+i+'" onclick="resetPassword(this)">Reset Pwd</button>'
+      +'</div></td>'
+    +'</tr>';
+  }).join(''):'<tr><td colspan="5" style="text-align:center;color:#bbb;padding:20px">No users found</td></tr>';
+}
+async function addUser(){
+  const name=el('new-name').value.trim(), uname=el('new-uname').value.trim();
+  const pwd=el('new-pwd').value.trim(), role=el('new-role').value;
+  if(!name||!uname||!pwd||!role){ toast('All fields required','error'); return; }
+  try{
+    await API.addUser({fullName:name, username:uname, password:pwd, role:role});
+    el('new-name').value=''; el('new-uname').value=''; el('new-pwd').value=''; el('new-role').value='';
+    await loadUsers(); toast('User added!','success');
+  }catch(e){ toast('Error: '+e.message,'error'); }
+}
+async function toggleUserStatus(btn){
+  const u=allUsers[parseInt(btn.dataset.idx)]; if(!u) return;
+  await API.updateUser({username:u.username, active:!u.active});
+  await loadUsers(); toast('Updated','success');
+}
+async function resetPassword(btn){
+  const u=allUsers[parseInt(btn.dataset.idx)]; if(!u) return;
+  const newPwd=prompt('New password for '+u.fullName+':'); if(!newPwd) return;
+  await API.updateUser({username:u.username, password:newPwd});
+  toast('Password reset','success');
+}
 
-  if (!page.length) {
-    el('int-tbody').innerHTML =
-      '<tr><td colspan="8" style="text-align:center;padding:40px">'+
-        '<div style="font-size:36px;margin-bottom:10px">&#x1F4C5;</div>'+
-        '<div style="font-size:13px;font-weight:600;color:#888;margin-bottom:6px">No interviews scheduled yet</div>'+
-        '<div style="font-size:11px;color:#bbb">Go to <b>Candidates</b> &rarr; complete the calling steps &rarr; Schedule Interview Date</div>'+
-      '</td></tr>';
-    el('int-count').textContent     = '0 interviews';
-    el('int-page-info').textContent = '\u2014';
-    el('int-prev').disabled = true; el('int-next').disabled = true; return;
-  }
+// ── Page Visibility ───────────────────────────────────────────
+const ALL_PAGES=[
+  {key:'dashboard',label:'Dashboard'},
+  {key:'candidates',label:'Candidates'},
+  {key:'interview',label:'Interview Panel'},
+  {key:'offer',label:'Offer Process'},
+  {key:'settings',label:'Settings'}
+];
+const ALL_ROLES=['HR','Manager','Admin'];
+let pageSettings={};
 
-  el('int-tbody').innerHTML = page.map(function(iv,i) {
-    var idx = start+i;
-    return '<tr>'+
-      '<td><div class="td-name">'+
-        '<div class="av av-'+iv.color+'">'+iv.initials+'</div>'+
-        '<div><b>'+iv.candidate+'</b><div style="font-size:9px;color:#aaa">'+iv.appNo+'</div></div>'+
-      '</div></td>'+
-      '<td>'+iv.desig+'</td>'+
-      '<td style="font-size:10.5px;font-weight:600">'+(iv.interviewDate||'\u2014')+'</td>'+
-      '<td>'+scoreChip(iv.hrScore,'HR')+'</td>'+
-      '<td>'+assignedChip(iv)+'</td>'+
-      '<td>'+overallBadge(iv)+'</td>'+
-      '<td>'+actionBtn(iv,idx)+'</td>'+
-    '</tr>';
+async function loadPageSettings(){
+  try{ pageSettings=await API.getPageSettings()||{}; }
+  catch(e){ pageSettings={}; }
+  renderPageSettings();
+}
+
+function renderPageSettings(){
+  // Default: HR sees dashboard+candidates+interview+offer; Manager=dashboard+candidates+interview; Admin=all
+  const defaults={
+    'HR':      ['dashboard','candidates','interview','offer'],
+    'Manager': ['dashboard','candidates','interview'],
+    'Admin':   ['dashboard','candidates','interview','offer','settings']
+  };
+  el('page-settings-grid').innerHTML=ALL_PAGES.map(function(pg){
+    return '<tr><td style="font-size:12px;font-weight:600;color:var(--navy);padding:8px 0">'+pg.label+'</td>'
+      +ALL_ROLES.map(function(role){
+        const key=role+'_'+pg.key;
+        const def=(defaults[role]||[]).includes(pg.key);
+        const checked=pageSettings[key]!==undefined ? pageSettings[key] : def;
+        return '<td style="text-align:center"><label class="toggle-sw">'
+          +'<input type="checkbox" id="ps-'+key+'" '+(checked?'checked':'')+'>'
+          +'<span class="toggle-knob"></span></label></td>';
+      }).join('')
+    +'</tr>';
   }).join('');
-
-  el('int-count').textContent     = total+' interview'+(total!==1?'s':'');
-  el('int-page-info').textContent = 'Showing '+(start+1)+'\u2013'+Math.min(start+PAGE_SIZE,total)+' of '+total;
-  el('int-prev').disabled = currentPage===1;
-  el('int-next').disabled = start+PAGE_SIZE>=total;
 }
 
-function scoreChip(sc, label) {
-  if (!sc) return '<span class="sc-chip sc-pending">'+label+': \u2014</span>';
-  var t=sc.total||0, pass=t>=CONFIG.INTERVIEW_CUTOFF;
-  return '<span class="sc-chip '+(pass?'sc-done':'sc-fail')+'">'+label+': '+t+' '+(pass?'&#x2713;':'&#x2717;')+'</span>';
-}
-
-function assignedChip(iv) {
-  if (!iv.hrScore) return '<span style="font-size:10px;color:#bbb">HR pending</span>';
-  if (iv.assignedScore) {
-    var t=iv.assignedScore.total||0, pass=t>=CONFIG.INTERVIEW_CUTOFF;
-    return '<span class="sc-chip '+(pass?'sc-done':'sc-fail')+'">'+t+' '+(pass?'&#x2713;':'&#x2717;')+'</span>';
-  }
-  if (iv.assignedName) {
-    var st = iv.tokenStatus==='completed'?'Submitted':'Link Sent';
-    return '<span class="badge b-short">'+iv.assignedName+' &middot; '+st+'</span>';
-  }
-  return '<span style="font-size:10px;color:var(--gold)">&#x26A0; Assign needed</span>';
-}
-
-function overallBadge(iv) {
-  if (allDone(iv)) {
-    var g=(iv.hrScore.total||0)+(iv.assignedScore.total||0);
-    var pass = g >= (CONFIG.INTERVIEW_CUTOFF * 2 * 0.6);
-    return '<span class="badge '+(pass?'b-sel':'b-rej')+'">'+g+'/120</span>';
-  }
-  if (iv.hrScore) return '<span class="badge b-short">Round 2 Pending</span>';
-  return '<span class="badge b-new">Not Started</span>';
-}
-
-// ── Action Buttons ────────────────────────────────────────────
-function actionBtn(iv, idx) {
-  var r = userRole;
-
-  // All rounds done — Manager/Admin approve or reject
-  if (allDone(iv)) {
-    var g = (iv.hrScore.total||0)+(iv.assignedScore.total||0);
-    var pass = g >= (CONFIG.INTERVIEW_CUTOFF * 2 * 0.6);
-    if (r==='Manager'||r==='Admin') {
-      if (pass)
-        return '<button class="ib-score" style="background:var(--green)" data-idx="'+idx+'" onclick="clickApprove(this)" title="Approve and move to Offer Process">&#x2713; Approve &amp; Select</button>';
-      else
-        return '<div style="display:flex;gap:4px">'+
-          '<button class="ib-view" data-idx="'+idx+'" onclick="clickViewAll(this)">View Scores</button>'+
-          '<button class="ib-score" style="background:var(--red);font-size:10px;padding:5px 10px" data-idx="'+idx+'" onclick="clickRejectIV(this)">Reject</button>'+
-        '</div>';
-    }
-    return '<button class="ib-view" data-idx="'+idx+'" onclick="clickViewAll(this)">View Scores</button>';
-  }
-
-  // HR round
-  if (r==='HR'||r==='Admin') {
-    if (!iv.hrScore)
-      return '<button class="ib-score" data-idx="'+idx+'" onclick="clickScore(this)">Score HR Round</button>';
-    // HR done — show assign interviewer option
-    if (!iv.assignedName)
-      return '<button class="ib-score" style="background:var(--gold)" data-idx="'+idx+'" onclick="clickAssign(this)">&#x1F517; Assign Interviewer</button>';
-    if (iv.tokenStatus!=='completed')
-      return '<div style="display:flex;gap:4px">'+
-        '<button class="ib-view" data-idx="'+idx+'" onclick="clickViewHR(this)">HR Score</button>'+
-        '<button class="ib-score" style="background:var(--purple);font-size:10px;padding:5px 10px" data-idx="'+idx+'" onclick="clickShareLink(this)">&#x1F517; Share Link</button>'+
-      '</div>';
-    return '<button class="ib-view" data-idx="'+idx+'" onclick="clickViewHR(this)">View All Scores</button>';
-  }
-
-  // Manager — waits for all done
-  if (r==='Manager') {
-    if (!iv.hrScore) return '<span class="ib-locked">&#x1F512; Awaiting HR</span>';
-    if (!iv.assignedScore) return '<span class="ib-locked">&#x1F512; Round 2 Pending</span>';
-  }
-  return '<span class="ib-locked">\u2014</span>';
-}
-
-// ── Click Handlers ────────────────────────────────────────────
-function clickScore(btn)    { openPanel(parseInt(btn.dataset.idx),'HR',true); }
-function clickViewHR(btn)   { openPanel(parseInt(btn.dataset.idx),'HR',false); }
-function clickViewAll(btn)  { openPanel(parseInt(btn.dataset.idx),'HR',false); }
-
-function clickAssign(btn) {
-  var iv = filtered[parseInt(btn.dataset.idx)]; if(!iv) return;
-  el('assign-modal').dataset.idx = btn.dataset.idx;
-  el('assign-cand').textContent = iv.candidate+' · '+iv.desig;
-  el('assign-name').value  = '';
-  el('assign-desig').value = '';
-  el('assign-link-box').style.display = 'none';
-  el('assign-modal').classList.add('show');
-}
-
-function clickShareLink(btn) {
-  var iv = filtered[parseInt(btn.dataset.idx)]; if(!iv) return;
-  // Re-open assign modal showing the existing link
-  el('assign-modal').dataset.idx = btn.dataset.idx;
-  el('assign-cand').textContent = iv.candidate+' · '+iv.desig;
-  el('assign-name').value  = iv.assignedName||'';
-  el('assign-desig').value = iv.assignedDesig||'';
-  var link = 'https://bsctextilescandb-ui.github.io/BSC-Candidate-Followup/interview-form.html?token='+iv.token;
-  el('assign-link-input').value = link;
-  el('assign-link-box').style.display = 'block';
-  el('assign-modal').classList.add('show');
-}
-
-async function confirmAssign() {
-  var name  = el('assign-name').value.trim();
-  var desig = el('assign-desig').value.trim();
-  if (!name||!desig) { toast('Name and designation are required','error'); return; }
-  var iv = filtered[parseInt(el('assign-modal').dataset.idx)]; if(!iv) return;
-  var btn = el('assign-confirm-btn'); btn.disabled=true; btn.textContent='Generating...';
-  try {
-    var res = await API.generateInterviewToken({
-      appNo:iv.appNo, candidate:iv.candidate, desig:iv.desig,
-      assignedName:name, assignedDesig:desig
+async function savePageSettings(){
+  const settings={};
+  ALL_PAGES.forEach(function(pg){
+    ALL_ROLES.forEach(function(role){
+      const inp=el('ps-'+role+'_'+pg.key);
+      if(inp) settings[role+'_'+pg.key]=inp.checked;
     });
-    el('assign-link-input').value = res.link;
-    el('assign-link-box').style.display='block';
-    iv.assignedName  = name;
-    iv.assignedDesig = desig;
-    iv.token         = res.token;
-    iv.tokenStatus   = 'pending';
-    renderTable();
-    toast('Link generated! Share via WhatsApp or copy.','success');
-  } catch(e) { toast('Error: '+e.message,'error'); }
-  finally { btn.disabled=false; btn.textContent='Generate Link'; }
-}
-
-function copyLink() {
-  var val = el('assign-link-input').value;
-  navigator.clipboard.writeText(val).then(function(){ toast('Link copied!','success'); }).catch(function(){
-    el('assign-link-input').select(); document.execCommand('copy'); toast('Copied!','success');
   });
+  await API.savePageSettings(settings);
+  pageSettings=settings; toast('Visibility settings saved!','success');
 }
 
-function shareWhatsApp() {
-  var link = el('assign-link-input').value;
-  var iv   = allInterviews.find(function(x){ return x.assignedName===el('assign-name').value.trim(); });
-  var msg  = encodeURIComponent('Dear '+el('assign-name').value+',\n\nPlease complete the BSC interview assessment for the candidate:\n\n'+link+'\n\nThis link is for one-time use. Kindly submit before the interview date.\n\nBSC The Textile Mall — HR');
-  window.open('https://wa.me/?text='+msg,'_blank');
+// Call loadPageSettings on load
+loadPageSettings();
+
+// ── Interview Questions ───────────────────────────────────────
+async function loadQuestions(){
+  try{ const d=await API.getInterviewQuestions('All','HR'); allQuestions=d.questions||[]; renderQuestions(); }
+  catch(e){ allQuestions=[]; renderQuestions(); }
+}
+function renderQuestions(){
+  el('q-tbody').innerHTML=allQuestions.length?allQuestions.map(function(q,i){
+    return '<tr>'
+      +'<td style="font-size:11px">'+q.text+'</td>'
+      +'<td style="font-size:10px">'+(q.round||'HR')+'</td>'
+      +'<td style="font-size:10px">'+q.max+'</td>'
+      +'<td><button class="btn btn-outline-red btn-sm" data-idx="'+i+'" onclick="deleteQuestion(this)">Remove</button></td>'
+    +'</tr>';
+  }).join(''):'<tr><td colspan="4" style="text-align:center;color:#bbb;padding:16px">No questions — add below</td></tr>';
+}
+function deleteQuestion(btn){
+  const i=parseInt(btn.dataset.idx);
+  showModal({title:'Remove Question',body:'Remove: <b>'+allQuestions[i].text+'</b>?',confirmText:'Remove',confirmClass:'btn-red',
+    onConfirm:async function(){ allQuestions.splice(i,1); renderQuestions(); toast('Removed (save sheet manually)','warn'); }});
 }
 
-function closeAssignModal() { el('assign-modal').classList.remove('show'); }
-
-// ── Manager Approve ───────────────────────────────────────────
-function clickApprove(btn) {
-  var iv = filtered[parseInt(btn.dataset.idx)]; if(!iv) return;
-  el('approve-modal').dataset.idx = btn.dataset.idx;
-  el('approve-cand').innerHTML = '<b>'+iv.candidate+'</b> &middot; '+iv.desig;
-  var g = (iv.hrScore.total||0)+(iv.assignedScore.total||0);
-  el('approve-scores').innerHTML =
-    '<div style="display:flex;justify-content:space-between;padding:4px 0;font-size:12px"><span>HR Round</span><b>'+(iv.hrScore.total||0)+'/60</b></div>'+
-    '<div style="display:flex;justify-content:space-between;padding:4px 0;font-size:12px;border-top:1px solid #f0ede8"><span>Round 2 (Assigned)</span><b>'+(iv.assignedScore.total||0)+'/60</b></div>'+
-    '<div style="display:flex;justify-content:space-between;padding:6px 0 4px;font-size:13px;border-top:2px solid #e8e4dd;font-weight:800"><span>Grand Total</span><span style="color:var(--green)">'+g+'/120</span></div>';
-  el('approve-remarks').value = '';
-  el('approve-remarks-err').style.display = 'none';
-  el('approve-modal').classList.add('show');
+// ── Designations ──────────────────────────────────────────────
+async function loadDesigs(){
+  try{ const d=await API.call('getDesignations'); allDesigs=d.designations||[]; renderDesigs(); }
+  catch(e){ allDesigs=[]; renderDesigs(); }
 }
-
-async function confirmApprove() {
-  var remarks = el('approve-remarks').value.trim();
-  if (remarks.length < 5) { el('approve-remarks-err').style.display='block'; return; }
-  var iv = filtered[parseInt(el('approve-modal').dataset.idx)]; if(!iv) return;
-  var btn = el('approve-confirm-btn'); btn.disabled=true; btn.textContent='Approving...';
-  try {
-    await API.approveSelection({appNo:iv.appNo, candidate:iv.candidate, desig:iv.desig, remarks:remarks});
-    allInterviews = allInterviews.filter(function(x){ return x.appNo!==iv.appNo; });
-    closeApproveModal();
-    applyFilter();
-    toast(iv.candidate+' approved \u2014 moved to Offer Process!','success');
-  } catch(e) { toast('Error: '+e.message,'error'); btn.disabled=false; btn.textContent='Confirm Approval'; }
+function renderDesigs(){
+  el('desig-list').innerHTML=allDesigs.map(function(d,i){
+    return '<div style="display:flex;align-items:center;justify-content:space-between;padding:7px 10px;background:#F9F7F4;border-radius:7px;margin-bottom:5px;font-size:12px">'
+      +'<span>'+d+'</span>'
+      +'<button class="btn btn-outline-red btn-sm" data-idx="'+i+'" onclick="removeDesig(this)">Remove</button>'
+    +'</div>';
+  }).join('')||'<div style="font-size:11px;color:#bbb;padding:10px">No designations configured</div>';
 }
-function closeApproveModal() { el('approve-modal').classList.remove('show'); }
-
-// ── Reject (only after all rounds, mandatory remarks) ─────────
-function clickRejectIV(btn) {
-  var iv = filtered[parseInt(btn.dataset.idx)]; if(!iv) return;
-  el('reject-modal').dataset.idx = btn.dataset.idx;
-  el('reject-cand').textContent  = iv.candidate;
-  el('reject-remarks').value     = '';
-  el('reject-remarks-err').style.display = 'none';
-  el('reject-modal').classList.add('show');
+function removeDesig(btn){
+  const i=parseInt(btn.dataset.idx);
+  showModal({title:'Remove Designation',body:'Remove <b>'+allDesigs[i]+'</b>?',confirmText:'Remove',confirmClass:'btn-red',
+    onConfirm:function(){ allDesigs.splice(i,1); renderDesigs(); toast('Removed (update Roles_Config sheet)','warn'); }});
 }
-
-async function confirmRejectIV() {
-  var remarks = el('reject-remarks').value.trim();
-  if (remarks.length < 5) { el('reject-remarks-err').style.display='block'; return; }
-  var iv = filtered[parseInt(el('reject-modal').dataset.idx)]; if(!iv) return;
-  var btn = el('reject-confirm-btn'); btn.disabled=true; btn.textContent='Rejecting...';
-  try {
-    await API.rejectCandidate({appNo:iv.appNo, remarks:remarks});
-    allInterviews = allInterviews.filter(function(x){ return x.appNo!==iv.appNo; });
-    closeRejectModal();
-    applyFilter();
-    toast(iv.candidate+' rejected','warn');
-  } catch(e) { toast('Error: '+e.message,'error'); btn.disabled=false; btn.textContent='Confirm Reject'; }
+function addDesig(){
+  const v=el('new-desig-input').value.trim(); if(!v) return;
+  if(allDesigs.includes(v)){ toast('Already exists','error'); return; }
+  allDesigs.push(v); renderDesigs(); el('new-desig-input').value='';
+  toast('Added (update Roles_Config sheet)','success');
 }
-function closeRejectModal() { el('reject-modal').classList.remove('show'); }
-
-// ── Score Panel ───────────────────────────────────────────────
-async function openPanel(idx, round, canEdit) {
-  currentIV    = filtered[idx]; if(!currentIV) return;
-  currentRound = round;
-  var iv = currentIV;
-  el('sp-av').textContent      = iv.initials;
-  el('sp-av').style.background = AV_BG[iv.color]||'#1E2D4E';
-  el('sp-name').textContent    = iv.candidate;
-  el('sp-meta').textContent    = iv.desig+' \u00b7 '+iv.appNo+' \u00b7 '+(iv.interviewDate||'\u2014');
-  el('sp-body').innerHTML      = '<div style="text-align:center;padding:30px;color:#aaa">&#x23F3; Loading...</div>';
-  el('sp-foot').style.display  = 'none';
-  el('sp-overlay').classList.add('show');
-  el('sp-panel').classList.add('open');
-
-  try {
-    var qd = await API.getInterviewQuestions(iv.desig,'HR');
-    questions = qd.questions||[];
-  } catch(e) { questions=[]; }
-
-  el('sp-body').innerHTML     = buildPanelBody(iv, canEdit);
-  el('sp-foot').style.display = canEdit ? 'flex' : 'none';
-  if (canEdit) {
-    document.querySelectorAll('.q-inp').forEach(function(inp){
-      inp.addEventListener('input',function(){ onScoreInput(inp); });
-    });
-    updateTotal();
-  }
-  document.addEventListener('keydown', escCb);
-}
-
-function buildPanelBody(iv, canEdit) {
-  var html = '';
-  // Show assigned round scores if available (with actual Q&A)
-  if (iv.assignedScore) {
-    var sc   = iv.assignedScore;
-    var pass = sc.total>=CONFIG.INTERVIEW_CUTOFF;
-    html +=
-      '<div style="background:#F9F7F4;border-radius:9px;padding:12px 14px;margin-bottom:14px;border-left:4px solid '+(pass?'var(--green)':'var(--red)')+'">'+
-        '<div style="font-size:9px;font-weight:800;color:#aaa;text-transform:uppercase;margin-bottom:7px">Round 2 (Assigned) — Read Only</div>'+
-        '<div><span style="font-size:22px;font-weight:800;color:var(--navy)">'+sc.total+'/60</span>'+
-          '<span style="font-size:9px;padding:3px 9px;border-radius:4px;font-weight:700;margin-left:8px;background:'+(pass?'#EAF3DE':'#FCEBEB')+';color:'+(pass?'#3B6D11':'#A32D2D')+'">'+(pass?'PASS &#x2713;':'FAIL &#x2717;')+'</span>'+
-        '</div>'+
-        (iv.assignedName?'<div style="font-size:10px;color:#888;margin-top:4px">Assessed by: <b>'+iv.assignedName+'</b> ('+iv.assignedDesig+')</div>':'')+
-        (sc.remarks?'<div style="font-size:10.5px;color:#777;margin-top:6px;font-style:italic;background:#fff;padding:6px 10px;border-radius:6px">"'+sc.remarks+'"</div>':'')+
-        (sc.scores&&questions.length?'<div style="margin-top:8px">'+
-          questions.map(function(q,i){return '<div style="display:flex;justify-content:space-between;font-size:10.5px;padding:3px 0;border-bottom:.5px solid #e8e4dd;color:#555"><span>'+q.text+'</span><b>'+(sc.scores[i]||0)+'/'+q.max+'</b></div>';}).join('')+
-        '</div>':'')+
-      '</div>';
-  }
-
-  // HR round
-  var existing = iv.hrScore;
-  html += '<div style="font-size:11px;font-weight:800;color:var(--navy);text-transform:uppercase;margin:14px 0 10px;padding-bottom:6px;border-bottom:2px solid var(--cream)">HR Round'+(canEdit?'':' \u2014 View Only')+'</div>';
-
-  if (!questions.length) {
-    html += '<div style="font-size:11px;color:#aaa;padding:10px 0">No HR questions configured. Add to Interview_Questions sheet.</div>';
-  } else {
-    questions.forEach(function(q,i) {
-      var saved = existing&&existing.scores ? existing.scores[i]||0 : 0;
-      var max   = q.max||10, pct = max?saved/max*100:0;
-      var cls   = pct>=70?'s-green':pct>=50?'s-amber':saved?'s-red':'';
-      var color = pct>=70?'var(--green)':pct>=50?'var(--gold)':'var(--red)';
-      var ro    = canEdit ? '' : ' readonly style="background:#f5f5f5;cursor:not-allowed"';
-      html +=
-        '<div class="q-score-row">'+
-          '<div><div class="q-text">'+q.text+'</div><div class="q-maxpts">Max '+max+' pts</div></div>'+
-          '<div class="q-inp-wrap">'+
-            '<input class="q-inp '+(canEdit?cls:'')+'" data-idx="'+i+'" data-max="'+max+'" type="number" min="0" max="'+max+'" value="'+(saved||'')+'" placeholder="0"'+ro+'>'+
-            '<div class="q-minibar"><div class="q-mb-fill" id="mb-'+i+'" style="width:'+(saved?pct:0)+'%;background:'+color+'"></div></div>'+
-            '<div class="q-lbl" id="ql-'+i+'" style="color:'+color+'">'+(saved?pct>=70?'Good':pct>=50?'Avg':'Weak':'\u2014')+'</div>'+
-          '</div>'+
-        '</div>';
-    });
-  }
-
-  // Total and remarks
-  if (questions.length) {
-    var tot  = existing?existing.total||0:0;
-    var maxT = questions.reduce(function(s,q){return s+(q.max||10);},0);
-    var prog = maxT?Math.round(tot/maxT*100):0, pass=tot>=CONFIG.INTERVIEW_CUTOFF;
-    html +=
-      '<div class="total-wrap" id="total-wrap">'+
-        '<div class="total-prog"><div class="total-prog-fill" id="total-fill" style="width:'+prog+'%;background:'+(pass?'var(--green)':'var(--red)')+'"></div></div>'+
-        '<span class="total-num" id="total-num">'+tot+'</span>'+
-        '<span style="font-size:13px;color:#bbb">/ '+maxT+'</span>'+
-        '<span class="total-verdict" id="total-verdict" style="background:'+(pass?'#EAF3DE':'#FCEBEB')+';color:'+(pass?'#3B6D11':'#A32D2D')+'">'+
-          (tot>0?(pass?'PASS &#x2713;':'FAIL &#x2717;'):'\u2014')+
-        '</span>'+
-      '</div>'+
-      '<div style="font-size:9px;font-weight:700;color:#888;margin:10px 0 5px;text-transform:uppercase">Remarks <span style="color:var(--red)">*</span> '+(canEdit?'':'(read only)')+'</div>'+
-      '<textarea class="remarks-ta" id="remarks-ta" maxlength="500" placeholder="Assessment remarks (mandatory)..."'+
-        ' oninput="el(\'char-ct\').textContent=this.value.length"'+
-        (canEdit?'':' readonly style="background:#f5f5f5"')+'>'+
-        (existing&&existing.remarks?existing.remarks:'')+
-      '</textarea>'+
-      '<div class="char-ct"><span id="char-ct">'+(existing&&existing.remarks?existing.remarks.length:0)+'</span>/500</div>';
-  }
-  return html;
-}
-
-function onScoreInput(inp) {
-  var v=parseInt(inp.value)||0, max=parseInt(inp.dataset.max)||10;
-  if(v>max){v=max;inp.value=max;} if(v<0){v=0;inp.value=0;}
-  var pct=max?v/max*100:0,color,cls,lbl;
-  if(pct>=70){color='var(--green)';cls='s-green';lbl='Good';}
-  else if(pct>=50){color='var(--gold)';cls='s-amber';lbl='Avg';}
-  else{color='var(--red)';cls='s-red';lbl='Weak';}
-  inp.className='q-inp '+cls;
-  var mb=el('mb-'+inp.dataset.idx),ql=el('ql-'+inp.dataset.idx);
-  if(mb){mb.style.width=pct+'%';mb.style.background=color;}
-  if(ql){ql.textContent=lbl;ql.style.color=color;}
-  updateTotal();
-}
-function updateTotal() {
-  var inputs=Array.from(document.querySelectorAll('.q-inp')); if(!inputs.length)return;
-  var tot=inputs.reduce(function(s,i){return s+(parseInt(i.value)||0);},0);
-  var maxT=inputs.reduce(function(s,i){return s+(parseInt(i.dataset.max)||10);},0);
-  var prog=maxT?Math.round(tot/maxT*100):0, pass=tot>=CONFIG.INTERVIEW_CUTOFF;
-  var fill=el('total-fill'),num=el('total-num'),verd=el('total-verdict');
-  if(fill){fill.style.width=prog+'%';fill.style.background=pass?'var(--green)':'var(--red)';}
-  if(num) num.textContent=tot;
-  if(verd){verd.textContent=tot>0?(pass?'PASS \u2713':'FAIL \u2717'):'\u2014';
-    verd.style.background=pass?'#EAF3DE':'#FCEBEB';verd.style.color=pass?'#3B6D11':'#A32D2D';}
-}
-
-async function saveScore() {
-  var inputs  = Array.from(document.querySelectorAll('.q-inp'));
-  var scores  = inputs.map(function(i){return parseInt(i.value)||0;});
-  var total   = scores.reduce(function(a,b){return a+b;},0);
-  var remarks = el('remarks-ta')?el('remarks-ta').value.trim():'';
-  if (!remarks||remarks.length<5) { toast('Remarks are mandatory before saving','error'); el('remarks-ta')&&el('remarks-ta').classList.add('err'); return; }
-  var btn=el('sp-save-btn'); btn.disabled=true; btn.textContent='Saving...';
-  try {
-    await API.saveScore(currentIV.appNo,'HR',{scores:scores,total:total,remarks:remarks});
-    currentIV.hrScore={scores:scores,total:total,remarks:remarks};
-    allInterviews=allInterviews.map(function(iv){return iv.appNo===currentIV.appNo?currentIV:iv;});
-    toast('HR score saved \u2014 '+(total>=CONFIG.INTERVIEW_CUTOFF?'PASS \u2713':'FAIL \u2717'),total>=CONFIG.INTERVIEW_CUTOFF?'success':'warn');
-    closePanel(); applyFilter();
-  } catch(e) { toast('Save failed: '+e.message,'error'); btn.disabled=false; btn.textContent='Save Score'; }
-}
-
-function closePanel() {
-  el('sp-overlay').classList.remove('show'); el('sp-panel').classList.remove('open');
-  document.removeEventListener('keydown',escCb);
-  currentIV=null; currentRound=null;
-}
-function escCb(e){if(e.key==='Escape'){closePanel();closeAssignModal();closeApproveModal();closeRejectModal();}}
 
 </script>
 </body>

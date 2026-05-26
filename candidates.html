@@ -7,12 +7,17 @@
 <style>
 .bulk-bar{display:none;align-items:center;gap:9px;background:#EDE8DE;padding:8px 12px;border-radius:8px;margin-bottom:10px;font-size:11px}
 .bulk-bar.show{display:flex}
-.rej-reason{font-size:8.5px;background:#FCEBEB;color:#A32D2D;padding:2px 7px;border-radius:4px;font-style:italic;display:block;margin-top:3px}
-tr.row-hold td{background:#FFFBF4}
-tr.row-rejected td{background:#FFF8F8}
+.rej-reason{font-size:8.5px;background:#FCEBEB;color:#A32D2D;padding:2px 7px;border-radius:4px;display:block;margin-top:3px}
+.call-hist-item{font-size:10.5px;color:#555;padding:5px 8px;background:#F9F7F4;border-radius:6px;margin-bottom:5px}
+.call-hist-badge{font-size:8.5px;background:#E6F1FB;color:#185FA5;padding:2px 6px;border-radius:4px;font-weight:700;margin-right:5px}
+.rm-textarea{width:100%;font-size:13px;padding:9px 11px;border:1.5px solid #ddd;border-radius:8px;background:#F9F7F4;font-family:inherit;resize:none;height:80px;margin-top:8px}
+.rm-textarea:focus{outline:none;border-color:var(--navy)}
+.rm-textarea.err{border-color:var(--red)}
 </style>
 </head>
 <body>
+<button class="sb-toggle" id="sb-toggle"><span></span><span></span><span></span></button>
+<div class="sb-mob-overlay" id="sb-mob-overlay"></div>
 <div class="app-shell">
 <aside class="sidebar">
   <div class="sb-logo-box"><img src="data:image/jpeg;base64,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x9IWVi4SEIPpExqIhbq+BptThxxrUASEpAJOB4YrpK5vcBluXa49vmWBV8t0uQGpzCUcSkNcCj3g5j6qgnpz58ueKg++ybaqzRtjdO0SC7b5i9sljXLUV5t9kus5yFanUxoiHoMn08NxpalFQ4StXJvGE9SQeIc62SNT2aPCZXdrta4EkxESXmlzUYQkgEkHI4k5OAroaiB/Q13tmlddWXTTd3laem29CLdClIUHBKUTxhsLweADGVEDOfHGazrlp67vaotkpWnpjzLWiFwO8LIPdSik4Rz58XUcvOq4leN37dd92G0b9Hi2emR7rTYgk2Nybjje3BS7LvNoiW9q4SrnDZiOgFt9byQhYIzkKzgjHPl4c6S71aIjUd2VdIbLckZYWt9IDg5c0nPMcxz9oqFrVY9R2S3bdTp+nrjcYNutsi3XOA21xusKdHDx8GfWGOWR4e+s6/aakxdYRmxpy9DSk/Tv0QmPbkoW5DHGSW1g54QoEZUDyOOfKs9e617cFpOEUwfs9bfvZi2diRbXWwB5g5brzVQnAJAzWmm2y4u6YZt1puz1olNttITJU2iQtATjIIVyUSBgn41kaeh3KDa0Rrrd13aUFKKpKo6GSoE8hwo5DA5VYub2suGY2hu0HC97Wzv46Wt53XOab10bnf8AVNtnWpduRp5LanVqeDinApKlE4TyA4UjxPWtXpjc5Vzn6bTNtSY0TUzD7tuW27xLbU2T+bcGAMqTg5HQ8vbXnoK1z2Nytfzrpa5Tduui2DGcdZPA+hCClQx18ehHOtdYNB+i6rgXWBDurOntNtSHLZAlO5cefdzkNpVgttjw4zkkjoBk1g6UgeJ+v4XoTT4e10jXC3ZaRnlcx5gZ67ZHHIHQArpLZrC//wC0P8mLzppERl+CubHkR5XflCEq4cOgJASSeXIkZ5AnrWt0juiNQSrGtmAwqLeZcmKltp4qfiKaSVBTqcYwQnJx04k8zXhCsr953DtGubNbLtZJAjPt3dm4IU13vqYabKSSFetzynKcJz1xXN6G0hqCLrDTWoUQpkC+uOyhqora4I7qCSUlOPUOTw8IRnoCcEHONuS4tpf2y/f/AItopKB0bi4AODdLnJwD73zORs0g3OeyLdo2nalKVcXk0pSlESlKURKUpREpSlESlKURKUpREpSlESlKURKUpREpSlESlKURKUpREpSlESlKURKUpREpSlESlKURKUpREpSlESlKURKUpREpSlESlKURKUpREpSlESlKURKUpREpSlESlKURKUpREpSlESlKURKUpREpSlESlKURKUpREpSlESlKURKUpREpSlESlKURKUpREpSlESlKURf/2Q==" alt="BSC The Textile Mall"></div>
@@ -25,8 +30,8 @@ tr.row-rejected td{background:#FFF8F8}
     <a class="nav-item active" data-page="candidates" href="candidates.html"><span class="nav-icon">👥</span> Candidates <span class="nav-badge" id="nb-cand">0</span></a>
     <a class="nav-item" data-page="interview" href="interview-panel.html"><span class="nav-icon">🎯</span> Interview Panel </a>
     <a class="nav-item" data-page="offer" href="offer-process.html"><span class="nav-icon">📄</span> Offer Process <span class="nav-badge" id="nb-offer">0</span></a>
-    <a class="nav-item" data-page="onboarding" href="onboarding.html"><span class="nav-icon">✅</span> Onboarding </a>
-    <a class="nav-item" data-page="exit" href="employee-exit.html"><span class="nav-icon">🚪</span> Employee Exit </a>
+    <a class="nav-item" data-page="onboarding" style="display:none" href="onboarding.html"><span class="nav-icon">✅</span> Onboarding </a>
+    <a class="nav-item" data-page="exit" style="display:none" href="employee-exit.html"><span class="nav-icon">🚪</span> Employee Exit </a>
   <div class="sb-section">Public</div>
   <a class="nav-item" data-page="form" href="candidate-entry.html" target="_blank"><span class="nav-icon">📋</span> Entry Form (QR)</a>
   <div class="sb-section">Admin</div>
@@ -38,20 +43,21 @@ tr.row-rejected td{background:#FFF8F8}
 </aside>
   <div class="main">
     <header class="topbar">
-      <div class="topbar-left"><div class="topbar-title">Candidates</div>
-        <div class="breadcrumb"><a class="bc-link" href="dashboard.html">Dashboard</a><span class="bc-sep">›</span><span>Candidates</span></div></div>
+      <div class="topbar-left">
+        <div class="topbar-title">Candidates</div>
+        <div class="breadcrumb"><a class="bc-link" href="dashboard.html">Dashboard</a><span class="bc-sep">›</span><span>Candidates</span></div>
+      </div>
       <div class="topbar-right">
         <span class="topbar-time" id="live-clock"></span>
         <span class="live-ind"><span class="live-dot"></span>Live</span>
         <button class="btn btn-primary btn-sm" onclick="window.open('candidate-entry.html','_blank')">＋ Add Walk-in</button>
-        <div class="bell-btn">🔔<div class="bell-dot"></div></div>
       </div>
     </header>
     <main class="content">
       <div class="kpi-grid">
         <div class="kpi gold"><div class="kpi-label">All Candidates</div><div class="kpi-val" id="k-total">0</div></div>
         <div class="kpi blue"><div class="kpi-label">New / Unreviewed</div><div class="kpi-val" id="k-new">0</div></div>
-        <div class="kpi navy"><div class="kpi-label">Shortlisted</div><div class="kpi-val" id="k-short">0</div></div>
+        <div class="kpi navy"><div class="kpi-label">Shortlisted / Calling</div><div class="kpi-val" id="k-short">0</div></div>
         <div class="kpi" style="border-left-color:#F57F17"><div class="kpi-label">Interviewed</div><div class="kpi-val" id="k-int" style="color:#F57F17">0</div></div>
       </div>
       <div class="kpi-grid" style="margin-top:-4px">
@@ -60,7 +66,7 @@ tr.row-rejected td{background:#FFF8F8}
         <div class="kpi orange"><div class="kpi-label">On Hold</div><div class="kpi-val" id="k-hold">0</div></div>
         <div class="kpi red"><div class="kpi-label">Rejected</div><div class="kpi-val" id="k-rej">0</div></div>
       </div>
-      <div class="status-pills" id="status-pills">
+      <div class="status-pills">
         <span class="sp sp-all active" data-status="all">All · <b id="p-all">0</b></span>
         <span class="sp sp-new"   data-status="New">New · <b id="p-new">0</b></span>
         <span class="sp sp-short" data-status="Shortlisted">Shortlisted · <b id="p-short">0</b></span>
@@ -71,19 +77,20 @@ tr.row-rejected td{background:#FFF8F8}
         <span class="sp sp-rej"   data-status="Rejected">Rejected · <b id="p-rej">0</b></span>
         <span class="sp sp-board" data-status="Onboarding">Onboarding · <b id="p-board">0</b></span>
       </div>
-      <div class="filter-bar" style="margin-bottom:8px">
-        <input class="search-input" id="cand-search" placeholder="🔍 Search name, phone, app no…" oninput="applyFilters()">
+      <div class="filter-bar">
+        <input class="search-input" id="cand-search" placeholder="&#x1F50D; Search name, phone, app no..." oninput="applyFilters()">
         <select class="fsel" id="f-desig" data-desig-source="filter" onchange="applyFilters()"><option value="">All Designations</option></select>
         <select class="fsel" id="f-source" onchange="applyFilters()">
           <option value="">All Sources</option><option>Walk-in</option><option>Employee Ref</option><option>Online Apply</option><option>Other</option>
         </select>
-        <button class="btn btn-outline-green btn-sm" onclick="exportCSV()">⬇ Export CSV</button>
+        <button class="btn btn-muted btn-sm" id="sort-btn" onclick="toggleSort()">&#x2191; Oldest First</button>
+        <button class="btn btn-outline-green btn-sm" onclick="exportCSV()">&#x2B07; CSV</button>
       </div>
       <div class="bulk-bar" id="bulk-bar">
         <b id="bulk-count">0 selected</b>
         <button class="btn btn-outline-gold btn-sm" onclick="bulkAction('Shortlisted')">Bulk Shortlist</button>
-        <button class="btn btn-outline-red btn-sm"  onclick="bulkAction('Rejected')">Bulk Reject</button>
-        <button class="btn btn-muted btn-sm"         onclick="clearBulk()">✕ Clear</button>
+        <button class="btn btn-outline-red btn-sm" onclick="bulkAction('Rejected')">Bulk Reject</button>
+        <button class="btn btn-muted btn-sm" onclick="clearBulk()">✕</button>
       </div>
       <div class="table-card" style="padding:0">
         <div class="table-wrap">
@@ -93,77 +100,102 @@ tr.row-rejected td{background:#FFF8F8}
               <th>App No</th><th>Candidate</th><th>Phone</th><th>Designation</th>
               <th>Source</th><th>Referrer</th><th>Date</th><th>Status</th><th>Days In</th><th>Actions</th>
             </tr></thead>
-            <tbody id="cand-tbody"><tr><td colspan="11" style="text-align:center;padding:30px"><div class="skel" style="height:14px;margin:6px auto;width:50%"></div></td></tr></tbody>
+            <tbody id="cand-tbody"></tbody>
           </table>
         </div>
         <div class="table-pagination">
-          <span id="cand-page-info">Loading…</span>
+          <span id="cand-page-info">Loading...</span>
           <div style="display:flex;gap:6px">
             <button class="btn btn-muted btn-sm" id="prev-btn" onclick="changePage(-1)" disabled>← Prev</button>
             <button class="btn btn-outline btn-sm" id="next-btn" onclick="changePage(1)">Next →</button>
           </div>
         </div>
       </div>
+    
+      <!-- Selected / Rejected separate view -->
+      <div style="display:flex;gap:8px;margin-top:14px;flex-wrap:wrap">
+        <button class="btn btn-outline-green btn-sm" onclick="toggleSelRejPanel('selected')">&#x2713; View Selected Candidates</button>
+        <button class="btn btn-outline-red btn-sm"   onclick="toggleSelRejPanel('rejected')">&#x2717; View Rejected Candidates</button>
+      </div>
+      <div id="sel-rej-panel" style="display:none;margin-top:10px">
+        <div class="table-card" style="padding:0">
+          <div style="padding:10px 16px;border-bottom:1px solid #f0ede8;display:flex;align-items:center;justify-content:space-between">
+            <span class="card-title" id="sel-rej-title">Selected Candidates</span>
+            <button class="btn btn-muted btn-sm" onclick="el('sel-rej-panel').style.display='none'">&#x2715; Close</button>
+          </div>
+          <div class="table-wrap"><table>
+            <thead id="sel-rej-head"></thead>
+            <tbody id="sel-rej-tbody"></tbody>
+          </table></div>
+        </div>
+      </div>
     </main>
   </div>
 </div>
 
-<!-- Candidate Detail Drawer -->
+<!-- Drawer -->
 <div class="drawer-overlay" id="drawer-overlay" onclick="closeDrawer()"></div>
 <div class="drawer" id="cand-drawer">
   <div class="drawer-head">
     <div class="drawer-av" id="dr-av"></div>
-    <div><div class="drawer-name" id="dr-name">—</div><div class="drawer-appno" id="dr-appno">—</div></div>
+    <div><div class="drawer-name" id="dr-name"></div><div class="drawer-appno" id="dr-appno"></div></div>
     <button class="drawer-close" onclick="closeDrawer()">✕</button>
   </div>
   <div class="drawer-body" id="drawer-body"></div>
   <div class="drawer-actions" id="drawer-actions"></div>
 </div>
 
-<!-- Reject Modal -->
-<div class="modal-overlay" id="rej-modal">
+<!-- Mandatory Remarks Modal -->
+<div class="modal-overlay" id="remark-modal">
   <div class="modal">
-    <div class="modal-title">Reject Candidate</div>
+    <div class="modal-title" id="rm-title">Shortlist Candidate</div>
     <div class="modal-body">
-      <p style="margin-bottom:12px">Select reason for <b id="rej-name"></b>:</p>
-      <select class="fsel" id="rej-reason-sel" style="width:100%;font-size:12px;padding:8px">
-        <option value="">Select reason…</option>
-        <option>Low experience</option><option>Salary mismatch</option>
-        <option>Better candidate selected</option><option>Did not appear</option>
-        <option>Failed interview</option><option>Other</option>
-      </select>
+      <div id="rm-reason-wrap" style="display:none;margin-bottom:10px">
+        <label style="font-size:10px;font-weight:700;color:#888;display:block;margin-bottom:5px">REASON</label>
+        <select id="rm-reason" class="fsel" style="width:100%;font-size:12px;padding:8px">
+          <option value="">Select reason for rejection...</option>
+          <option>Low experience</option><option>Salary mismatch</option>
+          <option>Better candidate selected</option><option>Did not appear</option>
+          <option>Failed interview</option><option>Over-qualified</option><option>Other</option>
+        </select>
+      </div>
+      <label style="font-size:10px;font-weight:700;color:#888;display:block">REMARKS <span style="color:var(--red)">*</span></label>
+      <textarea class="rm-textarea" id="rm-remarks" placeholder="Enter your remarks (mandatory)..." maxlength="300"></textarea>
+      <div style="font-size:10px;color:var(--red);margin-top:4px;display:none" id="rm-remarks-err">Remarks are required (min 5 characters)</div>
     </div>
     <div class="modal-btns">
-      <button class="btn btn-muted" onclick="closeRejModal()">Cancel</button>
-      <button class="btn btn-red"   onclick="confirmReject()">Confirm Reject</button>
+      <button class="btn btn-muted" onclick="closeRemarkModal()">Cancel</button>
+      <button class="btn btn-primary" id="rm-confirm-btn" onclick="confirmRemark()">Confirm</button>
     </div>
   </div>
 </div>
 
-<!-- Schedule Interview Modal -->
-<div class="modal-overlay" id="sched-modal">
+<!-- Step-by-Step Call Modal -->
+<div class="modal-overlay" id="call-modal">
   <div class="modal" style="max-width:460px">
-    <div class="modal-title">📅 Schedule Interview</div>
+    <div class="modal-title" id="call-modal-title">📞 1st Follow-up Call</div>
     <div class="modal-body">
-      <p id="sched-cand-info" style="margin-bottom:16px;font-size:12px;color:#555;background:#F9F7F4;padding:8px 12px;border-radius:7px"></p>
-      <div style="font-size:9px;font-weight:800;color:#1E2D4E;text-transform:uppercase;letter-spacing:.08em;margin-bottom:10px">Follow-up Calls (tracking only)</div>
-      <div style="display:grid;grid-template-columns:1fr 1fr;gap:10px;margin-bottom:14px">
-        <div class="fg">
-          <label style="font-size:9px;font-weight:700;color:#888;text-transform:uppercase;display:block;margin-bottom:5px">1st Call Date</label>
-          <input type="date" id="sched-call1" style="width:100%;font-size:13px;padding:8px 10px;border:1.5px solid #ddd;border-radius:8px;background:#F9F7F4;font-family:inherit">
-        </div>
-        <div class="fg">
-          <label style="font-size:9px;font-weight:700;color:#888;text-transform:uppercase;display:block;margin-bottom:5px">2nd Call Date</label>
-          <input type="date" id="sched-call2" style="width:100%;font-size:13px;padding:8px 10px;border:1.5px solid #ddd;border-radius:8px;background:#F9F7F4;font-family:inherit">
+      <p id="call-modal-cand" style="font-size:11.5px;color:#555;background:#F9F7F4;padding:8px 12px;border-radius:7px;margin-bottom:14px"></p>
+      <div id="call-history-wrap" style="display:none;margin-bottom:12px">
+        <div style="font-size:9px;font-weight:800;color:#aaa;text-transform:uppercase;margin-bottom:6px">Previous Steps</div>
+        <div id="call-history"></div>
+      </div>
+      <div style="font-size:9px;font-weight:800;color:#888;text-transform:uppercase;margin-bottom:6px">
+        Step <span id="call-step-num">1</span> of 3
+      </div>
+      <div style="display:grid;grid-template-columns:1fr 1fr;gap:10px;margin-bottom:12px">
+        <div>
+          <label style="display:block;font-size:9px;font-weight:700;color:#888;margin-bottom:5px" id="call-date-label">Call Date *</label>
+          <input type="date" id="call-date" style="width:100%;font-size:13px;padding:8px 10px;border:1.5px solid #ddd;border-radius:8px;background:#F9F7F4;font-family:inherit">
         </div>
       </div>
-      <div style="font-size:9px;font-weight:800;color:#1E2D4E;text-transform:uppercase;letter-spacing:.08em;margin-bottom:10px">Interview Date <span class="req">*</span></div>
-      <input type="date" id="sched-interview" style="width:100%;font-size:14px;padding:9px 11px;border:1.5px solid #ddd;border-radius:8px;background:#F9F7F4;font-family:inherit">
-      <div style="font-size:10px;color:#C0272D;margin-top:4px;display:none" id="sched-int-err">Interview date is required</div>
+      <label style="display:block;font-size:9px;font-weight:700;color:#888;margin-bottom:5px">REMARKS / NOTES <span style="color:var(--red)">*</span></label>
+      <textarea id="call-remarks" style="width:100%;font-size:13px;padding:9px 11px;border:1.5px solid #ddd;border-radius:8px;background:#F9F7F4;font-family:inherit;resize:none;height:80px" placeholder="What was discussed in this call?..." maxlength="500"></textarea>
+      <div style="font-size:10px;color:var(--red);margin-top:4px;display:none" id="call-remarks-err">Remarks are required</div>
     </div>
     <div class="modal-btns">
-      <button class="btn btn-muted" onclick="closeSchedModal()">Cancel</button>
-      <button class="btn btn-primary" id="sched-confirm-btn" onclick="confirmSchedule()">Confirm Schedule</button>
+      <button class="btn btn-muted" onclick="closeCallModal()">Cancel</button>
+      <button class="btn btn-primary" id="call-confirm-btn" onclick="confirmCallStep()">Save & Continue</button>
     </div>
   </div>
 </div>
@@ -171,335 +203,358 @@ tr.row-rejected td{background:#FFF8F8}
 <script src="shared.js"></script>
 <script>
 'use strict';
-const session = initPage('candidates');
-const PAGE_SIZE = 10;
-let currentPage = 1, allCandidates = [], filtered = [], activeStatus = 'all';
-const AV_BG = {navy:'#1E2D4E',gold:'#C9952A',green:'#2d8a4e',red:'#C0272D',purple:'#7c4dbd',teal:'#1a8a84'};
+const session  = initPage('candidates');
+const userRole = session ? session.role : 'HR';
+const isViewOnly = userRole === 'Manager'; // Manager = view only
+const PAGE_SIZE  = 10;
+
+let currentPage=1, allCandidates=[], filtered=[], activeStatus='all', sortDir='asc';
+const AV_BG={navy:'#1E2D4E',gold:'#C9952A',green:'#2d8a4e',red:'#C0272D',purple:'#7c4dbd',teal:'#1a8a84'};
 
 // ── Load ──────────────────────────────────────────────────────
-(async function load() {
-  try {
-    const data = await API.getCandidates({limit:500});
-    allCandidates = data.candidates || [];
-  } catch(e) {
-    console.error('[Candidates Load]', e);
-    allCandidates = [];
-  }
+(async function load(){
+  try{
+    const data=await API.getCandidates({limit:500});
+    allCandidates=data.candidates||[];
+  }catch(e){ allCandidates=[]; }
   buildKPIs(); buildPills(); applyFilters();
 })();
 
-// ── KPIs ──────────────────────────────────────────────────────
-function buildKPIs() {
-  const c = s => allCandidates.filter(x => x.status === s).length;
-  el('k-total').textContent = allCandidates.length;
-  el('k-new').textContent   = c('New');
-  el('k-short').textContent = c('Shortlisted');
-  el('k-int').textContent   = c('Interviewed');
-  el('k-sel').textContent   = c('Selected');
-  el('k-offer').textContent = c('Offer Sent');
-  el('k-hold').textContent  = c('Hold');
-  el('k-rej').textContent   = c('Rejected');
+// ── KPIs & Pills ──────────────────────────────────────────────
+function buildKPIs(){
+  const c=s=>allCandidates.filter(x=>x.status===s).length;
+  const cMulti=arr=>allCandidates.filter(x=>arr.includes(x.status)).length;
+  el('k-total').textContent =allCandidates.length;
+  el('k-new').textContent   =c('New');
+  el('k-short').textContent =cMulti(['Shortlisted','1st Call Done','2nd Call Done','Interview Scheduled']);
+  el('k-int').textContent   =c('Interviewed');
+  el('k-sel').textContent   =c('Selected');
+  el('k-offer').textContent =c('Offer Sent');
+  el('k-hold').textContent  =c('Hold');
+  el('k-rej').textContent   =c('Rejected');
 }
-function buildPills() {
-  const c = s => allCandidates.filter(x => x.status === s).length;
-  el('p-all').textContent   = allCandidates.length;
-  el('p-new').textContent   = c('New');
-  el('p-short').textContent = c('Shortlisted');
-  el('p-int').textContent   = c('Interviewed');
-  el('p-sel').textContent   = c('Selected');
-  el('p-offer').textContent = c('Offer Sent');
-  el('p-hold').textContent  = c('Hold');
-  el('p-rej').textContent   = c('Rejected');
-  el('p-board').textContent = c('Onboarding');
+function buildPills(){
+  const c=s=>allCandidates.filter(x=>x.status===s).length;
+  const cMulti=arr=>allCandidates.filter(x=>arr.includes(x.status)).length;
+  el('p-all').textContent   =allCandidates.length;
+  el('p-new').textContent   =c('New');
+  el('p-short').textContent =cMulti(['Shortlisted','1st Call Done','2nd Call Done','Interview Scheduled']);
+  el('p-int').textContent   =c('Interviewed');
+  el('p-sel').textContent   =c('Selected');
+  el('p-offer').textContent =c('Offer Sent');
+  el('p-hold').textContent  =c('Hold');
+  el('p-rej').textContent   =c('Rejected');
+  el('p-board').textContent =c('Onboarding');
 }
 
-// ── Filters ───────────────────────────────────────────────────
-function applyFilters() {
-  const q     = (el('cand-search').value || '').toLowerCase();
-  const desig = el('f-desig')  ? el('f-desig').value  : '';
-  const src   = el('f-source') ? el('f-source').value : '';
-  filtered = allCandidates.filter(function(c) {
-    if (activeStatus !== 'all' && c.status !== activeStatus) return false;
-    if (desig && c.desig  !== desig) return false;
-    if (src   && c.source !== src)   return false;
-    if (q && !c.name.toLowerCase().includes(q) &&
-             !c.appNo.toLowerCase().includes(q) &&
-             !String(c.phone).includes(q)) return false;
+// ── Filters — default sort: earliest first ────────────────────
+function applyFilters(){
+  const q     =(el('cand-search').value||'').toLowerCase();
+  const desig =el('f-desig')  ? el('f-desig').value  : '';
+  const src   =el('f-source') ? el('f-source').value : '';
+  filtered=allCandidates.filter(function(c){
+    if(activeStatus!=='all' && c.status!==activeStatus) return false;
+    if(desig && c.desig!==desig) return false;
+    if(src   && c.source!==src)  return false;
+    if(q && !c.name.toLowerCase().includes(q) &&
+            !c.appNo.toLowerCase().includes(q) &&
+            !String(c.phone).includes(q)) return false;
     return true;
   });
-  currentPage = 1; renderTable();
+  // Sort by rawDate (earliest first by default)
+  filtered.sort(function(a,b){
+    return sortDir==='asc' ? a.rawDate-b.rawDate : b.rawDate-a.rawDate;
+  });
+  currentPage=1; renderTable();
 }
-initStatusPills(function(s) { activeStatus = s; applyFilters(); });
+function toggleSort(){
+  sortDir=sortDir==='asc'?'desc':'asc';
+  el('sort-btn').textContent=sortDir==='asc'?'↑ Oldest First':'↓ Newest First';
+  applyFilters();
+}
+initStatusPills(function(s){ activeStatus=s; applyFilters(); });
 
 // ── Render Table ──────────────────────────────────────────────
-function renderTable() {
-  const start = (currentPage - 1) * PAGE_SIZE;
-  const page  = filtered.slice(start, start + PAGE_SIZE);
-  const total = filtered.length;
-  if (!page.length) {
-    el('cand-tbody').innerHTML = '<tr><td colspan="11"><div class="empty-state">' +
-      '<div class="empty-icon">&#x1F50D;</div>' +
-      '<div class="empty-title">No candidates found</div>' +
-      '</div></td></tr>';
-    el('cand-page-info').textContent = '0 results';
-    el('prev-btn').disabled = true;
-    el('next-btn').disabled = true;
-    return;
+function renderTable(){
+  const start=(currentPage-1)*PAGE_SIZE, page=filtered.slice(start,start+PAGE_SIZE), total=filtered.length;
+  if(!page.length){
+    el('cand-tbody').innerHTML='<tr><td colspan="11"><div class="empty-state"><div class="empty-icon">&#x1F50D;</div><div class="empty-title">No candidates found</div></div></td></tr>';
+    el('cand-page-info').textContent='0 results';
+    el('prev-btn').disabled=true; el('next-btn').disabled=true; return;
   }
-  el('cand-tbody').innerHTML = page.map(function(c, i) {
-    const idx    = start + i;
-    const ph     = '<span class="phone-mask" data-real="' + c.phone + '">' + maskPhone(c.phone) + '</span>';
-    const rejTag = (c.status === 'Rejected' && c.rejReason)
-                 ? '<span class="rej-reason">' + c.rejReason + '</span>' : '';
-    const rowCls = c.status === 'Hold' ? 'row-hold' : c.status === 'Rejected' ? 'row-rejected' : '';
-    return '<tr class="' + rowCls + '">' +
-      '<td><input type="checkbox" class="row-chk" data-idx="' + idx + '" onchange="rowCheck()"></td>' +
-      '<td style="font-size:10px;white-space:nowrap">' + c.appNo + '</td>' +
-      '<td><div class="td-name" style="cursor:pointer" onclick="openDrawer(' + idx + ')" title="View details">' +
-        '<div class="av av-' + c.color + '">' + c.initials + '</div>' +
-        '<b style="color:var(--blue);text-decoration:underline dotted">' + c.name + '</b>' +
-      '</div></td>' +
-      '<td>' + ph + '</td>' +
-      '<td>' + c.desig + '</td>' +
-      '<td>' + c.source + '</td>' +
-      '<td style="color:var(--muted)">' + (c.referrer || '—') + '</td>' +
-      '<td style="font-size:10.5px;white-space:nowrap">' + c.date + '</td>' +
-      '<td>' + statusBadge(c.status) + '</td>' +
-      '<td>' + daysChip(c.daysIn) + '</td>' +
-      '<td><div style="display:flex;flex-direction:column;gap:3px">' + actionBtns(c, idx) + rejTag + '</div></td>' +
-    '</tr>';
+  el('cand-tbody').innerHTML=page.map(function(c,i){
+    const idx   =start+i;
+    const ph    ='<span class="phone-mask" data-real="'+c.phone+'">'+maskPhone(c.phone)+'</span>';
+    const rejTag=(c.status==='Rejected'&&c.rejReason)?'<span class="rej-reason">'+c.rejReason+'</span>':'';
+    const rowCls=c.status==='Hold'?'row-hold':c.status==='Rejected'?'row-rejected':'';
+    return '<tr class="'+rowCls+'">'
+      +'<td>'+(isViewOnly?'':'<input type="checkbox" class="row-chk" data-idx="'+idx+'" onchange="rowCheck()">')+'</td>'
+      +'<td style="font-size:10px;white-space:nowrap">'+c.appNo+'</td>'
+      +'<td><div class="td-name" style="cursor:pointer" onclick="openDrawer('+idx+')">'
+        +'<div class="av av-'+c.color+'">'+c.initials+'</div>'
+        +'<b style="color:var(--blue);text-decoration:underline dotted">'+c.name+'</b>'
+      +'</div></td>'
+      +'<td>'+ph+'</td>'
+      +'<td>'+c.desig+'</td>'
+      +'<td>'+c.source+'</td>'
+      +'<td style="color:var(--muted)">'+(c.referrer||'—')+'</td>'
+      +'<td style="font-size:10.5px;white-space:nowrap">'+c.date+'</td>'
+      +'<td>'+statusBadge(c.status)+'</td>'
+      +'<td>'+daysChip(c.daysIn)+'</td>'
+      +'<td>'+(isViewOnly?'<span style="font-size:10px;color:#aaa">View only</span>':buildActionBtns(c,idx))+'</td>'
+    +'</tr>';
   }).join('');
-  el('cand-page-info').textContent = 'Showing ' + (start+1) + '–' + Math.min(start+PAGE_SIZE,total) + ' of ' + total;
-  el('prev-btn').disabled = currentPage === 1;
-  el('next-btn').disabled = start + PAGE_SIZE >= total;
+  el('cand-page-info').textContent='Showing '+(start+1)+'–'+Math.min(start+PAGE_SIZE,total)+' of '+total;
+  el('prev-btn').disabled=currentPage===1;
+  el('next-btn').disabled=start+PAGE_SIZE>=total;
 }
 
-function actionBtns(c, idx) {
-  const s = c.status;
-  if (s==='New')
-    return '<div style="display:flex;gap:4px">' +
-      '<button class="btn btn-outline btn-sm"     data-idx="'+idx+'" onclick="clickShortlist(this)">Shortlist</button>' +
-      '<button class="btn btn-outline-red btn-sm" data-idx="'+idx+'" onclick="clickReject(this)">Reject</button>' +
-    '</div>';
-  if (s==='Shortlisted')
-    return '<button class="btn btn-outline-gold btn-sm" data-idx="'+idx+'" onclick="clickSched(this)">Schedule Interview</button>';
-  if (s==='Interviewed')
+// ── Action buttons — step-based scheduling ────────────────────
+function buildActionBtns(c,idx){
+  const s=c.status;
+  if(s==='New')
+    return '<div style="display:flex;gap:3px;flex-wrap:wrap">'
+      +'<button class="btn btn-outline btn-sm"     data-idx="'+idx+'" onclick="clickShortlist(this)">Shortlist</button>'
+      +'<button class="btn btn-muted btn-sm"        data-idx="'+idx+'" onclick="clickHold(this)">Hold</button>'
+      +'<button class="btn btn-outline-red btn-sm" data-idx="'+idx+'" onclick="clickReject(this)">Reject</button>'
+    +'</div>';
+  if(s==='Shortlisted')
+    return '<button class="btn btn-outline-gold btn-sm" data-idx="'+idx+'" onclick="clickStartCall(this)">&#x1F4DE; 1st Call</button>';
+  if(s==='1st Call Done')
+    return '<button class="btn btn-outline-gold btn-sm" data-idx="'+idx+'" onclick="clickStartCall(this)">&#x1F4DE; 2nd Call</button>';
+  if(s==='2nd Call Done')
+    return '<button class="btn btn-primary btn-sm" data-idx="'+idx+'" onclick="clickStartCall(this)">&#x1F4C5; Schedule Interview</button>';
+  if(s==='Interview Scheduled')
+    return '<span class="badge b-int">In Interview Panel</span>';
+  if(s==='Interviewed')
     return '<button class="btn btn-outline btn-sm" onclick="window.location.href=\'interview-panel.html\'">View Scores</button>';
-  if (s==='Selected')
+  if(s==='Selected')
     return '<button class="btn btn-outline-green btn-sm" onclick="window.location.href=\'offer-process.html\'">Send Offer</button>';
-  if (s==='Offer Sent')
-    return '<button class="btn btn-outline btn-sm" onclick="window.location.href=\'offer-process.html\'">Track Offer</button>';
-  if (s==='Hold')
+  if(s==='Hold')
     return '<button class="btn btn-outline-gold btn-sm" data-idx="'+idx+'" onclick="clickReactivate(this)">Reactivate</button>';
-  if (s==='Rejected')
+  if(s==='Rejected')
     return '<button class="btn btn-muted btn-sm" data-idx="'+idx+'" onclick="clickReactivate(this)">Re-engage</button>';
-  if (s==='Onboarding')
-    return '<button class="btn btn-outline-green btn-sm" onclick="window.location.href=\'onboarding.html\'">Checklist</button>';
+  if(s==='Onboarding')
+    return '<span class="badge b-board">Onboarding</span>';
   return '';
 }
+function changePage(d){ currentPage+=d; renderTable(); }
 
-function changePage(d) { currentPage += d; renderTable(); }
+// ── Click handlers ────────────────────────────────────────────
+function getByIdx(btn){ return filtered[parseInt(btn.dataset.idx)]; }
 
-// ── Click Handlers (use data-idx — no appNo in onclick) ───────
-function getByIdx(btn) { return filtered[parseInt(btn.dataset.idx)]; }
-function clickShortlist(btn)  { const c=getByIdx(btn); if(c) quickStatus(c.appNo,'Shortlisted'); }
-function clickReject(btn)     { const c=getByIdx(btn); if(c) openReject(c.appNo,c.name); }
-function clickSched(btn)      { const c=getByIdx(btn); if(c) openSchedModal(c.appNo); }
-function clickReactivate(btn) { const c=getByIdx(btn); if(c) quickStatus(c.appNo,'New'); }
-function clickHold(btn)       { const c=getByIdx(btn); if(c) { quickStatus(c.appNo,'Hold'); closeDrawer(); } }
+function clickShortlist(btn) { openRemarkModal('shortlist',getByIdx(btn)); }
+function clickHold(btn)      { openRemarkModal('hold',getByIdx(btn)); }
+function clickReject(btn)    { openRemarkModal('reject',getByIdx(btn)); }
+function clickReactivate(btn){ const c=getByIdx(btn); if(c) doStatusChange(c.appNo,'New','Reactivated'); }
+function clickHoldDrawer(idx){ openRemarkModal('hold',filtered[idx]); }
+function clickStartCall(btn) { const c=getByIdx(btn); if(c) openCallModal(c); }
 
-async function quickStatus(appNo, status) {
-  await API.updateCandidate(appNo, {status:status});
-  allCandidates = allCandidates.map(function(c) {
-    return c.appNo===appNo ? Object.assign({},c,{status:status}) : c;
-  });
+// ── MANDATORY REMARKS MODAL ───────────────────────────────────
+let _rmAction=null, _rmCandidate=null;
+function openRemarkModal(action, c){
+  if(!c) return;
+  _rmAction=action; _rmCandidate=c;
+  const labels={shortlist:'Shortlist',hold:'Hold',reject:'Reject'};
+  const colors={shortlist:'btn-primary',hold:'btn-outline-gold',reject:'btn-red'};
+  el('rm-title').textContent=labels[action]+' — '+c.name;
+  el('rm-remarks').value='';
+  el('rm-remarks-err').style.display='none';
+  el('rm-remarks').classList.remove('err');
+  el('rm-confirm-btn').className='btn '+colors[action];
+  el('rm-confirm-btn').textContent='Confirm '+labels[action];
+  if(action==='reject'){
+    el('rm-reason-wrap').style.display='block';
+    el('rm-reason').value='';
+  }else{
+    el('rm-reason-wrap').style.display='none';
+  }
+  el('remark-modal').classList.add('show');
+  setTimeout(()=>el('rm-remarks').focus(),100);
+}
+function closeRemarkModal(){ el('remark-modal').classList.remove('show'); _rmAction=null; _rmCandidate=null; }
+async function confirmRemark(){
+  const remarks=el('rm-remarks').value.trim();
+  if(remarks.length<5){
+    el('rm-remarks-err').style.display='block';
+    el('rm-remarks').classList.add('err');
+    return;
+  }
+  if(_rmAction==='reject'){
+    const reason=el('rm-reason').value;
+    if(!reason){ toast('Select a reason','error'); return; }
+  }
+  closeRemarkModal();
+  const c=_rmCandidate, action=_rmAction;
+  const statusMap={shortlist:'Shortlisted',hold:'Hold',reject:'Rejected'};
+  if(action==='reject'){
+    await API.rejectCandidate({appNo:c.appNo,remarks:remarks});
+    updateLocal(c.appNo,{status:'Rejected',rejReason:remarks});
+  }else{
+    await API.updateCandidate(c.appNo,{status:statusMap[action],remarks:remarks});
+    updateLocal(c.appNo,{status:statusMap[action]});
+  }
   buildKPIs(); buildPills(); applyFilters();
-  toast('Status updated','success');
+  toast('Done — '+c.name+' '+statusMap[action].toLowerCase(),'success');
+  closeDrawer();
+}
+function updateLocal(appNo,updates){
+  allCandidates=allCandidates.map(function(c){ return c.appNo===appNo?Object.assign({},c,updates):c; });
 }
 
-// ── Reject Modal ──────────────────────────────────────────────
-let rejectTargetAppNo='', rejectTargetName='';
-function openReject(appNo,name) {
-  rejectTargetAppNo=appNo; rejectTargetName=name;
-  el('rej-name').textContent=name;
-  el('rej-reason-sel').value='';
-  el('rej-modal').classList.add('show');
+// ── STEP-BY-STEP SCHEDULING MODAL ────────────────────────────
+let _callCandidate=null;
+async function openCallModal(c){
+  _callCandidate=c;
+  const status=await API.getCallStatus(c.appNo);
+  const step=status.step||0;
+  // Determine which step to show
+  let nextStep=1;
+  if(step>=1) nextStep=2;
+  if(step>=2) nextStep=3;
+
+  const stepLabels={1:'1st Follow-up Call',2:'2nd Follow-up Call',3:'Schedule Interview Date'};
+  const stepIcons={1:'📞',2:'📞',3:'📅'};
+
+  el('call-modal-title').textContent=stepIcons[nextStep]+' '+stepLabels[nextStep];
+  el('call-modal-cand').textContent=c.name+' · '+c.desig;
+  el('call-step-num').textContent=nextStep;
+  el('call-date').value=new Date().toISOString().slice(0,10);
+  el('call-remarks').value='';
+  el('call-remarks-err').style.display='none';
+  el('call-date-label').textContent=nextStep===3?'Interview Date *':'Call Date *';
+
+  // Show history
+  let hist='';
+  if(step>=1&&status.call1Date) hist+='<div class="call-hist-item"><span class="call-hist-badge">1st Call</span> '+status.call1Date+(status.call1Remarks?' — <i>'+status.call1Remarks+'</i>':'')+'</div>';
+  if(step>=2&&status.call2Date) hist+='<div class="call-hist-item"><span class="call-hist-badge">2nd Call</span> '+status.call2Date+(status.call2Remarks?' — <i>'+status.call2Remarks+'</i>':'')+'</div>';
+  el('call-history').innerHTML=hist;
+  el('call-history-wrap').style.display=hist?'block':'none';
+
+  el('call-modal').classList.add('show');
+  setTimeout(()=>el('call-remarks').focus(),100);
+  el('call-modal').dataset.step=nextStep;
 }
-function closeRejModal() { el('rej-modal').classList.remove('show'); }
-async function confirmReject() {
-  const reason=el('rej-reason-sel').value;
-  if(!reason){toast('Select a reason','error');return;}
-  await API.updateCandidate(rejectTargetAppNo,{status:'Rejected',q4:reason});
-  allCandidates=allCandidates.map(function(c){
-    return c.appNo===rejectTargetAppNo?Object.assign({},c,{status:'Rejected',rejReason:reason}):c;
-  });
-  buildKPIs(); buildPills(); applyFilters();
-  closeRejModal(); toast('Candidate rejected','warn');
+function closeCallModal(){ el('call-modal').classList.remove('show'); _callCandidate=null; }
+async function confirmCallStep(){
+  const date=el('call-date').value;
+  const remarks=el('call-remarks').value.trim();
+  if(!date){ toast('Date is required','error'); return; }
+  if(remarks.length<5){
+    el('call-remarks-err').style.display='block';
+    el('call-remarks').classList.add('err');
+    return;
+  }
+  const step=parseInt(el('call-modal').dataset.step);
+  const btn=el('call-confirm-btn'); btn.disabled=true; btn.textContent='Saving...';
+  try{
+    const res=await API.saveCallStep({appNo:_callCandidate.appNo,candidate:_callCandidate.name,desig:_callCandidate.desig,step,date,remarks});
+    updateLocal(_callCandidate.appNo,{status:res.newStatus||(_callCandidate.status)});
+    buildKPIs(); buildPills(); applyFilters();
+    closeCallModal(); closeDrawer();
+    const stepMsg={1:'1st call logged',2:'2nd call logged',3:'Interview scheduled!'};
+    toast(stepMsg[step]||'Saved','success');
+  }catch(e){ toast('Error: '+e.message,'error'); }
+  finally{ btn.disabled=false; btn.textContent='Save & Continue'; }
 }
 
-// ── Bulk Actions ──────────────────────────────────────────────
-function rowCheck() {
+// ── Bulk ──────────────────────────────────────────────────────
+function rowCheck(){
   const n=document.querySelectorAll('.row-chk:checked').length;
   el('bulk-bar').classList.toggle('show',n>0);
   el('bulk-count').textContent=n+' selected';
 }
-function toggleAll(chk) {
-  document.querySelectorAll('.row-chk').forEach(function(c){c.checked=chk.checked;});
-  rowCheck();
-}
-function clearBulk() {
-  document.querySelectorAll('.row-chk,#chk-all').forEach(function(c){c.checked=false;});
-  rowCheck();
-}
-async function bulkAction(status) {
-  const idxs=Array.from(document.querySelectorAll('.row-chk:checked')).map(function(c){return parseInt(c.dataset.idx);});
+function toggleAll(chk){ document.querySelectorAll('.row-chk').forEach(c=>c.checked=chk.checked); rowCheck(); }
+function clearBulk(){ document.querySelectorAll('.row-chk,#chk-all').forEach(c=>c.checked=false); rowCheck(); }
+async function bulkAction(status){
+  const idxs=Array.from(document.querySelectorAll('.row-chk:checked')).map(c=>parseInt(c.dataset.idx));
   if(!idxs.length) return;
-  const appNos=idxs.map(function(i){return filtered[i]?filtered[i].appNo:null;}).filter(Boolean);
-  showModal({title:'Bulk '+status,body:'Change <b>'+appNos.length+'</b> candidates to <b>'+status+'</b>?',
-    confirmText:'Apply',confirmClass:'btn-primary',
+  const appNos=idxs.map(i=>filtered[i]?filtered[i].appNo:null).filter(Boolean);
+  showModal({title:'Bulk '+status,body:'Change <b>'+appNos.length+'</b> to <b>'+status+'</b>?',confirmText:'Apply',confirmClass:'btn-primary',
     onConfirm:async function(){
-      await Promise.all(appNos.map(function(a){return API.updateCandidate(a,{status:status});}));
-      allCandidates=allCandidates.map(function(c){
-        return appNos.includes(c.appNo)?Object.assign({},c,{status:status}):c;
-      });
-      buildKPIs();buildPills();applyFilters();clearBulk();
-      toast(appNos.length+' updated','success');
+      await Promise.all(appNos.map(a=>API.updateCandidate(a,{status})));
+      appNos.forEach(a=>updateLocal(a,{status}));
+      buildKPIs(); buildPills(); applyFilters(); clearBulk(); toast(appNos.length+' updated','success');
     }
   });
 }
-
-// ── Export CSV ────────────────────────────────────────────────
-function exportCSV() {
-  const hdr=['App No','Name','Phone','Designation','Source','Referrer','Date','Status','Days In'];
-  const rows=filtered.map(function(c){return[c.appNo,c.name,c.phone,c.desig,c.source,c.referrer,c.date,c.status,c.daysIn];});
-  const csv=[hdr].concat(rows).map(function(r){return r.map(function(v){return '"'+v+'"';}).join(',');}).join('\n');
-  const a=document.createElement('a');
-  a.href='data:text/csv;charset=utf-8,'+encodeURIComponent(csv);
-  a.download='BSC_Candidates_'+new Date().toISOString().slice(0,10)+'.csv';
-  a.click();
+function exportCSV(){
+  const hdr=['App No','Name','Phone','Designation','Source','Date','Status','Days In'];
+  const rows=filtered.map(c=>[c.appNo,c.name,c.phone,c.desig,c.source,c.date,c.status,c.daysIn]);
+  const csv=[hdr].concat(rows).map(r=>r.map(v=>'"'+v+'"').join(',')).join('\n');
+  const a=document.createElement('a');a.href='data:text/csv;charset=utf-8,'+encodeURIComponent(csv);
+  a.download='BSC_Candidates_'+new Date().toISOString().slice(0,10)+'.csv';a.click();
 }
 
-// ── Candidate Detail Drawer ────────────────────────────────────
-function openDrawer(idx) {
+// ── Drawer ────────────────────────────────────────────────────
+function openDrawer(idx){
   const c=filtered[idx]; if(!c) return;
-  el('dr-av').textContent=c.initials;
-  el('dr-av').style.background=AV_BG[c.color]||'#1E2D4E';
-  el('dr-name').textContent=c.name;
-  el('dr-appno').textContent=c.appNo+' · Applied '+c.date;
+  el('dr-av').textContent=c.initials; el('dr-av').style.background=AV_BG[c.color]||'#1E2D4E';
+  el('dr-name').textContent=c.name; el('dr-appno').textContent=c.appNo+' · Applied '+c.date;
   const age=c.dob?calcAge(c.dob):'—';
   el('drawer-body').innerHTML=
-    '<div class="drawer-section">'+
-      '<div class="ds-title">Status</div>'+statusBadge(c.status)+
-      (c.rejReason?'<span style="font-size:10px;color:var(--red);margin-left:6px;font-style:italic">'+c.rejReason+'</span>':'')+
-      '<span style="font-size:10px;color:#999;margin-left:8px">'+c.daysIn+'d in pipeline</span>'+
-    '</div>'+
-    '<div class="drawer-section"><div class="ds-title">Personal Details</div>'+
-      '<div class="drow"><span class="drow-label">Full Name</span><span class="drow-val highlight">'+c.name+'</span></div>'+
-      '<div class="drow"><span class="drow-label">Date of Birth</span><span class="drow-val">'+(c.dob||'—')+(age!=='—'?' ('+age+' yrs)':'')+'</span></div>'+
-      '<div class="drow"><span class="drow-label">Phone</span><span class="drow-val">'+String(c.phone||'').replace(/(\d{5})(\d{5})/,'$1 $2')+'</span></div>'+
-    '</div>'+
-    '<div class="drawer-section"><div class="ds-title">Application Details</div>'+
-      '<div class="drow"><span class="drow-label">Designation</span><span class="drow-val highlight">'+c.desig+'</span></div>'+
-      '<div class="drow"><span class="drow-label">Expected Salary</span><span class="drow-val salary">'+(c.salary?'&#x20B9;'+Number(c.salary).toLocaleString('en-IN'):'—')+'</span></div>'+
-      '<div class="drow"><span class="drow-label">Source</span><span class="drow-val">'+(c.source||'—')+'</span></div>'+
-      '<div class="drow"><span class="drow-label">Referrer</span><span class="drow-val">'+(c.referrer||'—')+'</span></div>'+
-      '<div class="drow"><span class="drow-label">Resume</span><span class="drow-val">'+(c.resume||'—')+'</span></div>'+
-    '</div>'+
-    ((c.q1||c.q2||c.q3||c.q4)?
-      '<div class="drawer-section"><div class="ds-title">Designation Questions</div>'+
-      (c.q1?'<div class="q-ans"><div class="q-ans-label">Experience</div><div class="q-ans-val">'+c.q1+'</div></div>':'')+
-      (c.q2?'<div class="q-ans"><div class="q-ans-label">Textile Store</div><div class="q-ans-val">'+c.q2+'</div></div>':'')+
-      (c.q3?'<div class="q-ans"><div class="q-ans-label">Qualification</div><div class="q-ans-val">'+c.q3+'</div></div>':'')+
-      (c.q4&&c.status!=='Rejected'?'<div class="q-ans"><div class="q-ans-label">Join When</div><div class="q-ans-val">'+c.q4+'</div></div>':'')+
-    '</div>':'');
-  el('drawer-actions').innerHTML=buildDrawerActions(c,idx);
+    '<div class="drawer-section"><div class="ds-title">Status</div>'+statusBadge(c.status)+'<span style="font-size:10px;color:#999;margin-left:8px">'+c.daysIn+'d in pipeline</span></div>'
+    +'<div class="drawer-section"><div class="ds-title">Personal</div>'
+      +'<div class="drow"><span class="drow-label">Name</span><span class="drow-val highlight">'+c.name+'</span></div>'
+      +'<div class="drow"><span class="drow-label">DOB / Age</span><span class="drow-val">'+(c.dob||'—')+(age!=='—'?' ('+age+' yrs)':'')+'</span></div>'
+      +'<div class="drow"><span class="drow-label">Phone</span><span class="drow-val">'+String(c.phone||'').replace(/(\d{5})(\d{5})/,'$1 $2')+'</span></div>'
+    +'</div>'
+    +'<div class="drawer-section"><div class="ds-title">Application</div>'
+      +'<div class="drow"><span class="drow-label">Designation</span><span class="drow-val highlight">'+c.desig+'</span></div>'
+      +'<div class="drow"><span class="drow-label">Salary</span><span class="drow-val salary">'+(c.salary?'₹'+Number(c.salary).toLocaleString('en-IN'):'—')+'</span></div>'
+      +'<div class="drow"><span class="drow-label">Source</span><span class="drow-val">'+(c.source||'—')+'</span></div>'
+      +'<div class="drow"><span class="drow-label">Resume</span><span class="drow-val">'+(c.resumeUrl?'<a href="'+c.resumeUrl+'" target="_blank" style="color:var(--blue)">View PDF ↗</a>':'—')+'</span></div>'
+    +'</div>'
+    +((c.q1||c.q2)
+      ?'<div class="drawer-section"><div class="ds-title">Q&A</div>'
+        +(c.q1?'<div class="q-ans"><div class="q-ans-label">Experience</div><div class="q-ans-val">'+c.q1+'</div></div>':'')
+        +(c.q2?'<div class="q-ans"><div class="q-ans-label">Textile exp.</div><div class="q-ans-val">'+c.q2+'</div></div>':'')
+        +(c.q3?'<div class="q-ans"><div class="q-ans-label">Qualification</div><div class="q-ans-val">'+c.q3+'</div></div>':'')
+        +(c.q4?'<div class="q-ans"><div class="q-ans-label">Weekends</div><div class="q-ans-val">'+c.q4+'</div></div>':'')
+        +(c.q5?'<div class="q-ans"><div class="q-ans-label">Joining</div><div class="q-ans-val">'+c.q5+'</div></div>':'')
+        +(c.remarks?'<div class="q-ans"><div class="q-ans-label">Remarks</div><div class="q-ans-val">'+c.remarks+'</div></div>':'')
+      +'</div>' : '');
+  el('drawer-actions').innerHTML=isViewOnly
+    ?'<div style="font-size:11px;color:#aaa;padding:8px;text-align:center">View only access</div>'
+    :buildDrawerActions(c,idx);
   el('drawer-overlay').classList.add('show');
   el('cand-drawer').classList.add('open');
 }
-function buildDrawerActions(c,idx) {
+function buildDrawerActions(c,idx){
   const s=c.status;
-  if(s==='New')
-    return '<button class="da-btn da-shortlist" data-idx="'+idx+'" onclick="clickShortlist(this)">&#x2713; Shortlist</button>'+
-           '<button class="da-btn da-hold"      data-idx="'+idx+'" onclick="clickHold(this)">Hold</button>'+
-           '<button class="da-btn da-reject"    data-idx="'+idx+'" onclick="closeDrawer();clickReject(this)">Reject</button>';
-  if(s==='Shortlisted')
-    return '<button class="da-btn da-schedule" data-idx="'+idx+'" onclick="closeDrawer();clickSched(this)">&#x1F3AF; Schedule Interview</button>'+
-           '<button class="da-btn da-hold"     data-idx="'+idx+'" onclick="clickHold(this)">Hold</button>';
-  if(s==='Selected')
-    return '<button class="da-btn da-shortlist" onclick="closeDrawer();window.location.href=\'offer-process.html\'">&#x1F4C4; Send Offer</button>';
-  if(s==='Hold')
-    return '<button class="da-btn da-shortlist" data-idx="'+idx+'" onclick="clickReactivate(this)">Reactivate</button>'+
-           '<button class="da-btn da-reject"    data-idx="'+idx+'" onclick="closeDrawer();clickReject(this)">Reject</button>';
-  if(s==='Rejected')
-    return '<button class="da-btn da-shortlist" data-idx="'+idx+'" onclick="clickReactivate(this)">Re-engage</button>';
-  if(s==='Onboarding')
-    return '<button class="da-btn da-schedule" onclick="closeDrawer();window.location.href=\'onboarding.html\'">&#x2705; Onboarding</button>';
-  return '<span style="font-size:11px;color:#aaa;padding:8px">No actions available</span>';
+  if(s==='New') return '<button class="da-btn da-shortlist" data-idx="'+idx+'" onclick="clickShortlist(this)">✓ Shortlist</button><button class="da-btn da-hold" data-idx="'+idx+'" onclick="clickHoldDrawer('+idx+')">Hold</button><button class="da-btn da-reject" data-idx="'+idx+'" onclick="clickReject(this)">Reject</button>';
+  if(s==='Shortlisted'||s==='1st Call Done'||s==='2nd Call Done') return '<button class="da-btn da-schedule" data-idx="'+idx+'" onclick="clickStartCall(this)">Next Step →</button><button class="da-btn da-hold" data-idx="'+idx+'" onclick="clickHoldDrawer('+idx+')">Hold</button>';
+  if(s==='Hold') return '<button class="da-btn da-shortlist" data-idx="'+idx+'" onclick="clickReactivate(this)">Reactivate</button><button class="da-btn da-reject" data-idx="'+idx+'" onclick="clickReject(this)">Reject</button>';
+  if(s==='Rejected') return '<button class="da-btn da-shortlist" data-idx="'+idx+'" onclick="clickReactivate(this)">Re-engage</button>';
+  if(s==='Selected') return '<button class="da-btn da-shortlist" onclick="closeDrawer();window.location.href=\'offer-process.html\'">Send Offer</button>';
+  return '<span style="font-size:11px;color:#aaa;padding:8px">No actions</span>';
 }
-function closeDrawer() {
-  el('drawer-overlay').classList.remove('show');
-  el('cand-drawer').classList.remove('open');
+async function doStatusChange(appNo,status,label){
+  await API.updateCandidate(appNo,{status});
+  updateLocal(appNo,{status}); buildKPIs(); buildPills(); applyFilters();
+  toast(label,'success');
 }
-document.addEventListener('keydown',function(e){if(e.key==='Escape')closeDrawer();});
+function closeDrawer(){ el('drawer-overlay').classList.remove('show'); el('cand-drawer').classList.remove('open'); }
+document.addEventListener('keydown',e=>{ if(e.key==='Escape'){ closeDrawer(); closeCallModal(); closeRemarkModal(); } });
 
-// ── Schedule Interview Modal ── FIX: store data on modal element ──
-function openSchedModal(appNo) {
-  const c = allCandidates.find(function(x){return x.appNo===appNo;});
-  if (!c) { toast('Candidate not found','error'); return; }
 
-  // Store directly on DOM — no global variable that can be lost
-  const modal = el('sched-modal');
-  modal.dataset.appno = c.appNo;
-  modal.dataset.cname = c.name;
-  modal.dataset.desig = c.desig;
-
-  const today = new Date().toISOString().slice(0,10);
-  el('sched-call1').value     = '';
-  el('sched-call2').value     = '';
-  el('sched-interview').value = today;
-  el('sched-int-err').style.display = 'none';
-  el('sched-cand-info').innerHTML = 'Scheduling interview for <b>'+c.name+'</b> &nbsp;&middot;&nbsp; '+c.desig;
-  modal.classList.add('show');
-}
-
-function closeSchedModal() {
-  const modal = el('sched-modal');
-  modal.classList.remove('show');
-  delete modal.dataset.appno;
-  delete modal.dataset.cname;
-  delete modal.dataset.desig;
-}
-
-async function confirmSchedule() {
-  const modal   = el('sched-modal');
-  const appNo   = modal.dataset.appno;
-  const name    = modal.dataset.cname;
-  const desig   = modal.dataset.desig;
-
-  if (!appNo) { toast('Error — please close and try again','error'); return; }
-
-  const call1   = el('sched-call1').value;
-  const call2   = el('sched-call2').value;
-  const intDate = el('sched-interview').value;
-
-  el('sched-int-err').style.display = intDate ? 'none' : 'block';
-  if (!intDate) return;
-
-  const btn = el('sched-confirm-btn');
-  btn.textContent = 'Scheduling\u2026'; btn.disabled = true;
-
-  try {
-    await API.scheduleInterview({
-      appNo:appNo, candidate:name, desig:desig,
-      call1Date:call1, call2Date:call2, interviewDate:intDate
-    });
-    closeSchedModal();
-    toast(name+' interview scheduled on '+new Date(intDate).toLocaleDateString('en-IN',{day:'2-digit',month:'short',year:'numeric'}),'success');
-  } catch(e) {
-    toast('Failed: '+e.message,'error');
-  } finally {
-    btn.textContent='Confirm Schedule'; btn.disabled=false;
-  }
+async function toggleSelRejPanel(type){
+  const panel=el('sel-rej-panel');
+  if(panel.dataset.current===type&&panel.style.display!=='none'){panel.style.display='none';return;}
+  panel.dataset.current=type;panel.style.display='block';
+  el('sel-rej-title').textContent=type==='selected'?'Selected Candidates':'Rejected Candidates';
+  el('sel-rej-tbody').innerHTML='<tr><td colspan="6" style="text-align:center;padding:16px"><div class="skel" style="height:12px;width:50%;margin:auto"></div></td></tr>';
+  try{
+    if(type==='selected'){
+      const d=await API.getSelectedCandidates();
+      el('sel-rej-head').innerHTML='<tr><th>App No</th><th>Name</th><th>Designation</th><th>Source</th><th>HR Score</th><th>Total Score</th><th>Remarks</th></tr>';
+      el('sel-rej-tbody').innerHTML=(d.candidates||[]).map(c=>'<tr><td style="font-size:10px">'+c.appNo+'</td><td><b>'+c.name+'</b></td><td>'+c.desig+'</td><td>'+c.source+'</td><td>'+c.hrScore+'</td><td><b style="color:var(--green)">'+c.totalScore+'</b></td><td style="font-size:10.5px;color:#777">'+c.remarks+'</td></tr>').join('')||'<tr><td colspan="7" style="text-align:center;color:#bbb;padding:16px">No selected candidates yet</td></tr>';
+    }else{
+      const d=await API.getRejectedCandidates();
+      el('sel-rej-head').innerHTML='<tr><th>App No</th><th>Name</th><th>Designation</th><th>Stage</th><th>Rejected On</th><th>Remarks</th></tr>';
+      el('sel-rej-tbody').innerHTML=(d.candidates||[]).map(c=>'<tr><td style="font-size:10px">'+c.appNo+'</td><td><b>'+c.name+'</b></td><td>'+c.desig+'</td><td><span class="badge b-short">'+c.stage+'</span></td><td style="font-size:10.5px">'+c.rejectionDate+'</td><td style="font-size:10.5px;color:#777">'+c.remarks+'</td></tr>').join('')||'<tr><td colspan="6" style="text-align:center;color:#bbb;padding:16px">No rejected candidates yet</td></tr>';
+    }
+  }catch(e){el('sel-rej-tbody').innerHTML='<tr><td colspan="6" style="text-align:center;color:var(--red)">Error loading data</td></tr>';}
 }
 
 </script>

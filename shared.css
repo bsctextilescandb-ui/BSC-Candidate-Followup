@@ -334,3 +334,46 @@ tr.row-danger td{background:#FFF8F8}
 
 @media(max-width:960px){.app-shell{grid-template-columns:1fr}.sidebar{display:none}.kpi-grid{grid-template-columns:repeat(2,1fr)}}
 @media(max-width:600px){.kpi-grid{grid-template-columns:1fr 1fr}.content{padding:12px}}
+
+/* BSC CRM shared.css v4 — appends mobile sidebar + all fixes to existing CSS */
+
+/* ── Mobile sidebar toggle ─────────────────────────────────── */
+.sb-toggle{display:none;position:fixed;top:10px;left:10px;z-index:600;width:38px;height:38px;border-radius:8px;background:var(--navy);border:none;cursor:pointer;flex-direction:column;align-items:center;justify-content:center;gap:5px;box-shadow:0 2px 8px rgba(0,0,0,.2)}
+.sb-toggle span{display:block;width:18px;height:2px;background:#fff;border-radius:2px;transition:all .2s}
+.sb-mob-overlay{display:none;position:fixed;inset:0;background:rgba(0,0,0,.45);z-index:399}
+.sb-mob-overlay.show{display:block}
+
+@media(max-width:768px){
+  .app-shell{grid-template-columns:1fr!important}
+  .sidebar{position:fixed;top:0;left:-240px;width:220px;height:100vh;z-index:400;transition:left .3s ease;overflow-y:auto}
+  .sidebar.mob-open{left:0}
+  .sb-toggle{display:flex}
+  .main{min-height:100vh}
+  .topbar{padding:9px 14px 9px 56px}
+  .content{padding:12px 10px}
+  .kpi-grid{grid-template-columns:1fr 1fr!important;gap:8px}
+  .kpi{padding:10px 12px}
+  .kpi-val{font-size:20px}
+  table{font-size:10.5px}
+  th,td{padding:5px 6px}
+  .drawer{width:100%!important;right:-100%!important}
+  .drawer.open{right:0!important}
+  .sp-panel{width:100%!important;right:-100%!important}
+  .sp-panel.open{right:0!important}
+  .dp-panel{width:100%!important;right:-100%!important}
+  .dp-panel.open{right:0!important}
+  .filter-bar{gap:6px}
+  .search-input{width:150px}
+  .btn{font-size:10.5px;padding:6px 10px}
+  .topbar-title{font-size:14px}
+  .df-bar{gap:5px}
+  .df-btn{font-size:10px;padding:4px 9px}
+  .chart-grid{grid-template-columns:1fr!important}
+  .ob-layout{grid-template-columns:1fr!important}
+  .modal{max-width:95vw;padding:18px 16px}
+}
+@media(max-width:400px){
+  .kpi-grid{grid-template-columns:1fr!important}
+  .topbar-right .live-ind,.topbar-right .topbar-time{display:none}
+  .fg-row{grid-template-columns:1fr!important}
+}
