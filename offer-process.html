@@ -67,6 +67,8 @@
         <div class="itab"        data-filter="Pending Accept" onclick="setFilter(this)">Pending</div>
         <div class="itab"        data-filter="Accepted"       onclick="setFilter(this)">Accepted</div>
         <div class="itab"        data-filter="Declined"       onclick="setFilter(this)">Declined</div>
+        <div class="itab"        data-filter="joining"        onclick="setFilter(this)" style="border-color:var(--green);color:var(--green)">&#x1F4C5; Joining Tracker</div>
+        <div class="itab"        data-filter="Joined"         onclick="setFilter(this)" style="border-color:var(--teal);color:var(--teal)">&#x2705; Joined</div>
       </div>
       <div class="table-card" style="padding:0">
         <div style="padding:12px 16px;border-bottom:1px solid #f0ede8;display:flex;align-items:center;justify-content:space-between;gap:8px">
@@ -84,6 +86,46 @@
           <div style="display:flex;gap:6px">
             <button class="btn btn-muted btn-sm" id="of-prev" onclick="changePage(-1)" disabled>&larr;</button>
             <button class="btn btn-outline btn-sm" id="of-next" onclick="changePage(1)">&rarr;</button>
+          </div>
+        </div>
+      </div>
+    
+      <!-- Joining Tracker Panel -->
+      <div id="joining-panel" style="display:none;margin-top:4px">
+        <div class="table-card" style="padding:0">
+          <div style="padding:12px 16px;border-bottom:1px solid #f0ede8;display:flex;align-items:center;justify-content:space-between">
+            <div>
+              <span class="card-title" id="joining-panel-title">Joining Tracker</span>
+              <div style="font-size:10px;color:#888;margin-top:2px">Candidates who accepted offer — waiting to join</div>
+            </div>
+          </div>
+          <div class="table-wrap">
+            <table>
+              <thead><tr>
+                <th>Candidate</th><th>Designation</th><th>Notice Period</th>
+                <th>Est. DOJ</th><th>Status</th><th id="joining-action-hd">Action</th>
+              </tr></thead>
+              <tbody id="joining-tbody">
+                <tr><td colspan="6" style="text-align:center;padding:24px;color:#bbb">Loading...</td></tr>
+              </tbody>
+            </table>
+          </div>
+        </div>
+      </div>
+
+      <!-- Mark Joined Modal -->
+      <div class="modal-overlay" id="join-modal" style="display:none">
+        <div class="modal" style="max-width:400px">
+          <div class="modal-title" style="color:var(--green)">&#x2705; Confirm Joining</div>
+          <div class="modal-body">
+            <p id="join-cand-info" style="font-size:12px;color:#555;background:#F9F7F4;padding:8px 12px;border-radius:7px;margin-bottom:14px"></p>
+            <label style="display:block;font-size:9px;font-weight:700;color:#888;text-transform:uppercase;margin-bottom:5px">ACTUAL DATE OF JOINING <span style="color:var(--red)">*</span></label>
+            <input type="date" id="join-date-input" style="width:100%;font-size:14px;padding:9px 11px;border:1.5px solid #ddd;border-radius:8px;background:#F9F7F4;font-family:inherit">
+            <div style="font-size:10px;color:var(--red);margin-top:4px;display:none" id="join-date-err">Joining date is required</div>
+          </div>
+          <div class="modal-btns">
+            <button class="btn btn-muted" onclick="closeJoinModal()">Cancel</button>
+            <button class="btn btn-green" id="join-confirm-btn" onclick="confirmJoining()">Confirm Joining</button>
           </div>
         </div>
       </div>
@@ -357,6 +399,126 @@ async function clickReengage(){
   await API.updateOfferStatus(appNo,'Pending Accept');
   closePanel(); const d=await API.getOffers(); allOffers=d.offers||[]; buildKPIs(); applyFilter(); toast('Re-engaged','success');
 }
+
+
+// ── Joining Tracker ───────────────────────────────────────────
+function renderJoiningTracker(type){
+  const panel = document.getElementById('joining-panel');
+  const tbody  = document.getElementById('joining-tbody');
+  const title  = document.getElementById('joining-panel-title');
+  const actHd  = document.getElementById('joining-action-hd');
+  panel.style.display = 'block';
+
+  const isJoined = type === 'Joined';
+  title.textContent  = isJoined ? 'Joined Employees' : 'Joining Tracker — Awaiting Join';
+  actHd.textContent  = isJoined ? 'Joined On' : 'Action';
+
+  const today = new Date();
+  const list  = allOffers.filter(function(o){
+    return isJoined ? o.status==='Joined' : o.status==='Accepted';
+  });
+
+  if(!list.length){
+    tbody.innerHTML='<tr><td colspan="6" style="text-align:center;padding:24px;color:#bbb">'
+      +(isJoined?'No joined employees yet':'No accepted candidates pending joining')+'</td></tr>';
+    return;
+  }
+
+  tbody.innerHTML = list.map(function(o){
+    const doj     = o.estDoj ? new Date(o.estDoj) : null;
+    const dayDiff = doj ? Math.ceil((doj - today) / 86400000) : null;
+    let dojBadge  = '';
+    if(doj){
+      if(isJoined){
+        dojBadge = '<span class="badge b-sel" style="font-size:9.5px">'+fmtDate(o.estDoj)+'</span>';
+      } else if(dayDiff < 0){
+        dojBadge = '<span class="badge b-rej" style="font-size:9.5px">Overdue '+Math.abs(dayDiff)+'d</span>';
+      } else if(dayDiff === 0){
+        dojBadge = '<span class="badge b-int" style="font-size:9.5px">Joining Today!</span>';
+      } else if(dayDiff <= 3){
+        dojBadge = '<span class="badge b-warn" style="font-size:9.5px">In '+dayDiff+'d</span>';
+      } else {
+        dojBadge = '<span class="badge b-info" style="font-size:9.5px">In '+dayDiff+'d</span>';
+      }
+    }
+
+    const actualDojCell = isJoined
+      ? '<span style="font-size:11px;font-weight:600;color:var(--green)">'+(o.actualDoj?fmtDate(o.actualDoj):'—')+'</span>'
+      : '<button class="btn btn-green btn-sm" data-appno="'+o.appNo+'" data-name="'+o.name+'" data-desig="'+o.desig+'" data-doj="'+(o.estDoj||'')+'" onclick="openJoinModal(this)">Enter Joining Date</button>';
+
+    return '<tr>'
+      +'<td><div class="td-name"><div class="av av-'+o.color+'">'+o.initials+'</div><div><b>'+o.name+'</b><div style="font-size:9px;color:#aaa">'+o.appNo+'</div></div></div></td>'
+      +'<td style="font-size:11px">'+o.desig+'</td>'
+      +'<td style="font-size:11px">'+(o.noticePd||'—')+'</td>'
+      +'<td>'+(o.estDoj?'<span style="font-size:11px">'+fmtDate(o.estDoj)+'</span>':'<span style="color:#bbb">—</span>')+' '+dojBadge+'</td>'
+      +'<td>'+( isJoined
+        ? '<span class="badge b-sel">&#x2705; Joined</span>'
+        : (dayDiff!==null&&dayDiff<0
+          ? '<span class="badge b-rej">Did Not Join</span>'
+          : '<span class="badge b-short">Awaiting</span>'))
+      +'</td>'
+      +'<td>'+actualDojCell+'</td>'
+    +'</tr>';
+  }).join('');
+}
+
+function fmtDate(v){
+  if(!v) return '—';
+  try{ const d=new Date(v); return isNaN(d)?String(v):d.toLocaleDateString('en-IN',{day:'2-digit',month:'short',year:'numeric'}); }catch{ return String(v); }
+}
+
+// Override setFilter to handle joining tabs
+const _origSetFilter = setFilter;
+function setFilter(btn){
+  document.querySelectorAll('.itab').forEach(t=>t.classList.remove('active'));
+  btn.classList.add('active');
+  const f = btn.dataset.filter;
+  const jp = document.getElementById('joining-panel');
+  if(f==='joining'||f==='Joined'){
+    // Hide main table, show joining panel
+    document.querySelector('.table-card').style.display='none';
+    jp.style.display='block';
+    renderJoiningTracker(f);
+    activeFilter=f; return;
+  }
+  // Show main table
+  document.querySelector('.table-card').style.display='';
+  jp.style.display='none';
+  activeFilter=f; currentPage=1; applyFilter();
+}
+
+function openJoinModal(btn){
+  const appNo = btn.dataset.appno;
+  const name  = btn.dataset.name;
+  const desig = btn.dataset.desig;
+  const doj   = btn.dataset.doj;
+  document.getElementById('join-modal').dataset.appno = appNo;
+  document.getElementById('join-cand-info').innerHTML = '<b>'+name+'</b> — '+desig+'<br>'
+    +(doj?'<span style="font-size:10.5px;color:#888">Est. DOJ: '+fmtDate(doj)+'</span>':'');
+  document.getElementById('join-date-input').value = doj || new Date().toISOString().slice(0,10);
+  document.getElementById('join-date-err').style.display='none';
+  document.getElementById('join-modal').style.display='flex';
+}
+function closeJoinModal(){ document.getElementById('join-modal').style.display='none'; }
+
+async function confirmJoining(){
+  const modal  = document.getElementById('join-modal');
+  const appNo  = modal.dataset.appno;
+  const jDate  = document.getElementById('join-date-input').value;
+  if(!jDate){ document.getElementById('join-date-err').style.display='block'; return; }
+  const btn = document.getElementById('join-confirm-btn');
+  btn.disabled=true; btn.textContent='Saving...';
+  try{
+    await API.call('markJoined',{appNo:appNo, joiningDate:jDate});
+    closeJoinModal();
+    // Refresh
+    const d = await API.getOffers(); allOffers=d.offers||[]; buildKPIs();
+    renderJoiningTracker('joining');
+    toast('Joining confirmed! Employee is now active.','success');
+  }catch(e){ toast('Error: '+e.message,'error'); }
+  finally{ btn.disabled=false; btn.textContent='Confirm Joining'; }
+}
+
 </script>
 </body>
 </html>
