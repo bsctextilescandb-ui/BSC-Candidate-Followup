@@ -352,12 +352,13 @@ function clickAssign(btn) {
 
 function clickShareLink(btn) {
   var iv = filtered[parseInt(btn.dataset.idx)]; if(!iv) return;
-  // Re-open assign modal showing the existing link
   el('assign-modal').dataset.idx = btn.dataset.idx;
   el('assign-cand').textContent = iv.candidate+' · '+iv.desig;
   el('assign-name').value  = iv.assignedName||'';
   el('assign-desig').value = iv.assignedDesig||'';
-  var link = 'https://bsctextilescandb-ui.github.io/BSC-Candidate-Followup/interview-form.html?token='+iv.token;
+  // Always build full absolute URL
+  var token = iv.token||'';
+  var link  = 'https://bsctextilescandb-ui.github.io/BSC-Candidate-Followup/interview-form.html?token='+token;
   el('assign-link-input').value = link;
   el('assign-link-box').style.display = 'block';
   el('assign-modal').classList.add('show');
@@ -374,7 +375,12 @@ async function confirmAssign() {
       appNo:iv.appNo, candidate:iv.candidate, desig:iv.desig,
       assignedName:name, assignedDesig:desig
     });
-    el('assign-link-input').value = res.link;
+    // Ensure full absolute URL
+    var resolvedLink = res.link;
+    if(resolvedLink && !resolvedLink.startsWith('http')) {
+      resolvedLink = 'https://bsctextilescandb-ui.github.io/BSC-Candidate-Followup/interview-form.html?token='+(res.token||'');
+    }
+    el('assign-link-input').value = resolvedLink;
     el('assign-link-box').style.display='block';
     iv.assignedName  = name;
     iv.assignedDesig = desig;
@@ -388,9 +394,12 @@ async function confirmAssign() {
 
 function copyLink() {
   var val = el('assign-link-input').value;
-  navigator.clipboard.writeText(val).then(function(){ toast('Link copied!','success'); }).catch(function(){
-    el('assign-link-input').select(); document.execCommand('copy'); toast('Copied!','success');
-  });
+  if(!val.startsWith('http')){
+    toast('Error: invalid link — please regenerate','error'); return;
+  }
+  navigator.clipboard.writeText(val)
+    .then(function(){ toast('Link copied! Share this with the interviewer.','success'); })
+    .catch(function(){ el('assign-link-input').select(); document.execCommand('copy'); toast('Copied!','success'); });
 }
 
 function shareWhatsApp() {
