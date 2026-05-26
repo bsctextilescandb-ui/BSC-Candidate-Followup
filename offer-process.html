@@ -310,15 +310,16 @@ function renderCallRow(key, dateStr, remarks, callNo, label){
     '<div class="call-lbl">'+label+'</div>'
     +'<div class="call-status" id="'+key+'-status">'+(done?'<span style="color:var(--green)">&#x2713; '+dateStr+'</span>'+(remarks?'<div style="font-size:9.5px;color:#777;margin-top:2px;font-style:italic">"'+remarks+'"</div>':''):'<span style="color:#bbb">Not logged</span>')+'</div>'
     +'<button class="call-btn" id="'+key+'-btn" '+(done?'':'')
-      +' data-callno="'+callNo+'" onclick="logCallClick(this,'+(done?'true':'false')+')">'+(done?'Edit':'Log')+'</button>';
+      +' data-callno="'+callNo+'" data-done="'+(done?'1':'0')+'" onclick="logCallClick(this)">'+(done?'Edit':'Log')+'</button>';
 }
 
 function closePanel(){ el('dp-overlay').classList.remove('show'); el('dp-panel').classList.remove('open'); }
 document.addEventListener('keydown',function(e){ if(e.key==='Escape') closePanel(); });
 
 // ── Log Call with Remarks Modal ───────────────────────────────
-function logCallClick(btn, isDone){
+function logCallClick(btn){
   const callNo = parseInt(btn.dataset.callno);
+  const isDone = btn.dataset.done === '1';
   const labels = {1:'1st Call',2:'2nd Call',3:'Confirm Call'};
   el('lc-modal').dataset.callno = callNo;
   el('lc-title').textContent    = labels[callNo]+(isDone?' (Edit)':'');
