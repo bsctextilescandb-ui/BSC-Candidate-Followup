@@ -399,8 +399,8 @@ async function confirmRemark(){
     const reason = el('rm-reason').value;
     if(!reason){ toast('Select a reason first','error'); return; }
   }
+  const c=_rmCand, action=_rmAction;  // capture BEFORE close nullifies them
   closeRemarkModal();
-  const c=_rmCand, action=_rmAction;
   const statusMap = {shortlist:'Shortlisted', hold:'Hold', reject:'Rejected'};
   try {
     if(action==='reject'){
