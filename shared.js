@@ -152,12 +152,12 @@ const API = {
       getInterviews:{interviews:[]},
       saveCallStep:{success:true,newStatus:'1st Call Done'},
       getCallStatus:{step:0,status:'Not Started'},
-      generateInterviewToken:{success:true,token:'demo',link:'interview-form.html?token=demo'},
+      generateInterviewToken:{success:true,token:'demo',link:'https://bsctextilescandb-ui.github.io/BSC-Candidate-Followup/interview-form.html?token=demo'},
       submitInterviewScore:{success:true},
       getOffers:{offers:[],total:0},
       logOfferCall:{success:true},
       updateOfferDetails:{success:true},
-      acceptOffer:{success:true},
+      acceptOffer:{success:true}, markJoined:{success:true},
       updateOfferStatus:{success:true},
       approveSelection:{success:true},
       rejectCandidate:{success:true},
@@ -208,7 +208,8 @@ const STATUS_BADGE_MAP = {
   'New':'b-new','Shortlisted':'b-short','Interviewed':'b-int',
   'Selected':'b-sel','Offer Sent':'b-offer','Hold':'b-hold',
   'Rejected':'b-rej','Onboarding':'b-board',
-  '1st Call Done':'b-short','2nd Call Done':'b-short','Interview Scheduled':'b-int'
+  '1st Call Done':'b-short','2nd Call Done':'b-short','Interview Scheduled':'b-int',
+  'Offer Accepted':'b-board','Joined':'b-sel'
 };
 function statusBadge(s) {
   return '<span class="badge ' + (STATUS_BADGE_MAP[s] || 'b-info') + '">' + s + '</span>';
