@@ -13,6 +13,13 @@
 .rm-textarea{width:100%;font-size:13px;padding:9px 11px;border:1.5px solid #ddd;border-radius:8px;background:#F9F7F4;font-family:inherit;resize:none;height:80px;margin-top:8px}
 .rm-textarea:focus{outline:none;border-color:var(--navy)}
 .rm-textarea.err{border-color:var(--red)}
+
+.activity-item{display:flex;align-items:flex-start;gap:10px;padding:7px 0;border-bottom:1px solid #f5f3f0}
+.activity-item:last-child{border-bottom:none}
+.ai-dot{width:8px;height:8px;border-radius:50%;margin-top:4px;flex-shrink:0}
+.ai-body{flex:1}
+.ai-title{font-size:11.5px;font-weight:600;color:var(--navy)}
+.ai-remarks{font-size:10.5px;color:#777;margin-top:3px;font-style:italic;background:#F9F7F4;padding:5px 8px;border-radius:5px;margin-top:4px}
 </style>
 </head>
 <body>
@@ -146,7 +153,7 @@
 </div>
 
 <!-- Mandatory Remarks Modal -->
-<div class="modal-overlay" id="remark-modal">
+<div class="modal-overlay" id="remark-modal" style="display:none">
   <div class="modal">
     <div class="modal-title" id="rm-title">Shortlist Candidate</div>
     <div class="modal-body">
@@ -171,7 +178,7 @@
 </div>
 
 <!-- Step-by-Step Call Modal -->
-<div class="modal-overlay" id="call-modal">
+<div class="modal-overlay" id="call-modal" style="display:none">
   <div class="modal" style="max-width:460px">
     <div class="modal-title" id="call-modal-title">📞 1st Follow-up Call</div>
     <div class="modal-body">
@@ -205,7 +212,7 @@
 'use strict';
 const session  = initPage('candidates');
 const userRole = session ? session.role : 'HR';
-const isViewOnly = userRole === 'Manager'; // Manager = view only
+const isViewOnly = userRole === 'Manager';
 const PAGE_SIZE  = 10;
 
 let currentPage=1, allCandidates=[], filtered=[], activeStatus='all', sortDir='asc';
@@ -213,63 +220,65 @@ const AV_BG={navy:'#1E2D4E',gold:'#C9952A',green:'#2d8a4e',red:'#C0272D',purple:
 
 // ── Load ──────────────────────────────────────────────────────
 (async function load(){
-  try{
-    const data=await API.getCandidates({limit:500});
-    allCandidates=data.candidates||[];
-  }catch(e){ allCandidates=[]; }
+  try {
+    const data = await API.getCandidates({limit:500});
+    allCandidates = data.candidates || [];
+  } catch(e) {
+    console.error('[Candidates]', e);
+    allCandidates = [];
+  }
   buildKPIs(); buildPills(); applyFilters();
 })();
 
 // ── KPIs & Pills ──────────────────────────────────────────────
 function buildKPIs(){
-  const c=s=>allCandidates.filter(x=>x.status===s).length;
-  const cMulti=arr=>allCandidates.filter(x=>arr.includes(x.status)).length;
-  el('k-total').textContent =allCandidates.length;
-  el('k-new').textContent   =c('New');
-  el('k-short').textContent =cMulti(['Shortlisted','1st Call Done','2nd Call Done','Interview Scheduled']);
-  el('k-int').textContent   =c('Interviewed');
-  el('k-sel').textContent   =c('Selected');
-  el('k-offer').textContent =c('Offer Sent');
-  el('k-hold').textContent  =c('Hold');
-  el('k-rej').textContent   =c('Rejected');
+  const c = s => allCandidates.filter(x=>x.status===s).length;
+  const cM= a => allCandidates.filter(x=>a.includes(x.status)).length;
+  el('k-total').textContent  = allCandidates.length;
+  el('k-new').textContent    = c('New');
+  el('k-short').textContent  = cM(['Shortlisted','1st Call Done','2nd Call Done','Interview Scheduled']);
+  el('k-int').textContent    = c('Interviewed');
+  el('k-sel').textContent    = c('Selected');
+  el('k-offer').textContent  = c('Offer Sent');
+  el('k-hold').textContent   = c('Hold');
+  el('k-rej').textContent    = c('Rejected');
 }
 function buildPills(){
-  const c=s=>allCandidates.filter(x=>x.status===s).length;
-  const cMulti=arr=>allCandidates.filter(x=>arr.includes(x.status)).length;
-  el('p-all').textContent   =allCandidates.length;
-  el('p-new').textContent   =c('New');
-  el('p-short').textContent =cMulti(['Shortlisted','1st Call Done','2nd Call Done','Interview Scheduled']);
-  el('p-int').textContent   =c('Interviewed');
-  el('p-sel').textContent   =c('Selected');
-  el('p-offer').textContent =c('Offer Sent');
-  el('p-hold').textContent  =c('Hold');
-  el('p-rej').textContent   =c('Rejected');
-  el('p-board').textContent =c('Onboarding');
+  const c = s => allCandidates.filter(x=>x.status===s).length;
+  const cM= a => allCandidates.filter(x=>a.includes(x.status)).length;
+  el('p-all').textContent    = allCandidates.length;
+  el('p-new').textContent    = c('New');
+  el('p-short').textContent  = cM(['Shortlisted','1st Call Done','2nd Call Done','Interview Scheduled']);
+  el('p-int').textContent    = c('Interviewed');
+  el('p-sel').textContent    = c('Selected');
+  el('p-offer').textContent  = c('Offer Sent');
+  el('p-hold').textContent   = c('Hold');
+  el('p-rej').textContent    = c('Rejected');
+  el('p-board').textContent  = c('Onboarding');
 }
 
-// ── Filters — default sort: earliest first ────────────────────
+// ── Filters — sort earliest first by default ──────────────────
 function applyFilters(){
-  const q     =(el('cand-search').value||'').toLowerCase();
-  const desig =el('f-desig')  ? el('f-desig').value  : '';
-  const src   =el('f-source') ? el('f-source').value : '';
-  filtered=allCandidates.filter(function(c){
+  const q    = (el('cand-search').value||'').toLowerCase();
+  const desig= el('f-desig')  ? el('f-desig').value  : '';
+  const src  = el('f-source') ? el('f-source').value : '';
+  filtered = allCandidates.filter(function(c){
     if(activeStatus!=='all' && c.status!==activeStatus) return false;
-    if(desig && c.desig!==desig) return false;
-    if(src   && c.source!==src)  return false;
+    if(desig && c.desig!==desig)   return false;
+    if(src   && c.source!==src)    return false;
     if(q && !c.name.toLowerCase().includes(q) &&
             !c.appNo.toLowerCase().includes(q) &&
             !String(c.phone).includes(q)) return false;
     return true;
   });
-  // Sort by rawDate (earliest first by default)
   filtered.sort(function(a,b){
-    return sortDir==='asc' ? a.rawDate-b.rawDate : b.rawDate-a.rawDate;
+    return sortDir==='asc' ? (a.rawDate||0)-(b.rawDate||0) : (b.rawDate||0)-(a.rawDate||0);
   });
   currentPage=1; renderTable();
 }
 function toggleSort(){
-  sortDir=sortDir==='asc'?'desc':'asc';
-  el('sort-btn').textContent=sortDir==='asc'?'↑ Oldest First':'↓ Newest First';
+  sortDir = sortDir==='asc' ? 'desc' : 'asc';
+  el('sort-btn').textContent = sortDir==='asc' ? '↑ Oldest First' : '↓ Newest First';
   applyFilters();
 }
 initStatusPills(function(s){ activeStatus=s; applyFilters(); });
@@ -278,15 +287,15 @@ initStatusPills(function(s){ activeStatus=s; applyFilters(); });
 function renderTable(){
   const start=(currentPage-1)*PAGE_SIZE, page=filtered.slice(start,start+PAGE_SIZE), total=filtered.length;
   if(!page.length){
-    el('cand-tbody').innerHTML='<tr><td colspan="11"><div class="empty-state"><div class="empty-icon">&#x1F50D;</div><div class="empty-title">No candidates found</div></div></td></tr>';
+    el('cand-tbody').innerHTML = '<tr><td colspan="11"><div class="empty-state"><div class="empty-icon">&#x1F50D;</div><div class="empty-title">No candidates found</div></div></td></tr>';
     el('cand-page-info').textContent='0 results';
     el('prev-btn').disabled=true; el('next-btn').disabled=true; return;
   }
-  el('cand-tbody').innerHTML=page.map(function(c,i){
-    const idx   =start+i;
-    const ph    ='<span class="phone-mask" data-real="'+c.phone+'">'+maskPhone(c.phone)+'</span>';
-    const rejTag=(c.status==='Rejected'&&c.rejReason)?'<span class="rej-reason">'+c.rejReason+'</span>':'';
-    const rowCls=c.status==='Hold'?'row-hold':c.status==='Rejected'?'row-rejected':'';
+  el('cand-tbody').innerHTML = page.map(function(c,i){
+    const idx    = start+i;
+    const ph     = '<span class="phone-mask" data-real="'+c.phone+'">'+maskPhone(c.phone)+'</span>';
+    const rejTag = (c.status==='Rejected'&&c.rejReason) ? '<span class="rej-reason">'+c.rejReason+'</span>' : '';
+    const rowCls = c.status==='Hold'?'row-hold':c.status==='Rejected'?'row-rejected':'';
     return '<tr class="'+rowCls+'">'
       +'<td>'+(isViewOnly?'':'<input type="checkbox" class="row-chk" data-idx="'+idx+'" onchange="rowCheck()">')+'</td>'
       +'<td style="font-size:10px;white-space:nowrap">'+c.appNo+'</td>'
@@ -305,165 +314,168 @@ function renderTable(){
     +'</tr>';
   }).join('');
   el('cand-page-info').textContent='Showing '+(start+1)+'–'+Math.min(start+PAGE_SIZE,total)+' of '+total;
-  el('prev-btn').disabled=currentPage===1;
-  el('next-btn').disabled=start+PAGE_SIZE>=total;
+  el('prev-btn').disabled = currentPage===1;
+  el('next-btn').disabled = start+PAGE_SIZE>=total;
 }
 
-// ── Action buttons — step-based scheduling ────────────────────
-function buildActionBtns(c,idx){
-  const s=c.status;
+// ── Action buttons ────────────────────────────────────────────
+function buildActionBtns(c, idx){
+  const s = c.status;
+  // Store idx in dataset for safe retrieval
+  const d = 'data-idx="'+idx+'"';
   if(s==='New')
     return '<div style="display:flex;gap:3px;flex-wrap:wrap">'
-      +'<button class="btn btn-outline btn-sm"     data-idx="'+idx+'" onclick="clickShortlist(this)">Shortlist</button>'
-      +'<button class="btn btn-muted btn-sm"        data-idx="'+idx+'" onclick="clickHold(this)">Hold</button>'
-      +'<button class="btn btn-outline-red btn-sm" data-idx="'+idx+'" onclick="clickReject(this)">Reject</button>'
+      +'<button class="btn btn-outline btn-sm" '+d+' onclick="doShortlist(this)">Shortlist</button>'
+      +'<button class="btn btn-muted btn-sm"   '+d+' onclick="doHold(this)">Hold</button>'
+      +'<button class="btn btn-outline-red btn-sm" '+d+' onclick="doReject(this)">Reject</button>'
     +'</div>';
-  if(s==='Shortlisted')
-    return '<button class="btn btn-outline-gold btn-sm" data-idx="'+idx+'" onclick="clickStartCall(this)">&#x1F4DE; 1st Call</button>';
-  if(s==='1st Call Done')
-    return '<button class="btn btn-outline-gold btn-sm" data-idx="'+idx+'" onclick="clickStartCall(this)">&#x1F4DE; 2nd Call</button>';
-  if(s==='2nd Call Done')
-    return '<button class="btn btn-primary btn-sm" data-idx="'+idx+'" onclick="clickStartCall(this)">&#x1F4C5; Schedule Interview</button>';
-  if(s==='Interview Scheduled')
-    return '<span class="badge b-int">In Interview Panel</span>';
-  if(s==='Interviewed')
-    return '<button class="btn btn-outline btn-sm" onclick="window.location.href=\'interview-panel.html\'">View Scores</button>';
-  if(s==='Selected')
-    return '<button class="btn btn-outline-green btn-sm" onclick="window.location.href=\'offer-process.html\'">Send Offer</button>';
-  if(s==='Hold')
-    return '<button class="btn btn-outline-gold btn-sm" data-idx="'+idx+'" onclick="clickReactivate(this)">Reactivate</button>';
-  if(s==='Rejected')
-    return '<button class="btn btn-muted btn-sm" data-idx="'+idx+'" onclick="clickReactivate(this)">Re-engage</button>';
-  if(s==='Onboarding')
-    return '<span class="badge b-board">Onboarding</span>';
+  if(s==='Shortlisted')   return '<button class="btn btn-outline-gold btn-sm" '+d+' onclick="doCall(this)">&#x1F4DE; 1st Call</button>';
+  if(s==='1st Call Done') return '<button class="btn btn-outline-gold btn-sm" '+d+' onclick="doCall(this)">&#x1F4DE; 2nd Call</button>';
+  if(s==='2nd Call Done') return '<button class="btn btn-primary btn-sm" '+d+' onclick="doCall(this)">&#x1F4C5; Schedule Interview</button>';
+  if(s==='Interview Scheduled') return '<span class="badge b-int" style="font-size:9px">In Interview Panel</span>';
+  if(s==='Interviewed')  return '<button class="btn btn-outline btn-sm" onclick="window.location.href=\'interview-panel.html\'">View Scores</button>';
+  if(s==='Selected')     return '<button class="btn btn-outline-green btn-sm" onclick="window.location.href=\'offer-process.html\'">Send Offer</button>';
+  if(s==='Hold')         return '<button class="btn btn-outline-gold btn-sm" '+d+' onclick="doReactivate(this)">Reactivate</button>';
+  if(s==='Rejected')     return '<button class="btn btn-muted btn-sm" '+d+' onclick="doReactivate(this)">Re-engage</button>';
+  if(s==='Onboarding')   return '<span class="badge b-board">Onboarding</span>';
   return '';
 }
 function changePage(d){ currentPage+=d; renderTable(); }
 
-// ── Click handlers ────────────────────────────────────────────
-function getByIdx(btn){ return filtered[parseInt(btn.dataset.idx)]; }
+// ── Safe candidate getter — always works ──────────────────────
+function getCand(btn){ return filtered[parseInt(btn.dataset.idx)]; }
 
-function clickShortlist(btn) { openRemarkModal('shortlist',getByIdx(btn)); }
-function clickHold(btn)      { openRemarkModal('hold',getByIdx(btn)); }
-function clickReject(btn)    { openRemarkModal('reject',getByIdx(btn)); }
-function clickReactivate(btn){ const c=getByIdx(btn); if(c) doStatusChange(c.appNo,'New','Reactivated'); }
-function clickHoldDrawer(idx){ openRemarkModal('hold',filtered[idx]); }
-function clickStartCall(btn) { const c=getByIdx(btn); if(c) openCallModal(c); }
+// ── All action handlers go through remarks modal ──────────────
+function doShortlist(btn){ const c=getCand(btn); if(c) showRemarkModal('shortlist',c); }
+function doHold(btn){      const c=getCand(btn); if(c) showRemarkModal('hold',c); }
+function doReject(btn){    const c=getCand(btn); if(c) showRemarkModal('reject',c); }
+function doCall(btn){      const c=getCand(btn); if(c) openCallModal(c); }
+function doReactivate(btn){ const c=getCand(btn); if(c) quickStatusChange(c.appNo,'New'); }
 
-// ── MANDATORY REMARKS MODAL ───────────────────────────────────
-let _rmAction=null, _rmCandidate=null;
-function openRemarkModal(action, c){
-  if(!c) return;
-  _rmAction=action; _rmCandidate=c;
-  const labels={shortlist:'Shortlist',hold:'Hold',reject:'Reject'};
-  const colors={shortlist:'btn-primary',hold:'btn-outline-gold',reject:'btn-red'};
-  el('rm-title').textContent=labels[action]+' — '+c.name;
-  el('rm-remarks').value='';
-  el('rm-remarks-err').style.display='none';
-  el('rm-remarks').classList.remove('err');
-  el('rm-confirm-btn').className='btn '+colors[action];
-  el('rm-confirm-btn').textContent='Confirm '+labels[action];
-  if(action==='reject'){
-    el('rm-reason-wrap').style.display='block';
-    el('rm-reason').value='';
-  }else{
-    el('rm-reason-wrap').style.display='none';
-  }
-  el('remark-modal').classList.add('show');
-  setTimeout(()=>el('rm-remarks').focus(),100);
+// ── Quick status (no remarks needed for reactivate) ───────────
+async function quickStatusChange(appNo, status){
+  await API.updateCandidate(appNo,{status});
+  updateLocal(appNo,{status}); buildKPIs(); buildPills(); applyFilters();
+  toast('Status updated','success');
 }
-function closeRemarkModal(){ el('remark-modal').classList.remove('show'); _rmAction=null; _rmCandidate=null; }
+
+// ── REMARKS MODAL — direct DOM manipulation ───────────────────
+let _rmAction=null, _rmCand=null;
+function showRemarkModal(action, cand){
+  _rmAction=action; _rmCand=cand;
+  const title={shortlist:'Shortlist',hold:'Hold',reject:'Reject'}[action];
+
+  // Update modal content directly
+  el('rm-title').textContent = title+' — '+cand.name;
+  el('rm-remarks').value     = '';
+  el('rm-remarks').style.borderColor = '#ddd';
+  el('rm-remarks-err').style.display = 'none';
+
+  const btnClr = {shortlist:'#1E2D4E',hold:'#C9952A',reject:'#C0272D'}[action];
+  el('rm-confirm-btn').style.background = btnClr;
+  el('rm-confirm-btn').textContent      = 'Confirm '+title;
+
+  el('rm-reason-wrap').style.display = action==='reject' ? 'block' : 'none';
+  if(action==='reject') el('rm-reason').selectedIndex=0;
+
+  // Show modal
+  el('remark-modal').style.display = 'flex';
+  setTimeout(function(){ el('rm-remarks').focus(); }, 150);
+}
+
+function closeRemarkModal(){
+  el('remark-modal').style.display = 'none';
+  _rmAction=null; _rmCand=null;
+}
+
 async function confirmRemark(){
-  const remarks=el('rm-remarks').value.trim();
-  if(remarks.length<5){
-    el('rm-remarks-err').style.display='block';
-    el('rm-remarks').classList.add('err');
+  const remarks = el('rm-remarks').value.trim();
+  if(remarks.length < 5){
+    el('rm-remarks').style.borderColor = 'var(--red)';
+    el('rm-remarks-err').style.display = 'block';
     return;
   }
   if(_rmAction==='reject'){
-    const reason=el('rm-reason').value;
-    if(!reason){ toast('Select a reason','error'); return; }
+    const reason = el('rm-reason').value;
+    if(!reason){ toast('Select a reason first','error'); return; }
   }
   closeRemarkModal();
-  const c=_rmCandidate, action=_rmAction;
-  const statusMap={shortlist:'Shortlisted',hold:'Hold',reject:'Rejected'};
-  if(action==='reject'){
-    await API.rejectCandidate({appNo:c.appNo,remarks:remarks});
-    updateLocal(c.appNo,{status:'Rejected',rejReason:remarks});
-  }else{
-    await API.updateCandidate(c.appNo,{status:statusMap[action],remarks:remarks});
-    updateLocal(c.appNo,{status:statusMap[action]});
-  }
-  buildKPIs(); buildPills(); applyFilters();
-  toast('Done — '+c.name+' '+statusMap[action].toLowerCase(),'success');
-  closeDrawer();
+  const c=_rmCand, action=_rmAction;
+  const statusMap = {shortlist:'Shortlisted', hold:'Hold', reject:'Rejected'};
+  try {
+    if(action==='reject'){
+      await API.rejectCandidate({appNo:c.appNo, remarks:remarks});
+      updateLocal(c.appNo,{status:'Rejected', rejReason:remarks});
+    } else {
+      await API.updateCandidate(c.appNo,{status:statusMap[action], remarks:remarks});
+      updateLocal(c.appNo,{status:statusMap[action]});
+    }
+    buildKPIs(); buildPills(); applyFilters();
+    toast(c.name+' — '+statusMap[action],'success');
+    closeDrawer();
+  } catch(e){ toast('Error: '+e.message,'error'); }
 }
-function updateLocal(appNo,updates){
-  allCandidates=allCandidates.map(function(c){ return c.appNo===appNo?Object.assign({},c,updates):c; });
-}
 
-// ── STEP-BY-STEP SCHEDULING MODAL ────────────────────────────
-let _callCandidate=null;
-async function openCallModal(c){
-  _callCandidate=c;
-  const status=await API.getCallStatus(c.appNo);
-  const step=status.step||0;
-  // Determine which step to show
-  let nextStep=1;
-  if(step>=1) nextStep=2;
-  if(step>=2) nextStep=3;
+// ── CALL MODAL ────────────────────────────────────────────────
+let _callCand=null;
+async function openCallModal(cand){
+  _callCand=cand;
+  let status={step:0};
+  try{ status = await API.getCallStatus(cand.appNo); }catch(e){}
+  const step  = (status.step||0)+1; // next step to fill
+  const label = {1:'1st Follow-up Call',2:'2nd Follow-up Call',3:'Schedule Interview Date'}[step];
+  const icon  = step===3 ? '📅' : '📞';
 
-  const stepLabels={1:'1st Follow-up Call',2:'2nd Follow-up Call',3:'Schedule Interview Date'};
-  const stepIcons={1:'📞',2:'📞',3:'📅'};
-
-  el('call-modal-title').textContent=stepIcons[nextStep]+' '+stepLabels[nextStep];
-  el('call-modal-cand').textContent=c.name+' · '+c.desig;
-  el('call-step-num').textContent=nextStep;
-  el('call-date').value=new Date().toISOString().slice(0,10);
-  el('call-remarks').value='';
-  el('call-remarks-err').style.display='none';
-  el('call-date-label').textContent=nextStep===3?'Interview Date *':'Call Date *';
+  el('call-modal-title').textContent = icon+' '+label;
+  el('call-modal-cand').textContent  = cand.name+' · '+cand.desig;
+  el('call-step-num').textContent    = step;
+  el('call-date-label').textContent  = step===3 ? 'Interview Date *' : 'Call Date *';
+  el('call-date').value              = new Date().toISOString().slice(0,10);
+  el('call-remarks').value           = '';
+  el('call-remarks').style.borderColor = '#ddd';
+  el('call-remarks-err').style.display = 'none';
 
   // Show history
   let hist='';
-  if(step>=1&&status.call1Date) hist+='<div class="call-hist-item"><span class="call-hist-badge">1st Call</span> '+status.call1Date+(status.call1Remarks?' — <i>'+status.call1Remarks+'</i>':'')+'</div>';
-  if(step>=2&&status.call2Date) hist+='<div class="call-hist-item"><span class="call-hist-badge">2nd Call</span> '+status.call2Date+(status.call2Remarks?' — <i>'+status.call2Remarks+'</i>':'')+'</div>';
-  el('call-history').innerHTML=hist;
-  el('call-history-wrap').style.display=hist?'block':'none';
-
-  el('call-modal').classList.add('show');
-  setTimeout(()=>el('call-remarks').focus(),100);
-  el('call-modal').dataset.step=nextStep;
+  if(status.call1Date&&status.call1Date!=='—')
+    hist+='<div class="call-hist-item"><span class="call-hist-badge">1st Call</span> '+status.call1Date
+         +(status.call1Remarks?' — <i style="color:#777">'+status.call1Remarks+'</i>':'')+'</div>';
+  if(status.call2Date&&status.call2Date!=='—')
+    hist+='<div class="call-hist-item"><span class="call-hist-badge">2nd Call</span> '+status.call2Date
+         +(status.call2Remarks?' — <i style="color:#777">'+status.call2Remarks+'</i>':'')+'</div>';
+  el('call-history').innerHTML       = hist;
+  el('call-history-wrap').style.display = hist ? 'block' : 'none';
+  el('call-modal').dataset.step      = step;
+  el('call-modal').style.display     = 'flex';
+  setTimeout(function(){ el('call-remarks').focus(); }, 150);
 }
-function closeCallModal(){ el('call-modal').classList.remove('show'); _callCandidate=null; }
+function closeCallModal(){ el('call-modal').style.display='none'; _callCand=null; }
+
 async function confirmCallStep(){
-  const date=el('call-date').value;
-  const remarks=el('call-remarks').value.trim();
+  const date    = el('call-date').value;
+  const remarks = el('call-remarks').value.trim();
   if(!date){ toast('Date is required','error'); return; }
   if(remarks.length<5){
-    el('call-remarks-err').style.display='block';
-    el('call-remarks').classList.add('err');
-    return;
+    el('call-remarks').style.borderColor='var(--red)';
+    el('call-remarks-err').style.display='block'; return;
   }
-  const step=parseInt(el('call-modal').dataset.step);
-  const btn=el('call-confirm-btn'); btn.disabled=true; btn.textContent='Saving...';
+  const step = parseInt(el('call-modal').dataset.step);
+  const btn  = el('call-confirm-btn'); btn.disabled=true; btn.textContent='Saving...';
   try{
-    const res=await API.saveCallStep({appNo:_callCandidate.appNo,candidate:_callCandidate.name,desig:_callCandidate.desig,step,date,remarks});
-    updateLocal(_callCandidate.appNo,{status:res.newStatus||(_callCandidate.status)});
+    const res = await API.saveCallStep({
+      appNo:_callCand.appNo, candidate:_callCand.name,
+      desig:_callCand.desig, step, date, remarks
+    });
+    updateLocal(_callCand.appNo,{status:res.newStatus||_callCand.status});
     buildKPIs(); buildPills(); applyFilters();
     closeCallModal(); closeDrawer();
-    const stepMsg={1:'1st call logged',2:'2nd call logged',3:'Interview scheduled!'};
-    toast(stepMsg[step]||'Saved','success');
+    toast({1:'1st call logged ✓',2:'2nd call logged ✓',3:'Interview scheduled! ✓'}[step],'success');
   }catch(e){ toast('Error: '+e.message,'error'); }
   finally{ btn.disabled=false; btn.textContent='Save & Continue'; }
 }
 
 // ── Bulk ──────────────────────────────────────────────────────
-function rowCheck(){
-  const n=document.querySelectorAll('.row-chk:checked').length;
-  el('bulk-bar').classList.toggle('show',n>0);
-  el('bulk-count').textContent=n+' selected';
-}
+function rowCheck(){ const n=document.querySelectorAll('.row-chk:checked').length; el('bulk-bar').classList.toggle('show',n>0); el('bulk-count').textContent=n+' selected'; }
 function toggleAll(chk){ document.querySelectorAll('.row-chk').forEach(c=>c.checked=chk.checked); rowCheck(); }
 function clearBulk(){ document.querySelectorAll('.row-chk,#chk-all').forEach(c=>c.checked=false); rowCheck(); }
 async function bulkAction(status){
@@ -481,80 +493,152 @@ async function bulkAction(status){
 function exportCSV(){
   const hdr=['App No','Name','Phone','Designation','Source','Date','Status','Days In'];
   const rows=filtered.map(c=>[c.appNo,c.name,c.phone,c.desig,c.source,c.date,c.status,c.daysIn]);
-  const csv=[hdr].concat(rows).map(r=>r.map(v=>'"'+v+'"').join(',')).join('\n');
-  const a=document.createElement('a');a.href='data:text/csv;charset=utf-8,'+encodeURIComponent(csv);
-  a.download='BSC_Candidates_'+new Date().toISOString().slice(0,10)+'.csv';a.click();
+  const csv=[hdr].concat(rows).map(r=>r.map(v=>'"'+String(v||'').replace(/"/g,'""')+'"').join(',')).join('\n');
+  const a=document.createElement('a'); a.href='data:text/csv;charset=utf-8,'+encodeURIComponent(csv);
+  a.download='BSC_Candidates_'+new Date().toISOString().slice(0,10)+'.csv'; a.click();
 }
+function updateLocal(appNo,updates){ allCandidates=allCandidates.map(c=>c.appNo===appNo?Object.assign({},c,updates):c); }
 
-// ── Drawer ────────────────────────────────────────────────────
-function openDrawer(idx){
+// ── DRAWER — shows ALL remarks + logs + resume PDF ────────────
+async function openDrawer(idx){
   const c=filtered[idx]; if(!c) return;
-  el('dr-av').textContent=c.initials; el('dr-av').style.background=AV_BG[c.color]||'#1E2D4E';
-  el('dr-name').textContent=c.name; el('dr-appno').textContent=c.appNo+' · Applied '+c.date;
-  const age=c.dob?calcAge(c.dob):'—';
-  el('drawer-body').innerHTML=
-    '<div class="drawer-section"><div class="ds-title">Status</div>'+statusBadge(c.status)+'<span style="font-size:10px;color:#999;margin-left:8px">'+c.daysIn+'d in pipeline</span></div>'
-    +'<div class="drawer-section"><div class="ds-title">Personal</div>'
-      +'<div class="drow"><span class="drow-label">Name</span><span class="drow-val highlight">'+c.name+'</span></div>'
-      +'<div class="drow"><span class="drow-label">DOB / Age</span><span class="drow-val">'+(c.dob||'—')+(age!=='—'?' ('+age+' yrs)':'')+'</span></div>'
-      +'<div class="drow"><span class="drow-label">Phone</span><span class="drow-val">'+String(c.phone||'').replace(/(\d{5})(\d{5})/,'$1 $2')+'</span></div>'
-    +'</div>'
-    +'<div class="drawer-section"><div class="ds-title">Application</div>'
-      +'<div class="drow"><span class="drow-label">Designation</span><span class="drow-val highlight">'+c.desig+'</span></div>'
-      +'<div class="drow"><span class="drow-label">Salary</span><span class="drow-val salary">'+(c.salary?'₹'+Number(c.salary).toLocaleString('en-IN'):'—')+'</span></div>'
-      +'<div class="drow"><span class="drow-label">Source</span><span class="drow-val">'+(c.source||'—')+'</span></div>'
-      +'<div class="drow"><span class="drow-label">Resume</span><span class="drow-val">'+(c.resumeUrl?'<a href="'+c.resumeUrl+'" target="_blank" style="color:var(--blue)">View PDF ↗</a>':'—')+'</span></div>'
-    +'</div>'
-    +((c.q1||c.q2)
-      ?'<div class="drawer-section"><div class="ds-title">Q&A</div>'
-        +(c.q1?'<div class="q-ans"><div class="q-ans-label">Experience</div><div class="q-ans-val">'+c.q1+'</div></div>':'')
-        +(c.q2?'<div class="q-ans"><div class="q-ans-label">Textile exp.</div><div class="q-ans-val">'+c.q2+'</div></div>':'')
-        +(c.q3?'<div class="q-ans"><div class="q-ans-label">Qualification</div><div class="q-ans-val">'+c.q3+'</div></div>':'')
-        +(c.q4?'<div class="q-ans"><div class="q-ans-label">Weekends</div><div class="q-ans-val">'+c.q4+'</div></div>':'')
-        +(c.q5?'<div class="q-ans"><div class="q-ans-label">Joining</div><div class="q-ans-val">'+c.q5+'</div></div>':'')
-        +(c.remarks?'<div class="q-ans"><div class="q-ans-label">Remarks</div><div class="q-ans-val">'+c.remarks+'</div></div>':'')
-      +'</div>' : '');
-  el('drawer-actions').innerHTML=isViewOnly
-    ?'<div style="font-size:11px;color:#aaa;padding:8px;text-align:center">View only access</div>'
-    :buildDrawerActions(c,idx);
+  el('dr-av').textContent        = c.initials;
+  el('dr-av').style.background   = AV_BG[c.color]||'#1E2D4E';
+  el('dr-name').textContent      = c.name;
+  el('dr-appno').textContent     = c.appNo+' · Applied '+c.date;
+  const age = c.dob ? calcAge(c.dob) : '—';
+
+  // Build drawer body
+  let body = '';
+
+  // Status + days
+  body += '<div class="drawer-section"><div class="ds-title">Status</div>'
+    +statusBadge(c.status)
+    +(c.rejReason?'<span style="font-size:10px;color:var(--red);margin-left:7px;font-style:italic">'+c.rejReason+'</span>':'')
+    +'<span style="font-size:10px;color:#999;margin-left:8px">'+c.daysIn+'d in pipeline</span></div>';
+
+  // Personal
+  body += '<div class="drawer-section"><div class="ds-title">Personal</div>'
+    +'<div class="drow"><span class="drow-label">Full Name</span><span class="drow-val highlight">'+c.name+'</span></div>'
+    +'<div class="drow"><span class="drow-label">DOB / Age</span><span class="drow-val">'+(c.dob||'—')+(age!=='—'?' ('+age+' yrs)':'')+'</span></div>'
+    +'<div class="drow"><span class="drow-label">Phone</span><span class="drow-val">'+String(c.phone||'').replace(/(\d{5})(\d{5})/,'$1 $2')+'</span></div>'
+    +'</div>';
+
+  // Application
+  body += '<div class="drawer-section"><div class="ds-title">Application</div>'
+    +'<div class="drow"><span class="drow-label">Designation</span><span class="drow-val highlight">'+c.desig+'</span></div>'
+    +'<div class="drow"><span class="drow-label">Salary Exp.</span><span class="drow-val salary">'+(c.salary?'&#x20B9;'+Number(c.salary).toLocaleString('en-IN'):'—')+'</span></div>'
+    +'<div class="drow"><span class="drow-label">Source</span><span class="drow-val">'+(c.source||'—')+'</span></div>'
+    +'<div class="drow"><span class="drow-label">Referrer</span><span class="drow-val">'+(c.referrer||'—')+'</span></div>'
+    +'</div>';
+
+  // Resume PDF — prominent button
+  body += '<div class="drawer-section"><div class="ds-title">Resume / CV</div>';
+  if(c.resumeUrl){
+    body += '<a href="'+c.resumeUrl+'" target="_blank" style="display:inline-flex;align-items:center;gap:7px;padding:9px 16px;background:var(--navy);color:#fff;border-radius:8px;text-decoration:none;font-size:12px;font-weight:700;margin-bottom:4px">&#x1F4C4; View Resume PDF &#x2197;</a>'
+      +'<div style="font-size:9.5px;color:#aaa;margin-top:4px">Saved in BSC_Resumes Google Drive folder</div>';
+  } else {
+    body += '<div style="font-size:11px;color:#bbb;background:#F9F7F4;padding:9px 12px;border-radius:7px">No resume uploaded yet</div>';
+  }
+  body += '</div>';
+
+  // Q&A
+  if(c.q1||c.q2||c.q3||c.q4||c.q5){
+    body += '<div class="drawer-section"><div class="ds-title">Registration Q&amp;A</div>';
+    if(c.q1) body+='<div class="q-ans"><div class="q-ans-label">Retail Experience</div><div class="q-ans-val">'+c.q1+'</div></div>';
+    if(c.q2) body+='<div class="q-ans"><div class="q-ans-label">Textile Store Exp.</div><div class="q-ans-val">'+c.q2+'</div></div>';
+    if(c.q3) body+='<div class="q-ans"><div class="q-ans-label">Qualification</div><div class="q-ans-val">'+c.q3+'</div></div>';
+    if(c.q4) body+='<div class="q-ans"><div class="q-ans-label">Weekends / Festivals</div><div class="q-ans-val">'+c.q4+'</div></div>';
+    if(c.q5) body+='<div class="q-ans"><div class="q-ans-label">Can Join</div><div class="q-ans-val">'+c.q5+'</div></div>';
+    if(c.remarks) body+='<div class="q-ans"><div class="q-ans-label">Remarks (Self)</div><div class="q-ans-val">'+c.remarks+'</div></div>';
+    body+='</div>';
+  }
+
+  // Activity log — load call history
+  body += '<div class="drawer-section"><div class="ds-title">Activity Log</div>'
+    +'<div id="dr-activity-log"><div style="font-size:10px;color:#bbb;padding:6px 0">Loading...</div></div>'
+    +'</div>';
+
+  el('drawer-body').innerHTML = body;
+  el('drawer-actions').innerHTML = isViewOnly
+    ? '<div style="font-size:11px;color:#aaa;text-align:center;padding:8px">View only access</div>'
+    : buildDrawerActions(c, idx);
+
   el('drawer-overlay').classList.add('show');
   el('cand-drawer').classList.add('open');
+
+  // Load activity log async
+  loadActivityLog(c.appNo);
 }
+
+async function loadActivityLog(appNo){
+  const logEl = el('dr-activity-log'); if(!logEl) return;
+  try {
+    const status = await API.getCallStatus(appNo);
+    let log='';
+    if(status.step>=1&&status.call1Date&&status.call1Date!=='—'){
+      log+='<div class="activity-item"><div class="ai-dot" style="background:var(--gold)"></div>'
+        +'<div class="ai-body"><div class="ai-title">1st Call — '+status.call1Date+'</div>'
+        +(status.call1Remarks?'<div class="ai-remarks">"'+status.call1Remarks+'"</div>':'')+'</div></div>';
+    }
+    if(status.step>=2&&status.call2Date&&status.call2Date!=='—'){
+      log+='<div class="activity-item"><div class="ai-dot" style="background:var(--gold)"></div>'
+        +'<div class="ai-body"><div class="ai-title">2nd Call — '+status.call2Date+'</div>'
+        +(status.call2Remarks?'<div class="ai-remarks">"'+status.call2Remarks+'"</div>':'')+'</div></div>';
+    }
+    if(status.step>=3&&status.interviewDate&&status.interviewDate!=='—'){
+      log+='<div class="activity-item"><div class="ai-dot" style="background:var(--green)"></div>'
+        +'<div class="ai-body"><div class="ai-title">&#x1F4C5; Interview Scheduled — '+status.interviewDate+'</div>'
+        +(status.interviewRemarks?'<div class="ai-remarks">"'+status.interviewRemarks+'"</div>':'')+'</div></div>';
+    }
+    logEl.innerHTML = log || '<div style="font-size:10px;color:#bbb;padding:4px 0">No activity yet</div>';
+  } catch(e){
+    logEl.innerHTML='<div style="font-size:10px;color:#bbb">Could not load activity</div>';
+  }
+}
+
 function buildDrawerActions(c,idx){
   const s=c.status;
-  if(s==='New') return '<button class="da-btn da-shortlist" data-idx="'+idx+'" onclick="clickShortlist(this)">✓ Shortlist</button><button class="da-btn da-hold" data-idx="'+idx+'" onclick="clickHoldDrawer('+idx+')">Hold</button><button class="da-btn da-reject" data-idx="'+idx+'" onclick="clickReject(this)">Reject</button>';
-  if(s==='Shortlisted'||s==='1st Call Done'||s==='2nd Call Done') return '<button class="da-btn da-schedule" data-idx="'+idx+'" onclick="clickStartCall(this)">Next Step →</button><button class="da-btn da-hold" data-idx="'+idx+'" onclick="clickHoldDrawer('+idx+')">Hold</button>';
-  if(s==='Hold') return '<button class="da-btn da-shortlist" data-idx="'+idx+'" onclick="clickReactivate(this)">Reactivate</button><button class="da-btn da-reject" data-idx="'+idx+'" onclick="clickReject(this)">Reject</button>';
-  if(s==='Rejected') return '<button class="da-btn da-shortlist" data-idx="'+idx+'" onclick="clickReactivate(this)">Re-engage</button>';
-  if(s==='Selected') return '<button class="da-btn da-shortlist" onclick="closeDrawer();window.location.href=\'offer-process.html\'">Send Offer</button>';
+  const d='data-idx="'+idx+'"';
+  if(s==='New')         return '<button class="da-btn da-shortlist" '+d+' onclick="doShortlist(this)">&#x2713; Shortlist</button><button class="da-btn da-hold" '+d+' onclick="doHold(this)">Hold</button><button class="da-btn da-reject" '+d+' onclick="doReject(this)">Reject</button>';
+  if(['Shortlisted','1st Call Done','2nd Call Done'].includes(s))
+                        return '<button class="da-btn da-schedule" '+d+' onclick="doCall(this)">Next Step &#x2192;</button><button class="da-btn da-hold" '+d+' onclick="doHold(this)">Hold</button>';
+  if(s==='Hold')        return '<button class="da-btn da-shortlist" '+d+' onclick="doReactivate(this)">Reactivate</button><button class="da-btn da-reject" '+d+' onclick="doReject(this)">Reject</button>';
+  if(s==='Rejected')    return '<button class="da-btn da-shortlist" '+d+' onclick="doReactivate(this)">Re-engage</button>';
+  if(s==='Selected')    return '<button class="da-btn da-shortlist" onclick="window.location.href=\'offer-process.html\'">Send Offer</button>';
+  if(s==='Onboarding')  return '<button class="da-btn da-schedule" onclick="window.location.href=\'onboarding.html\'">Onboarding</button>';
   return '<span style="font-size:11px;color:#aaa;padding:8px">No actions</span>';
 }
-async function doStatusChange(appNo,status,label){
-  await API.updateCandidate(appNo,{status});
-  updateLocal(appNo,{status}); buildKPIs(); buildPills(); applyFilters();
-  toast(label,'success');
-}
+
 function closeDrawer(){ el('drawer-overlay').classList.remove('show'); el('cand-drawer').classList.remove('open'); }
-document.addEventListener('keydown',e=>{ if(e.key==='Escape'){ closeDrawer(); closeCallModal(); closeRemarkModal(); } });
+document.addEventListener('keydown', function(e){ if(e.key==='Escape'){ closeDrawer(); closeCallModal(); closeRemarkModal(); }});
 
-
+// ── Selected / Rejected panel ─────────────────────────────────
 async function toggleSelRejPanel(type){
   const panel=el('sel-rej-panel');
-  if(panel.dataset.current===type&&panel.style.display!=='none'){panel.style.display='none';return;}
-  panel.dataset.current=type;panel.style.display='block';
-  el('sel-rej-title').textContent=type==='selected'?'Selected Candidates':'Rejected Candidates';
-  el('sel-rej-tbody').innerHTML='<tr><td colspan="6" style="text-align:center;padding:16px"><div class="skel" style="height:12px;width:50%;margin:auto"></div></td></tr>';
+  if(panel.dataset.current===type&&panel.style.display!=='none'){ panel.style.display='none'; return; }
+  panel.dataset.current=type; panel.style.display='block';
+  el('sel-rej-title').textContent = type==='selected' ? 'Selected Candidates' : 'Rejected Candidates';
+  el('sel-rej-tbody').innerHTML   = '<tr><td colspan="7" style="text-align:center;padding:16px"><div class="skel" style="height:12px;width:40%;margin:auto"></div></td></tr>';
   try{
     if(type==='selected'){
       const d=await API.getSelectedCandidates();
-      el('sel-rej-head').innerHTML='<tr><th>App No</th><th>Name</th><th>Designation</th><th>Source</th><th>HR Score</th><th>Total Score</th><th>Remarks</th></tr>';
-      el('sel-rej-tbody').innerHTML=(d.candidates||[]).map(c=>'<tr><td style="font-size:10px">'+c.appNo+'</td><td><b>'+c.name+'</b></td><td>'+c.desig+'</td><td>'+c.source+'</td><td>'+c.hrScore+'</td><td><b style="color:var(--green)">'+c.totalScore+'</b></td><td style="font-size:10.5px;color:#777">'+c.remarks+'</td></tr>').join('')||'<tr><td colspan="7" style="text-align:center;color:#bbb;padding:16px">No selected candidates yet</td></tr>';
-    }else{
+      el('sel-rej-head').innerHTML='<tr><th>App No</th><th>Name</th><th>Designation</th><th>Source</th><th>HR Score</th><th>Total</th><th>Remarks</th></tr>';
+      el('sel-rej-tbody').innerHTML=(d.candidates||[]).map(c=>
+        '<tr><td style="font-size:10px">'+c.appNo+'</td><td><b>'+c.name+'</b></td><td>'+c.desig+'</td><td>'+c.source+'</td>'
+        +'<td>'+c.hrScore+'</td><td><b style="color:var(--green)">'+c.totalScore+'</b></td>'
+        +'<td style="font-size:10.5px;color:#777;max-width:180px">'+c.remarks+'</td></tr>'
+      ).join('') || '<tr><td colspan="7" style="text-align:center;color:#bbb;padding:16px">No selected candidates</td></tr>';
+    } else {
       const d=await API.getRejectedCandidates();
       el('sel-rej-head').innerHTML='<tr><th>App No</th><th>Name</th><th>Designation</th><th>Stage</th><th>Rejected On</th><th>Remarks</th></tr>';
-      el('sel-rej-tbody').innerHTML=(d.candidates||[]).map(c=>'<tr><td style="font-size:10px">'+c.appNo+'</td><td><b>'+c.name+'</b></td><td>'+c.desig+'</td><td><span class="badge b-short">'+c.stage+'</span></td><td style="font-size:10.5px">'+c.rejectionDate+'</td><td style="font-size:10.5px;color:#777">'+c.remarks+'</td></tr>').join('')||'<tr><td colspan="6" style="text-align:center;color:#bbb;padding:16px">No rejected candidates yet</td></tr>';
+      el('sel-rej-tbody').innerHTML=(d.candidates||[]).map(c=>
+        '<tr><td style="font-size:10px">'+c.appNo+'</td><td><b>'+c.name+'</b></td><td>'+c.desig+'</td>'
+        +'<td><span class="badge b-short">'+c.stage+'</span></td><td style="font-size:10.5px">'+c.rejectionDate+'</td>'
+        +'<td style="font-size:10.5px;color:#777;max-width:180px">'+c.remarks+'</td></tr>'
+      ).join('') || '<tr><td colspan="6" style="text-align:center;color:#bbb;padding:16px">No rejected candidates</td></tr>';
     }
-  }catch(e){el('sel-rej-tbody').innerHTML='<tr><td colspan="6" style="text-align:center;color:var(--red)">Error loading data</td></tr>';}
+  } catch(e){ el('sel-rej-tbody').innerHTML='<tr><td colspan="7" style="text-align:center;color:var(--red);padding:12px">Error loading</td></tr>'; }
 }
 
 </script>
