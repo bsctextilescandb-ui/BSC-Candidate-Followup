@@ -208,8 +208,7 @@ const STATUS_BADGE_MAP = {
   'New':'b-new','Shortlisted':'b-short','Interviewed':'b-int',
   'Selected':'b-sel','Offer Sent':'b-offer','Hold':'b-hold',
   'Rejected':'b-rej','Onboarding':'b-board',
-  '1st Call Done':'b-short','2nd Call Done':'b-short','Interview Scheduled':'b-int',
-  'Offer Accepted':'b-board','Joined':'b-sel'
+  '1st Call Done':'b-short','2nd Call Done':'b-short','Interview Scheduled':'b-int'
 };
 function statusBadge(s) {
   return '<span class="badge ' + (STATUS_BADGE_MAP[s] || 'b-info') + '">' + s + '</span>';
