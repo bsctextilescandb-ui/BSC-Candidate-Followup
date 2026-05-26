@@ -359,7 +359,7 @@ function buildActionBtns(c, idx){
   if(s==='Hold')         return '<button class="btn btn-outline-gold btn-sm" '+d+' onclick="doReactivate(this)">Reactivate</button>';
   if(s==='Rejected')     return '<button class="btn btn-muted btn-sm" '+d+' onclick="doReactivate(this)">Re-engage</button>';
   if(s==='Onboarding')   return '<span class="badge b-board">Onboarding</span>';
-  if(s==='Offer Accepted') return '<button class="btn btn-outline btn-sm" onclick="window.location.href='offer-process.html'">View in Joining Tracker</button>';
+  if(s==='Offer Accepted') return '<button class="btn btn-outline btn-sm" onclick="window.location.href=\'offer-process.html\'">View in Joining Tracker</button>';
   if(s==='Joined')         return '<span class="badge b-sel">&#x2705; Joined</span>';
   return '';
 }
