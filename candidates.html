@@ -223,12 +223,28 @@ const AV_BG={navy:'#1E2D4E',gold:'#C9952A',green:'#2d8a4e',red:'#C0272D',purple:
 
 // ── Load ──────────────────────────────────────────────────────
 (async function load(){
+  // Show loading indicator
+  el('cand-page-info').textContent = 'Fetching candidates...';
+
   try {
-    const data = await API.getCandidates({limit:500});
-    allCandidates = data.candidates || [];
+    // Add 15-second timeout to prevent stuck loading
+    const timeoutPromise = new Promise((_,reject)=>setTimeout(()=>reject(new Error('timeout')),15000));
+    const fetchPromise   = API.getCandidates({limit:500});
+    const data = await Promise.race([fetchPromise, timeoutPromise]);
+    allCandidates = (data && data.candidates) ? data.candidates : [];
   } catch(e) {
-    console.error('[Candidates]', e);
+    console.warn('[Candidates load]', e.message);
     allCandidates = [];
+    // Show connection error in table
+    el('cand-tbody').innerHTML =
+      '<tr><td colspan="11" style="text-align:center;padding:30px">'
+      +'<div style="font-size:32px;margin-bottom:10px">&#x1F4E1;</div>'
+      +'<div style="font-size:13px;font-weight:600;color:#888;margin-bottom:6px">Could not load candidates</div>'
+      +'<div style="font-size:11px;color:#bbb;margin-bottom:12px">Check: Apps Script deployed · Sheet ID set · Internet connection</div>'
+      +'<button class="btn btn-outline btn-sm" onclick="window.location.reload()">&#x21BB; Retry</button>'
+      +'</td></tr>';
+    el('cand-page-info').textContent = 'Connection error';
+    el('prev-btn').disabled = true; el('next-btn').disabled = true;
   }
   buildKPIs(); buildPills(); applyFilters();
 })();
