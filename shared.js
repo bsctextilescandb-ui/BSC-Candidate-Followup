@@ -152,7 +152,7 @@ const API = {
       getInterviews:{interviews:[]},
       saveCallStep:{success:true,newStatus:'1st Call Done'},
       getCallStatus:{step:0,status:'Not Started'},
-      generateInterviewToken:{success:true,token:'demo',link:'interview-form.html?token=demo'},
+      generateInterviewToken:{success:true,token:'demo',link:'https://bsctextilescandb-ui.github.io/BSC-Candidate-Followup/interview-form.html?token=demo'},
       submitInterviewScore:{success:true},
       getOffers:{offers:[],total:0},
       logOfferCall:{success:true},
