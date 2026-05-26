@@ -20,7 +20,6 @@
 .ai-body{flex:1}
 .ai-title{font-size:11.5px;font-weight:600;color:var(--navy)}
 .ai-remarks{font-size:10.5px;color:#777;margin-top:3px;font-style:italic;background:#F9F7F4;padding:5px 8px;border-radius:5px;margin-top:4px}
-.ai-extra{font-size:10px;color:#555;margin-top:5px;display:flex;align-items:center;gap:6px;flex-wrap:wrap}
 </style>
 </head>
 <body>
@@ -84,8 +83,6 @@
         <span class="sp sp-hold"  data-status="Hold">Hold · <b id="p-hold">0</b></span>
         <span class="sp sp-rej"   data-status="Rejected">Rejected · <b id="p-rej">0</b></span>
         <span class="sp sp-board" data-status="Onboarding">Onboarding · <b id="p-board">0</b></span>
-        <span class="sp" data-status="Offer Accepted" style="color:var(--teal)">Offer Accepted · <b id="p-joina">0</b></span>
-        <span class="sp" data-status="Joined" style="color:var(--green)">Joined · <b id="p-joined">0</b></span>
       </div>
       <div class="filter-bar">
         <input class="search-input" id="cand-search" placeholder="&#x1F50D; Search name, phone, app no..." oninput="applyFilters()">
@@ -223,28 +220,12 @@ const AV_BG={navy:'#1E2D4E',gold:'#C9952A',green:'#2d8a4e',red:'#C0272D',purple:
 
 // ── Load ──────────────────────────────────────────────────────
 (async function load(){
-  // Show loading indicator
-  el('cand-page-info').textContent = 'Fetching candidates...';
-
   try {
-    // Add 15-second timeout to prevent stuck loading
-    const timeoutPromise = new Promise((_,reject)=>setTimeout(()=>reject(new Error('timeout')),15000));
-    const fetchPromise   = API.getCandidates({limit:500});
-    const data = await Promise.race([fetchPromise, timeoutPromise]);
-    allCandidates = (data && data.candidates) ? data.candidates : [];
+    const data = await API.getCandidates({limit:500});
+    allCandidates = data.candidates || [];
   } catch(e) {
-    console.warn('[Candidates load]', e.message);
+    console.error('[Candidates]', e);
     allCandidates = [];
-    // Show connection error in table
-    el('cand-tbody').innerHTML =
-      '<tr><td colspan="11" style="text-align:center;padding:30px">'
-      +'<div style="font-size:32px;margin-bottom:10px">&#x1F4E1;</div>'
-      +'<div style="font-size:13px;font-weight:600;color:#888;margin-bottom:6px">Could not load candidates</div>'
-      +'<div style="font-size:11px;color:#bbb;margin-bottom:12px">Check: Apps Script deployed · Sheet ID set · Internet connection</div>'
-      +'<button class="btn btn-outline btn-sm" onclick="window.location.reload()">&#x21BB; Retry</button>'
-      +'</td></tr>';
-    el('cand-page-info').textContent = 'Connection error';
-    el('prev-btn').disabled = true; el('next-btn').disabled = true;
   }
   buildKPIs(); buildPills(); applyFilters();
 })();
@@ -274,8 +255,6 @@ function buildPills(){
   el('p-hold').textContent   = c('Hold');
   el('p-rej').textContent    = c('Rejected');
   el('p-board').textContent  = c('Onboarding');
-  if(el('p-joina')) el('p-joina').textContent = c('Offer Accepted');
-  if(el('p-joined')) el('p-joined').textContent = c('Joined');
 }
 
 // ── Filters — sort earliest first by default ──────────────────
@@ -359,8 +338,6 @@ function buildActionBtns(c, idx){
   if(s==='Hold')         return '<button class="btn btn-outline-gold btn-sm" '+d+' onclick="doReactivate(this)">Reactivate</button>';
   if(s==='Rejected')     return '<button class="btn btn-muted btn-sm" '+d+' onclick="doReactivate(this)">Re-engage</button>';
   if(s==='Onboarding')   return '<span class="badge b-board">Onboarding</span>';
-  if(s==='Offer Accepted') return '<button class="btn btn-outline btn-sm" onclick="window.location.href='offer-process.html'">View in Joining Tracker</button>';
-  if(s==='Joined')         return '<span class="badge b-sel">&#x2705; Joined</span>';
   return '';
 }
 function changePage(d){ currentPage+=d; renderTable(); }
@@ -422,8 +399,8 @@ async function confirmRemark(){
     const reason = el('rm-reason').value;
     if(!reason){ toast('Select a reason first','error'); return; }
   }
-  const c=_rmCand, action=_rmAction; // capture BEFORE close nullifies them
   closeRemarkModal();
+  const c=_rmCand, action=_rmAction;
   const statusMap = {shortlist:'Shortlisted', hold:'Hold', reject:'Rejected'};
   try {
     if(action==='reject'){
@@ -596,83 +573,27 @@ async function openDrawer(idx){
 
 async function loadActivityLog(appNo){
   const logEl = el('dr-activity-log'); if(!logEl) return;
-  logEl.innerHTML='<div style="font-size:10px;color:#bbb;padding:4px 0">Loading...</div>';
   try {
-    // Fetch all data in parallel
-    const [callStatus, scores, interviews] = await Promise.all([
-      API.getCallStatus(appNo),
-      API.getScores(appNo).catch(()=>({rounds:{HR:null,ASSIGNED:null}})),
-      API.getInterviews().catch(()=>({interviews:[]}))
-    ]);
-
-    const iv = (interviews.interviews||[]).find(function(x){return x.appNo===appNo;});
-    let log = '';
-
-    function aiItem(dot, icon, title, date, remarks, extra){
-      return '<div class="activity-item">'
-        +'<div class="ai-dot" style="background:'+dot+'"></div>'
-        +'<div class="ai-body">'
-          +'<div class="ai-title">'+icon+' '+title+(date&&date!=='—'?' <span style=\'font-weight:400;color:#aaa;font-size:10px\'>· '+date+'</span>':'')+'</div>'
-          +(remarks?'<div class="ai-remarks">'+remarks+'</div>':'')
-          +(extra?'<div class="ai-extra">'+extra+'</div>':'')
-        +'</div>'
-      +'</div>';
+    const status = await API.getCallStatus(appNo);
+    let log='';
+    if(status.step>=1&&status.call1Date&&status.call1Date!=='—'){
+      log+='<div class="activity-item"><div class="ai-dot" style="background:var(--gold)"></div>'
+        +'<div class="ai-body"><div class="ai-title">1st Call — '+status.call1Date+'</div>'
+        +(status.call1Remarks?'<div class="ai-remarks">"'+status.call1Remarks+'"</div>':'')+'</div></div>';
     }
-
-    // ── Calling steps ──────────────────────────────────────────
-    if(callStatus.step>=1 && callStatus.call1Date && callStatus.call1Date!=='—'){
-      log += aiItem('var(--gold)','📞','1st Follow-up Call', callStatus.call1Date,
-        callStatus.call1Remarks ? '"'+callStatus.call1Remarks+'"' : '', '');
+    if(status.step>=2&&status.call2Date&&status.call2Date!=='—'){
+      log+='<div class="activity-item"><div class="ai-dot" style="background:var(--gold)"></div>'
+        +'<div class="ai-body"><div class="ai-title">2nd Call — '+status.call2Date+'</div>'
+        +(status.call2Remarks?'<div class="ai-remarks">"'+status.call2Remarks+'"</div>':'')+'</div></div>';
     }
-    if(callStatus.step>=2 && callStatus.call2Date && callStatus.call2Date!=='—'){
-      log += aiItem('var(--gold)','📞','2nd Follow-up Call', callStatus.call2Date,
-        callStatus.call2Remarks ? '"'+callStatus.call2Remarks+'"' : '', '');
+    if(status.step>=3&&status.interviewDate&&status.interviewDate!=='—'){
+      log+='<div class="activity-item"><div class="ai-dot" style="background:var(--green)"></div>'
+        +'<div class="ai-body"><div class="ai-title">&#x1F4C5; Interview Scheduled — '+status.interviewDate+'</div>'
+        +(status.interviewRemarks?'<div class="ai-remarks">"'+status.interviewRemarks+'"</div>':'')+'</div></div>';
     }
-    if(callStatus.step>=3 && callStatus.interviewDate && callStatus.interviewDate!=='—'){
-      log += aiItem('var(--navy)','📅','Interview Scheduled', callStatus.interviewDate,
-        callStatus.interviewRemarks ? '"'+callStatus.interviewRemarks+'"' : '', '');
-    }
-
-    // ── HR Round scores ────────────────────────────────────────
-    const hrSc = scores.rounds && scores.rounds.HR;
-    if(hrSc){
-      const tot  = hrSc.total||0, pass = tot>=36;
-      const clr  = pass ? 'var(--green)' : 'var(--red)';
-      const sc   = '<span style=\'font-size:13px;font-weight:800;color:'+clr+'\'>'+tot+'/60</span>'
-                 +'<span style=\'font-size:9px;padding:2px 7px;border-radius:4px;margin-left:6px;font-weight:700;'
-                 +'background:'+(pass?'#EAF3DE':'#FCEBEB')+';color:'+(pass?'#3B6D11':'#A32D2D')+'\''
-                 +'>'+(pass?'PASS ✓':'FAIL ✗')+'</span>';
-      log += aiItem(pass?'var(--green)':'var(--red)','🎯','HR Round — Score', '', hrSc.remarks?'"'+hrSc.remarks+'"':'', sc);
-    }
-
-    // ── Round 2 (Assigned interviewer) scores ──────────────────
-    const r2Sc = scores.rounds && (scores.rounds.ASSIGNED || scores.rounds['Round 2']);
-    if(r2Sc){
-      const tot  = r2Sc.total||0, pass = tot>=36;
-      const clr  = pass ? 'var(--green)' : 'var(--red)';
-      const sc   = '<span style=\'font-size:13px;font-weight:800;color:'+clr+'\'>'+tot+'/60</span>'
-                 +'<span style=\'font-size:9px;padding:2px 7px;border-radius:4px;margin-left:6px;font-weight:700;'
-                 +'background:'+(pass?'#EAF3DE':'#FCEBEB')+';color:'+(pass?'#3B6D11':'#A32D2D')+'\''
-                 +'>'+(pass?'PASS ✓':'FAIL ✗')+'</span>';
-      const who  = iv && iv.assignedName
-        ? '<span style=\'font-size:10px;color:#555\'>Assessed by: <b>'+iv.assignedName+'</b>'
-          +(iv.assignedDesig?' ('+iv.assignedDesig+')':'')+'</span>'
-        : '';
-      log += aiItem(pass?'var(--green)':'var(--red)','🤝','Round 2 Assessment', '',
-        r2Sc.remarks?'"'+r2Sc.remarks+'"':'', sc+(who?'<br>'+who:''));
-    } else if(iv && iv.assignedName && !r2Sc){
-      // Assigned but not yet submitted
-      log += aiItem('var(--purple)','🔗','Round 2 Assigned',
-        iv.tokenStatus==='completed'?'Submitted':'Pending',
-        '', '<span style=\'font-size:10px;color:#555\'>Assigned to: <b>'+iv.assignedName+'</b>'
-          +(iv.assignedDesig?' ('+iv.assignedDesig+')':'')+'</span>');
-    }
-
-    logEl.innerHTML = log || '<div style="font-size:10px;color:#bbb;padding:4px 0">No activity recorded yet</div>';
-
+    logEl.innerHTML = log || '<div style="font-size:10px;color:#bbb;padding:4px 0">No activity yet</div>';
   } catch(e){
-    console.error('[ActivityLog]',e);
-    logEl.innerHTML='<div style="font-size:10px;color:#bbb">Could not load activity log</div>';
+    logEl.innerHTML='<div style="font-size:10px;color:#bbb">Could not load activity</div>';
   }
 }
 
