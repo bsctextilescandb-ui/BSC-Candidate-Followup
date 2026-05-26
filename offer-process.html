@@ -293,7 +293,7 @@ function openPanel(btn){
       +'<button class="btn btn-outline-red btn-full" onclick="clickDecline()">&#x2717; Candidate Declined</button>';
   }else if(o.status==='Accepted'){
     acts.innerHTML='<div style="text-align:center;padding:10px;background:#EAF3DE;border-radius:8px;font-size:11px;color:var(--green);font-weight:700">&#x2713; Offer Accepted — In Joining Tracker</div>'
-      +'<button class="btn btn-outline btn-full" style="margin-top:8px" onclick="document.querySelector('[data-filter=joining]').click()">View in Joining Tracker &#x2192;</button>';
+      +'<button class="btn btn-outline btn-full" style="margin-top:8px" onclick="setJoiningTab()">View in Joining Tracker &#x2192;</button>';
   }else if(o.status==='Declined'){
     acts.innerHTML='<div style="text-align:center;padding:10px;background:#FCEBEB;border-radius:8px;font-size:11px;color:var(--red);font-weight:700">&#x2717; Declined</div>'
       +'<button class="btn btn-outline btn-full" style="margin-top:8px" onclick="clickReengage()">Re-engage</button>';
@@ -518,6 +518,12 @@ async function confirmJoining(){
     toast('Joining confirmed! Employee is now active.','success');
   }catch(e){ toast('Error: '+e.message,'error'); }
   finally{ btn.disabled=false; btn.textContent='Confirm Joining'; }
+}
+
+
+function setJoiningTab(){
+  var btn=document.querySelector('[data-filter="joining"]');
+  if(btn) btn.click();
 }
 
 </script>
