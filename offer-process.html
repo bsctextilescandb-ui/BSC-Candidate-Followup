@@ -292,7 +292,8 @@ function openPanel(btn){
     acts.innerHTML='<button class="btn btn-green btn-full" style="margin-bottom:7px" onclick="clickAccept()">&#x2713; Mark as Accepted</button>'
       +'<button class="btn btn-outline-red btn-full" onclick="clickDecline()">&#x2717; Candidate Declined</button>';
   }else if(o.status==='Accepted'){
-    acts.innerHTML='<div style="text-align:center;padding:10px;background:#EAF3DE;border-radius:8px;font-size:11px;color:var(--green);font-weight:700">&#x2713; Offer Accepted — Onboarding</div>';
+    acts.innerHTML='<div style="text-align:center;padding:10px;background:#EAF3DE;border-radius:8px;font-size:11px;color:var(--green);font-weight:700">&#x2713; Offer Accepted — In Joining Tracker</div>'
+      +'<button class="btn btn-outline btn-full" style="margin-top:8px" onclick="document.querySelector('[data-filter=joining]').click()">View in Joining Tracker &#x2192;</button>';
   }else if(o.status==='Declined'){
     acts.innerHTML='<div style="text-align:center;padding:10px;background:#FCEBEB;border-radius:8px;font-size:11px;color:var(--red);font-weight:700">&#x2717; Declined</div>'
       +'<button class="btn btn-outline btn-full" style="margin-top:8px" onclick="clickReengage()">Re-engage</button>';
@@ -415,7 +416,7 @@ function renderJoiningTracker(type){
 
   const today = new Date();
   const list  = allOffers.filter(function(o){
-    return isJoined ? o.status==='Joined' : o.status==='Accepted';
+    return isJoined ? o.status==='Joined' : (o.status==='Accepted'||o.status==='Offer Accepted');
   });
 
   if(!list.length){

@@ -38,7 +38,7 @@ const COL = {
     CALL1_DATE:6,CALL1_REMARKS:7,
     CALL2_DATE:8,CALL2_REMARKS:9,
     CONFIRM_DATE:10,CONFIRM_REMARKS:11,
-    STATUS:12,CREATED_AT:13,UPDATED_AT:14
+    STATUS:12,CREATED_AT:13,UPDATED_AT:14,ACTUAL_DOJ:15
   },
   Selected_Candidates: {
     APP_NO:1,NAME:2,PHONE:3,DESIG:4,SOURCE:5,
@@ -341,7 +341,8 @@ function getKPIs() {
     var statusCounts=['1st Call Done','2nd Call Done','Interview Scheduled'];
     shortlisted=rows.filter(function(r){return r.STATUS==='Shortlisted'||statusCounts.includes(r.STATUS);}).length;
     selected=rows.filter(function(r){return ['Selected','Offer Sent','Onboarding'].includes(r.STATUS);}).length;
-    joined=rows.filter(function(r){return r.STATUS==='Onboarding';}).length;
+    joined=rows.filter(function(r){return r.STATUS==='Joined';}).length;
+    var offerAccepted=rows.filter(function(r){return r.STATUS==='Offer Accepted';}).length;
     newCandidates=rows.filter(function(r){return r.STATUS==='New';}).length;
     var hr=rows.filter(function(r){return r.STATUS==='Onboarding'&&r.DATE;});
     if(hr.length) avgDays=Math.round(hr.reduce(function(s,r){return s+calcDaysIn(r.DATE);},0)/hr.length);
@@ -360,7 +361,7 @@ function getKPIs() {
     interviewsToday=sc.filter(function(r){return r.INTERVIEW_DATE&&new Date(r.INTERVIEW_DATE).toDateString()===ts;}).length;
   }catch(e){}
   return {total:total,shortlisted:shortlisted,selected:selected,joined:joined,
-    acceptanceRate:acceptanceRate,avgDays:avgDays,onboarding:joined,
+    acceptanceRate:acceptanceRate,avgDays:avgDays,onboarding:offerAccepted,
     interviewsToday:interviewsToday,newCandidates:newCandidates,pendingOffers:pendingOffers};
 }
 
@@ -440,25 +441,36 @@ function getInterviews() {
 }
 
 function getInterviewQuestions(p) {
-  var round=p&&p.round?p.round:'HR';
+  var round = p&&p.round ? p.round : 'HR';
+  var desig  = p&&p.desig ? p.desig : '';
+  // Accept multiple round name variants
+  var roundVariants = [round];
+  if(round==='Round 2') roundVariants = ['Round 2','FM','ASSIGNED'];
+  if(round==='HR')      roundVariants = ['HR'];
   try{
-    var rows=getRows('Interview_Questions',COL.Interview_Questions);
-    var filtered=rows.filter(function(r){
-      var rm=!r.ROUND||r.ROUND===round||r.ROUND==='All';
-      return rm;
+    var rows = getRows('Interview_Questions',COL.Interview_Questions);
+    var filtered = rows.filter(function(r){
+      // Match round (accept variants + 'All')
+      var rm = !r.ROUND || r.ROUND==='All' || roundVariants.indexOf(r.ROUND)>=0;
+      // Match designation: blank/All matches everyone; or exact match
+      var dm = !r.DESIG || r.DESIG==='All' || !desig || r.DESIG===desig;
+      return rm && dm;
     });
+    // If designation-specific found, prefer those; else fall back to 'All'
+    var specific = filtered.filter(function(r){ return r.DESIG===desig; });
+    if(specific.length) filtered = specific;
     return {questions:filtered.map(function(r){
       return {id:String(r.Q_ID),text:String(r.QUESTION),type:String(r.TYPE||'score'),
         max:parseInt(r.MAX_SCORE)||10,
         options:r.OPTIONS?String(r.OPTIONS).split(',').map(function(o){return o.trim();}):[],
         round:String(r.ROUND||'HR')};
     })};
-  }catch(e){return {questions:[]};}
+  }catch(e){ return {questions:[]}; }
 }
 
 /* ── HR Score — mandatory remarks ──────────────────────────── */
 function saveScore(p) {
-  if (!p.scores||!p.scores.remarks) return {success:false,error:'Remarks are mandatory'};
+  if (!p.scores||!p.scores.remarks) return {success:false,error:'Remarks are mandatory — please add remarks before saving'};
   try{
     var now=new Date().toISOString(), scoreStr=JSON.stringify(p.scores);
     var updated=updateRow('HR_Status',COL.HR_Status.APP_NO,p.appNo,{[COL.HR_Status.HR]:scoreStr,[COL.HR_Status.UPDATED_AT]:now});
@@ -500,8 +512,11 @@ function getInterviewByToken(p) {
     var r=rows.find(function(x){return String(x.TOKEN)===String(p.token);});
     if(!r) return{success:false,error:'Invalid or expired link'};
     if(String(r.STATUS)==='completed') return{success:false,error:'This interview has already been submitted'};
-    var qData=getInterviewQuestions({round:'ASSIGNED'});
-    if(!qData.questions.length) qData=getInterviewQuestions({round:'HR'});
+    // Try Round 2 → FM (old name) → ASSIGNED in order, always pass designation
+    var qData=getInterviewQuestions({round:'Round 2',desig:String(r.DESIG||'')});
+    if(!qData.questions.length) qData=getInterviewQuestions({round:'FM',desig:String(r.DESIG||'')});
+    if(!qData.questions.length) qData=getInterviewQuestions({round:'ASSIGNED',desig:String(r.DESIG||'')});
+    if(!qData.questions.length) qData=getInterviewQuestions({round:'Round 2'}); // fallback without desig
     var hrScores=null;
     try{
       var hrRow=getRows('HR_Status',{APP_NO:1,HR:2}).find(function(x){return String(x.APP_NO)===String(r.APP_NO);});
@@ -512,6 +527,8 @@ function getInterviewByToken(p) {
       var cRow=getRows('Candidates',COL.Candidates).find(function(x){return String(x.APP_NO)===String(r.APP_NO);});
       if(cRow) candidateQs={q1:cRow.Q1,q2:cRow.Q2,q3:cRow.Q3,q4:cRow.Q4,q5:cRow.Q5,remarks:cRow.REMARKS};
     }catch(e2){}
+    // Also fetch HR questions so Round 2 form can show Round 1 Q&A
+    var hrQData = getInterviewQuestions({round:'HR', desig:String(r.DESIG||'')});
     return {
       success:true,
       token:r.TOKEN, appNo:r.APP_NO,
@@ -520,6 +537,7 @@ function getInterviewByToken(p) {
       assignedName:String(r.ASSIGNED_NAME||''),
       assignedDesig:String(r.ASSIGNED_DESIG||''),
       questions:qData.questions,
+      hrQuestions:hrQData.questions,
       hrScores:hrScores,
       candidateInfo:candidateQs
     };
@@ -637,6 +655,31 @@ function getRejectedCandidates() {
 }
 
 /* ── Offer Process ─────────────────────────────────────────── */
+function markJoined(p) {
+  // p: {appNo, joiningDate}
+  if(!p.joiningDate) return {success:false, error:'Joining date is required'};
+  try {
+    var now = new Date().toISOString();
+    var doj = new Date(p.joiningDate);
+    updateRow('Selection_Offer', COL.Selection_Offer.APP_NO, p.appNo, {
+      [COL.Selection_Offer.STATUS]:     'Joined',
+      [COL.Selection_Offer.ACTUAL_DOJ]: doj,
+      [COL.Selection_Offer.UPDATED_AT]: now
+    });
+    updateRow('Candidates', COL.Candidates.APP_NO, p.appNo, {
+      [COL.Candidates.STATUS]:     'Joined',
+      [COL.Candidates.UPDATED_AT]: now
+    });
+    // Also update Selected_Candidates record
+    try {
+      updateRow('Selected_Candidates', COL.Selected_Candidates.APP_NO, p.appNo,
+        {[COL.Selected_Candidates.DECISION_DATE]: doj});
+    } catch(e2){}
+    return {success:true};
+  } catch(e) { return {success:false, error:e.message}; }
+}
+
+
 function getOffers() {
   try{
     var rows=getRows('Selection_Offer',COL.Selection_Offer);
@@ -646,6 +689,7 @@ function getOffers() {
         initials:getInitials(String(r.NAME||'')),color:getAvatarColor(String(r.NAME||'')),
         desig:String(r.DESIG||''),noticePd:String(r.NOTICE_PD||''),
         estDoj:r.EST_DOJ?new Date(r.EST_DOJ).toISOString().slice(0,10):'',
+        actualDoj:r.ACTUAL_DOJ?new Date(r.ACTUAL_DOJ).toISOString().slice(0,10):'',
         call1:formatDate(r.CALL1_DATE),call1Remarks:String(r.CALL1_REMARKS||''),
         call2:formatDate(r.CALL2_DATE),call2Remarks:String(r.CALL2_REMARKS||''),
         confirm:formatDate(r.CONFIRM_DATE),confirmRemarks:String(r.CONFIRM_REMARKS||''),
@@ -686,7 +730,7 @@ function acceptOffer(p) {
   try{
     var now=new Date().toISOString();
     updateRow('Selection_Offer',COL.Selection_Offer.APP_NO,p.appNo,{[COL.Selection_Offer.STATUS]:'Accepted',[COL.Selection_Offer.UPDATED_AT]:now});
-    updateRow('Candidates',COL.Candidates.APP_NO,p.appNo,{[COL.Candidates.STATUS]:'Onboarding',[COL.Candidates.UPDATED_AT]:now});
+    updateRow('Candidates',COL.Candidates.APP_NO,p.appNo,{[COL.Candidates.STATUS]:'Offer Accepted',[COL.Candidates.UPDATED_AT]:now});
     return{success:true};
   }catch(e){return{success:false,error:e.message};}
 }
@@ -741,7 +785,7 @@ function setupSheets() {
     Interview_Tokens:['Token','App No','Candidate','Designation','Assigned Name','Assigned Designation','Status','Created At','Completed At','Scores JSON','Remarks'],
     Interview_Questions:['Designation','Round','Question ID','Question','Type','Max Score','Options'],
     HR_Status:['App No','HR Score JSON','Assigned Score JSON','Updated At'],
-    Selection_Offer:['App No','Name','Designation','Notice Period','Est DOJ','Call1 Date','Call1 Remarks','Call2 Date','Call2 Remarks','Confirm Date','Confirm Remarks','Status','Created At','Updated At'],
+    Selection_Offer:['App No','Name','Designation','Notice Period','Est DOJ','Call1 Date','Call1 Remarks','Call2 Date','Call2 Remarks','Confirm Date','Confirm Remarks','Status','Created At','Updated At','Actual DOJ'],
     Selected_Candidates:['App No','Name','Phone','Designation','Source','HR Score','Assigned Score','Total Score','Decision Date','Decision By','Remarks'],
     Rejected_Candidates:['App No','Name','Phone','Designation','Source','Stage','Rejection Date','Rejected By','Remarks'],
     Roles_Config:['Role','Designation','Active'],
@@ -776,10 +820,11 @@ function setupSheets() {
      ['All','HR','3','Textile/retail knowledge','score',15,''],
      ['All','HR','4','Expected salary reasonable?','score',10,''],
      ['All','HR','5','Can join immediately?','select',0,'Yes immediately,After 1 week,After 15 days,After 1 month'],
-     ['All','ASSIGNED','1','Job knowledge & skills','score',20,''],
-     ['All','ASSIGNED','2','Problem solving ability','score',15,''],
-     ['All','ASSIGNED','3','Team fit & attitude','score',15,''],
-     ['All','ASSIGNED','4','Overall recommendation','score',10,'']
+     ['All','Round 2','1','Job knowledge & product skills','score',20,''],
+     ['All','Round 2','2','Problem solving & decision making','score',15,''],
+     ['All','Round 2','3','Team fit & attitude','score',15,''],
+     ['All','Round 2','4','Customer handling ability','score',10,''],
+     ['All','Round 2','5','Overall recommendation','score',10,'']
     ].forEach(function(q){iq.appendRow(q);});
   }
   Logger.log('BSC CRM v4 setup complete!');

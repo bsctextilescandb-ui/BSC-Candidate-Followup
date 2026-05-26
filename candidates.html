@@ -84,6 +84,8 @@
         <span class="sp sp-hold"  data-status="Hold">Hold · <b id="p-hold">0</b></span>
         <span class="sp sp-rej"   data-status="Rejected">Rejected · <b id="p-rej">0</b></span>
         <span class="sp sp-board" data-status="Onboarding">Onboarding · <b id="p-board">0</b></span>
+        <span class="sp" data-status="Offer Accepted" style="color:var(--teal)">Offer Accepted · <b id="p-joina">0</b></span>
+        <span class="sp" data-status="Joined" style="color:var(--green)">Joined · <b id="p-joined">0</b></span>
       </div>
       <div class="filter-bar">
         <input class="search-input" id="cand-search" placeholder="&#x1F50D; Search name, phone, app no..." oninput="applyFilters()">
@@ -256,6 +258,8 @@ function buildPills(){
   el('p-hold').textContent   = c('Hold');
   el('p-rej').textContent    = c('Rejected');
   el('p-board').textContent  = c('Onboarding');
+  if(el('p-joina')) el('p-joina').textContent = c('Offer Accepted');
+  if(el('p-joined')) el('p-joined').textContent = c('Joined');
 }
 
 // ── Filters — sort earliest first by default ──────────────────
@@ -339,6 +343,8 @@ function buildActionBtns(c, idx){
   if(s==='Hold')         return '<button class="btn btn-outline-gold btn-sm" '+d+' onclick="doReactivate(this)">Reactivate</button>';
   if(s==='Rejected')     return '<button class="btn btn-muted btn-sm" '+d+' onclick="doReactivate(this)">Re-engage</button>';
   if(s==='Onboarding')   return '<span class="badge b-board">Onboarding</span>';
+  if(s==='Offer Accepted') return '<button class="btn btn-outline btn-sm" onclick="window.location.href='offer-process.html'">View in Joining Tracker</button>';
+  if(s==='Joined')         return '<span class="badge b-sel">&#x2705; Joined</span>';
   return '';
 }
 function changePage(d){ currentPage+=d; renderTable(); }
