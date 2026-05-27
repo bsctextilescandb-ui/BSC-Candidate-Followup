@@ -268,7 +268,8 @@ function renderTable(){
     const idx  = start+i;
     const sb   = {
       'Pending Accept':'b-short','Accepted':'b-sel',
-      'Declined':'b-rej','In Progress':'b-int','Joined':'b-sel'
+      'Declined':'b-rej','Offer Rejected':'b-rej',
+      'In Progress':'b-int','Joined':'b-sel'
     };
     const call1done  = o.call1  && o.call1  !== '\u2014';
     const call2done  = o.call2  && o.call2  !== '\u2014';
@@ -311,16 +312,25 @@ function openPanel(btn){
   const acts = el('dp-actions');
   if(o.status==='Pending Accept'||o.status==='In Progress'){
     acts.innerHTML =
-      '<button class="btn btn-green btn-full" style="margin-bottom:7px" onclick="clickAccept()">&#x2713; Candidate Accepted Offer</button>'
-      +'<button class="btn btn-outline-red btn-full" onclick="clickDecline()">&#x2717; Candidate Declined</button>';
+      '<button class="btn btn-green btn-full" style="margin-bottom:6px" onclick="clickAccept()">&#x2713; Candidate Accepted Offer</button>'
+      +'<button class="btn btn-outline-red btn-full" style="margin-bottom:6px" onclick="clickDecline()">&#x2717; Candidate Declined</button>'
+      +'<button class="btn btn-red btn-full" onclick="clickRejectOffer()">&#x274C; Reject Offer</button>';
   } else if(o.status==='Accepted'){
     acts.innerHTML =
-      '<div style="text-align:center;padding:10px;background:#EAF3DE;border-radius:8px;font-size:11px;color:var(--green);font-weight:700">&#x2713; Offer Accepted \u2014 In Joining Tracker</div>'
-      +'<button class="btn btn-outline btn-full" style="margin-top:8px" onclick="setJoiningTab()">View Joining Tracker &#x2192;</button>';
+      '<div style="text-align:center;padding:10px;background:#EAF3DE;border-radius:8px;font-size:11px;color:var(--green);font-weight:700;margin-bottom:8px">&#x2713; Offer Accepted \u2014 In Joining Tracker</div>'
+      +'<button class="btn btn-outline btn-full" style="margin-bottom:6px" onclick="setJoiningTab()">View Joining Tracker &#x2192;</button>'
+      +'<button class="btn btn-red btn-full" onclick="clickRejectOffer()">&#x274C; Reject Offer</button>';
+  } else if(o.status==='Offer Rejected'){
+    acts.innerHTML =
+      '<div style="text-align:center;padding:10px;background:#FCEBEB;border-radius:8px;font-size:11px;color:var(--red);font-weight:700;margin-bottom:8px">&#x274C; Offer Rejected</div>'
+      +'<button class="btn btn-outline btn-full" onclick="clickReengage()">Re-engage Candidate</button>';
   } else if(o.status==='Declined'){
     acts.innerHTML =
-      '<div style="text-align:center;padding:10px;background:#FCEBEB;border-radius:8px;font-size:11px;color:var(--red);font-weight:700">&#x2717; Declined</div>'
-      +'<button class="btn btn-outline btn-full" style="margin-top:8px" onclick="clickReengage()">Re-engage</button>';
+      '<div style="text-align:center;padding:10px;background:#FCEBEB;border-radius:8px;font-size:11px;color:var(--red);font-weight:700;margin-bottom:8px">&#x2717; Declined</div>'
+      +'<button class="btn btn-outline btn-full" onclick="clickReengage()">Re-engage</button>';
+  } else if(o.status==='Joined'){
+    acts.innerHTML =
+      '<div style="text-align:center;padding:10px;background:#EAF3DE;border-radius:8px;font-size:11px;color:var(--green);font-weight:700">&#x2705; Employee Joined</div>';
   } else {
     acts.innerHTML = '';
   }
@@ -514,12 +524,58 @@ async function confirmJoining(){
     await API.call('markJoined',{appNo, joiningDate:jDate});
     closeJoinModal();
     const d=await API.getOffers(); allOffers=d.offers||[]; buildKPIs();
-    renderJoiningTracker('joining');
-    toast('Joining confirmed!','success');
+    // Auto-switch to Joined tab
+    var joinedTab=document.querySelector('[data-filter="Joined"]');
+    if(joinedTab) joinedTab.click();
+    else renderJoiningTracker('Joined');
+    toast('Joining confirmed! Profile moved to Joined tab.','success');
   }catch(e){ toast('Error: '+e.message,'error'); }
   finally{ btn.disabled=false; btn.textContent='Confirm Joining'; }
 }
 
+
+/* \u2014\u2014 Reject Offer \u2014\u2014\u2014\u2014\u2014\u2014\u2014\u2014\u2014\u2014\u2014\u2014\u2014\u2014\u2014\u2014\u2014\u2014\u2014\u2014\u2014\u2014\u2014\u2014\u2014\u2014\u2014\u2014\u2014 */
+function clickRejectOffer(){
+  const appNo=el('dp-panel').dataset.appno;
+  const o=allOffers.find(function(x){return x.appNo===appNo;}); if(!o) return;
+  el('rej-offer-modal').dataset.appno=appNo;
+  el('rej-offer-cand').innerHTML='<b>'+o.name+'</b> \u2014 '+o.desig;
+  el('rej-offer-remarks').value=''; el('rej-offer-err').style.display='none';
+  el('rej-offer-modal').style.display='flex';
+}
+function closeRejOfferModal(){ el('rej-offer-modal').style.display='none'; }
+async function confirmRejectOffer(){
+  const remarks=el('rej-offer-remarks').value.trim();
+  if(remarks.length<3){ el('rej-offer-err').style.display='block'; return; }
+  const appNo=el('rej-offer-modal').dataset.appno;
+  const btn=el('rej-offer-confirm-btn'); btn.disabled=true; btn.textContent='Saving...';
+  try{
+    await API.call('rejectOffer',{appNo:appNo, remarks:remarks});
+    closeRejOfferModal(); closePanel();
+    const d=await API.getOffers(); allOffers=d.offers||[]; buildKPIs(); applyFilter();
+    toast('Offer marked as rejected','warn');
+  }catch(e){ toast('Error: '+e.message,'error'); }
+  finally{ btn.disabled=false; btn.textContent='Confirm Rejection'; }
+}
+
 </script>
+
+<!-- Reject Offer Modal -->
+<div id="rej-offer-modal" style="position:fixed;inset:0;z-index:1000;background:rgba(0,0,0,.45);display:none;align-items:center;justify-content:center;padding:20px">
+  <div class="modal">
+    <div class="modal-title" style="color:var(--red)">&#x274C; Reject Offer</div>
+    <div class="modal-body">
+      <p id="rej-offer-cand" style="margin-bottom:12px;font-size:12px;background:#FCEBEB;padding:8px 12px;border-radius:7px"></p>
+      <p style="font-size:11.5px;color:#555;margin-bottom:12px">This will mark the offer as <b>Rejected</b> and update the candidate status.</p>
+      <label style="display:block;font-size:9px;font-weight:700;color:#888;text-transform:uppercase;margin-bottom:5px">Reason / Remarks <span style="color:var(--red)">*</span></label>
+      <textarea class="rm-ta" id="rej-offer-remarks" placeholder="Reason for rejecting the offer..."></textarea>
+      <div style="font-size:10px;color:var(--red);margin-top:4px;display:none" id="rej-offer-err">Remarks required</div>
+    </div>
+    <div class="modal-btns">
+      <button class="btn btn-muted" onclick="closeRejOfferModal()">Cancel</button>
+      <button class="btn btn-red" id="rej-offer-confirm-btn" onclick="confirmRejectOffer()">Confirm Rejection</button>
+    </div>
+  </div>
+</div>
 </body>
 </html>
