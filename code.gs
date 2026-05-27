@@ -5,7 +5,12 @@
  * mandatory remarks, auto-move on status change
  */
 
-const SHEET_ID = 'YOUR_GOOGLE_SHEET_ID';
+// ══════════════════════════════════════════════════════════════
+// REQUIRED: Paste your Google Sheet ID below
+// Get it from your Sheet URL:
+// https://docs.google.com/spreadsheets/d/[SHEET_ID_IS_HERE]/edit
+// ══════════════════════════════════════════════════════════════
+const SHEET_ID = 'YOUR_GOOGLE_SHEET_ID'; // <-- REPLACE THIS
 
 const COL = {
   Candidates: {
@@ -34,11 +39,9 @@ const COL = {
   },
   HR_Status: { APP_NO:1,HR:2,ASSIGNED:3,UPDATED_AT:4 },
   Selection_Offer: {
-    APP_NO:1,NAME:2,DESIG:3,NOTICE_PD:4,EST_DOJ:5,
-    CALL1_DATE:6,CALL1_REMARKS:7,
-    CALL2_DATE:8,CALL2_REMARKS:9,
-    CONFIRM_DATE:10,CONFIRM_REMARKS:11,
-    STATUS:12,CREATED_AT:13,UPDATED_AT:14,ACTUAL_DOJ:15
+    APP_NO:1, NAME:2, DESIG:3, NOTICE_PD:4, EST_DOJ:5,
+    CALL1_DATE:6, CALL2_DATE:7, CONFIRM_DATE:8,
+    STATUS:10, CREATED_AT:11, UPDATED_AT:12, ACTUAL_DOJ:13
   },
   Selected_Candidates: {
     APP_NO:1,NAME:2,PHONE:3,DESIG:4,SOURCE:5,
@@ -125,7 +128,7 @@ function doPost(e) {
 function dispatch(action, p) {
   var map = {
     verifyUser:verifyUser,
-    getCandidates:getCandidates, addCandidate:addCandidate,
+    getCandidates:getCandidates, addCandidate:addCandidate, getActivityFull:getActivityFull,
     updateCandidate:updateCandidate, checkDuplicate:checkDuplicate, getNextAppNo:getNextAppNo,
     getKPIs:getKPIs, getPendingActions:getPendingActions,
     getSourceBreakdown:getSourceBreakdown, getDesignations:getDesignations,
@@ -334,18 +337,21 @@ function scheduleInterview(p) { return saveCallStep(Object.assign({},p,{step:3})
 
 /* ── Dashboard KPIs ────────────────────────────────────────── */
 function getKPIs() {
-  var total=0,shortlisted=0,selected=0,joined=0,newCandidates=0,avgDays=0;
+  var total=0,shortlisted=0,selected=0,joined=0,offerAccepted=0,newCandidates=0,avgDays=0,rejected=0,hold=0;
   try{
     var rows=getRows('Candidates',COL.Candidates);
     total=rows.length;
-    var statusCounts=['1st Call Done','2nd Call Done','Interview Scheduled'];
-    shortlisted=rows.filter(function(r){return r.STATUS==='Shortlisted'||statusCounts.includes(r.STATUS);}).length;
-    selected=rows.filter(function(r){return ['Selected','Offer Sent','Onboarding'].includes(r.STATUS);}).length;
+    shortlisted=rows.filter(function(r){
+      return ['Shortlisted','1st Call Done','2nd Call Done','Interview Scheduled','Interviewed'].includes(r.STATUS);
+    }).length;
+    selected=rows.filter(function(r){return r.STATUS==='Selected';}).length;
     joined=rows.filter(function(r){return r.STATUS==='Joined';}).length;
-    var offerAccepted=rows.filter(function(r){return r.STATUS==='Offer Accepted';}).length;
+    offerAccepted=rows.filter(function(r){return r.STATUS==='Offer Accepted';}).length;
     newCandidates=rows.filter(function(r){return r.STATUS==='New';}).length;
-    var hr=rows.filter(function(r){return r.STATUS==='Onboarding'&&r.DATE;});
-    if(hr.length) avgDays=Math.round(hr.reduce(function(s,r){return s+calcDaysIn(r.DATE);},0)/hr.length);
+    rejected=rows.filter(function(r){return r.STATUS==='Rejected';}).length;
+    hold=rows.filter(function(r){return r.STATUS==='Hold';}).length;
+    var doneRows=rows.filter(function(r){return r.STATUS==='Joined'&&r.DATE;});
+    if(doneRows.length) avgDays=Math.round(doneRows.reduce(function(s,r){return s+calcDaysIn(r.DATE);},0)/doneRows.length);
   }catch(e){}
   var acceptanceRate=0,pendingOffers=0;
   try{
@@ -361,6 +367,7 @@ function getKPIs() {
     interviewsToday=sc.filter(function(r){return r.INTERVIEW_DATE&&new Date(r.INTERVIEW_DATE).toDateString()===ts;}).length;
   }catch(e){}
   return {total:total,shortlisted:shortlisted,selected:selected,joined:joined,
+    offerAccepted:offerAccepted,rejected:rejected,hold:hold,
     acceptanceRate:acceptanceRate,avgDays:avgDays,onboarding:offerAccepted,
     interviewsToday:interviewsToday,newCandidates:newCandidates,pendingOffers:pendingOffers};
 }
@@ -576,7 +583,7 @@ function approveSelection(p) {
     autoMoveSelected(p.appNo, p.remarks);
     // Add to Selection_Offer
     var ex=getRows('Selection_Offer',COL.Selection_Offer).find(function(r){return String(r.APP_NO)===String(p.appNo);});
-    if(!ex) appendRow('Selection_Offer',[p.appNo,p.candidate,p.desig,'','','','','','','','','Pending Accept',now,now]);
+    if(!ex) appendRow('Selection_Offer',[p.appNo,p.candidate,p.desig,'','','','','','','Pending Accept',now,now]);
     return{success:true};
   }catch(e){return{success:false,error:e.message};}
 }
@@ -680,6 +687,105 @@ function markJoined(p) {
 }
 
 
+function getActivityFull(p) {
+  var appNo = String(p.appNo);
+  var activity = [];
+  try {
+    // ── Candidate basic + status history ──────────────────────
+    var cRows = getRows('Candidates', COL.Candidates);
+    var c = cRows.find(function(r){ return String(r.APP_NO)===appNo; });
+    if(c) {
+      var createdAt = c.CREATED_AT ? formatDate(c.CREATED_AT) : '';
+      activity.push({type:'applied', icon:'📋', label:'Applied', date:createdAt, color:'navy'});
+    }
+
+    // ── Interview Schedule (calls + interview date) ────────────
+    var schRows = getRows('Interview_Schedule', COL.Interview_Schedule);
+    var sch = schRows.find(function(r){ return String(r.APP_NO)===appNo; });
+    if(sch) {
+      if(sch.CALL1_DATE) activity.push({type:'call1',icon:'📞',label:'1st Follow-up Call',
+        date:formatDate(sch.CALL1_DATE),remarks:String(sch.CALL1_REMARKS||''),color:'gold'});
+      if(sch.CALL2_DATE) activity.push({type:'call2',icon:'📞',label:'2nd Follow-up Call',
+        date:formatDate(sch.CALL2_DATE),remarks:String(sch.CALL2_REMARKS||''),color:'gold'});
+      if(sch.INTERVIEW_DATE) activity.push({type:'interview',icon:'📅',label:'Interview Scheduled',
+        date:formatDate(sch.INTERVIEW_DATE),remarks:String(sch.INTERVIEW_REMARKS||''),color:'navy'});
+    }
+
+    // ── HR Round 1 scores ──────────────────────────────────────
+    var hrRows = getRows('HR_Status', COL.HR_Status);
+    var hr = hrRows.find(function(r){ return String(r.APP_NO)===appNo; });
+    if(hr && hr.HR) {
+      try {
+        var hd = JSON.parse(hr.HR);
+        activity.push({type:'hr_score',icon:'🎯',label:'HR Round 1 Assessment',
+          score:hd.total||0,maxScore:60,remarks:String(hd.remarks||''),
+          date:formatDate(hr.UPDATED_AT),color:'navy'});
+      } catch(e2) {}
+    }
+
+    // ── Round 2 scores + who assessed ─────────────────────────
+    var tokRows = getRows('Interview_Tokens', COL.Interview_Tokens);
+    var tok = tokRows.find(function(r){ return String(r.APP_NO)===appNo; });
+    if(tok) {
+      var assignedBy = String(tok.ASSIGNED_NAME||'')+(tok.ASSIGNED_DESIG?' ('+tok.ASSIGNED_DESIG+')':'');
+      if(hr && hr.ASSIGNED) {
+        try {
+          var r2 = JSON.parse(hr.ASSIGNED);
+          activity.push({type:'r2_score',icon:'🤝',label:'Round 2 Assessment',
+            score:r2.total||0,maxScore:60,remarks:String(r2.remarks||''),
+            assignedBy:assignedBy,date:formatDate(tok.COMPLETED_AT),color:'teal'});
+        } catch(e3) {
+          activity.push({type:'r2_assigned',icon:'🔗',label:'Round 2 Assigned to '+assignedBy,
+            date:formatDate(tok.CREATED_AT),color:'purple'});
+        }
+      } else {
+        activity.push({type:'r2_assigned',icon:'🔗',label:'Round 2 Assigned to '+assignedBy,
+          date:formatDate(tok.CREATED_AT),color:'purple'});
+      }
+    }
+
+    // ── Manager selection decision ─────────────────────────────
+    var selRows = getRows('Selected_Candidates', COL.Selected_Candidates);
+    var sel = selRows.find(function(r){ return String(r.APP_NO)===appNo; });
+    if(sel) {
+      activity.push({type:'selected',icon:'✅',label:'Selected by Manager',
+        date:formatDate(sel.DECISION_DATE),
+        by:String(sel.DECISION_BY||''),
+        remarks:String(sel.REMARKS||''),color:'green'});
+    }
+
+    // ── Offer process ──────────────────────────────────────────
+    var ofRows = getRows('Selection_Offer', COL.Selection_Offer);
+    var of = ofRows.find(function(r){ return String(r.APP_NO)===appNo; });
+    if(of) {
+      activity.push({type:'offer_start',icon:'📤',label:'Offer Process Started',
+        date:formatDate(of.CREATED_AT),color:'gold'});
+      if(of.CALL1_DATE) activity.push({type:'offer_c1',icon:'📞',label:'Offer Call 1',
+        date:formatDate(of.CALL1_DATE),color:'gold'});
+      if(of.CALL2_DATE) activity.push({type:'offer_c2',icon:'📞',label:'Offer Call 2',
+        date:formatDate(of.CALL2_DATE),color:'gold'});
+      if(of.CONFIRM_DATE) activity.push({type:'offer_conf',icon:'📞',label:'Offer Confirm Call',
+        date:formatDate(of.CONFIRM_DATE),color:'gold'});
+      if(of.NOTICE_PD||of.EST_DOJ) activity.push({type:'doj',icon:'📅',
+        label:'Joining Details Updated',
+        note:(of.NOTICE_PD?'Notice: '+of.NOTICE_PD:'')+(of.EST_DOJ?' | Est. DOJ: '+formatDate(of.EST_DOJ):''),
+        color:'teal'});
+      var st = String(of.STATUS||'');
+      if(st==='Accepted'||st==='Offer Accepted') activity.push({type:'offer_acc',icon:'✅',
+        label:'Offer Accepted',color:'green'});
+      else if(st==='Declined') activity.push({type:'offer_dec',icon:'❌',
+        label:'Offer Declined',color:'red'});
+      else if(st==='Offer Rejected') activity.push({type:'offer_rej',icon:'❌',
+        label:'Offer Rejected',color:'red'});
+      if(of.ACTUAL_DOJ) activity.push({type:'joined',icon:'🎉',
+        label:'Employee Joined',date:formatDate(of.ACTUAL_DOJ),color:'green'});
+    }
+
+  } catch(e) { return {success:false, error:e.message}; }
+  return {success:true, activity:activity};
+}
+
+
 function getOffers() {
   try{
     var rows=getRows('Selection_Offer',COL.Selection_Offer);
@@ -690,9 +796,9 @@ function getOffers() {
         desig:String(r.DESIG||''),noticePd:String(r.NOTICE_PD||''),
         estDoj:r.EST_DOJ?new Date(r.EST_DOJ).toISOString().slice(0,10):'',
         actualDoj:r.ACTUAL_DOJ?new Date(r.ACTUAL_DOJ).toISOString().slice(0,10):'',
-        call1:formatDate(r.CALL1_DATE),call1Remarks:String(r.CALL1_REMARKS||''),
-        call2:formatDate(r.CALL2_DATE),call2Remarks:String(r.CALL2_REMARKS||''),
-        confirm:formatDate(r.CONFIRM_DATE),confirmRemarks:String(r.CONFIRM_REMARKS||''),
+        call1:formatDate(r.CALL1_DATE),call1Remarks:'',
+        call2:formatDate(r.CALL2_DATE),call2Remarks:'',
+        confirm:formatDate(r.CONFIRM_DATE),confirmRemarks:'',
         status:String(r.STATUS||'')
       };
     }),total:rows.length};
@@ -700,13 +806,11 @@ function getOffers() {
 }
 
 function logOfferCall(p) {
-  // p: {appNo, callNo(1/2/3), date, remarks}
-  if(!p.remarks) return{success:false,error:'Remarks are mandatory'};
   try{
     var upd={};
-    if(p.callNo===1){upd[COL.Selection_Offer.CALL1_DATE]=p.date?new Date(p.date):new Date();upd[COL.Selection_Offer.CALL1_REMARKS]=p.remarks;}
-    if(p.callNo===2){upd[COL.Selection_Offer.CALL2_DATE]=p.date?new Date(p.date):new Date();upd[COL.Selection_Offer.CALL2_REMARKS]=p.remarks;}
-    if(p.callNo===3){upd[COL.Selection_Offer.CONFIRM_DATE]=p.date?new Date(p.date):new Date();upd[COL.Selection_Offer.CONFIRM_REMARKS]=p.remarks;}
+    if(p.callNo===1) upd[COL.Selection_Offer.CALL1_DATE]  = p.date?new Date(p.date):new Date();
+    if(p.callNo===2) upd[COL.Selection_Offer.CALL2_DATE]  = p.date?new Date(p.date):new Date();
+    if(p.callNo===3) upd[COL.Selection_Offer.CONFIRM_DATE]= p.date?new Date(p.date):new Date();
     upd[COL.Selection_Offer.UPDATED_AT]=new Date().toISOString();
     updateRow('Selection_Offer',COL.Selection_Offer.APP_NO,p.appNo,upd);
     return{success:true};
@@ -724,6 +828,23 @@ function updateOfferDetails(p) {
     return{success:true};
   }catch(e){return{success:false,error:e.message};}
 }
+
+function rejectOffer(p) {
+  if(!p.remarks) return{success:false,error:'Remarks are mandatory'};
+  try{
+    var now=new Date().toISOString();
+    updateRow('Selection_Offer',COL.Selection_Offer.APP_NO,p.appNo,{
+      [COL.Selection_Offer.STATUS]:'Offer Rejected',
+      [COL.Selection_Offer.UPDATED_AT]:now
+    });
+    updateRow('Candidates',COL.Candidates.APP_NO,p.appNo,{
+      [COL.Candidates.STATUS]:'Offer Rejected',
+      [COL.Candidates.UPDATED_AT]:now
+    });
+    return{success:true};
+  }catch(e){return{success:false,error:e.message};}
+}
+
 
 function acceptOffer(p) {
   if(!p.remarks) return{success:false,error:'Remarks are mandatory'};

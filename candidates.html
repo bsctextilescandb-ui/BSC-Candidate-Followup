@@ -596,83 +596,43 @@ async function openDrawer(idx){
 
 async function loadActivityLog(appNo){
   const logEl = el('dr-activity-log'); if(!logEl) return;
-  logEl.innerHTML='<div style="font-size:10px;color:#bbb;padding:4px 0">Loading...</div>';
+  logEl.innerHTML='<div style="font-size:10px;color:#bbb;padding:4px 0">Loading activity...</div>';
   try {
-    // Fetch all data in parallel
-    const [callStatus, scores, interviews] = await Promise.all([
-      API.getCallStatus(appNo),
-      API.getScores(appNo).catch(()=>({rounds:{HR:null,ASSIGNED:null}})),
-      API.getInterviews().catch(()=>({interviews:[]}))
-    ]);
-
-    const iv = (interviews.interviews||[]).find(function(x){return x.appNo===appNo;});
-    let log = '';
-
-    function aiItem(dot, icon, title, date, remarks, extra){
+    const d = await API.call('getActivityFull',{appNo:appNo});
+    if(!d.success||!d.activity||!d.activity.length){
+      logEl.innerHTML='<div style="font-size:10px;color:#bbb;padding:4px 0">No activity recorded yet</div>';
+      return;
+    }
+    const colorMap = {
+      navy:'#1E2D4E', gold:'#C9952A', green:'#2d8a4e',
+      red:'#C0272D', teal:'#1a8a84', purple:'#7c4dbd'
+    };
+    logEl.innerHTML = d.activity.map(function(a){
+      const dot = colorMap[a.color]||'#aaa';
+      let extra = '';
+      if(a.score!==undefined){
+        const pct = a.maxScore ? Math.round(a.score/a.maxScore*100) : 0;
+        const pass = pct>=60;
+        extra += '<div class="ai-extra">'
+          +'<span style="font-size:13px;font-weight:800;color:'+(pass?'var(--green)':'var(--red)')+'">'+a.score+'/'+a.maxScore+'</span>'
+          +'<span style="font-size:9px;padding:2px 7px;border-radius:4px;font-weight:700;background:'+(pass?'#EAF3DE':'#FCEBEB')+';color:'+(pass?'#3B6D11':'#A32D2D')+'">'+(pass?'PASS':'FAIL')+'</span>'
+          +(a.assignedBy?'<span style="font-size:10px;color:#555">by '+a.assignedBy+'</span>':'')
+          +'</div>';
+      }
+      if(a.by) extra += '<div style="font-size:10px;color:#555;margin-top:3px">by '+a.by+'</div>';
+      if(a.note) extra += '<div style="font-size:10px;color:#555;margin-top:3px">'+a.note+'</div>';
       return '<div class="activity-item">'
         +'<div class="ai-dot" style="background:'+dot+'"></div>'
         +'<div class="ai-body">'
-          +'<div class="ai-title">'+icon+' '+title+(date&&date!=='—'?' <span style=\'font-weight:400;color:#aaa;font-size:10px\'>· '+date+'</span>':'')+'</div>'
-          +(remarks?'<div class="ai-remarks">'+remarks+'</div>':'')
-          +(extra?'<div class="ai-extra">'+extra+'</div>':'')
+          +'<div class="ai-title">'+a.icon+' '+a.label+(a.date&&a.date!=='\u2014'?' <span style=\'font-size:9.5px;color:#aaa;font-weight:400\'>\u00b7 '+a.date+'</span>':'')+'</div>'
+          +(a.remarks?'<div class="ai-remarks">"'+a.remarks+'"</div>':'')
+          +extra
         +'</div>'
       +'</div>';
-    }
-
-    // ── Calling steps ──────────────────────────────────────────
-    if(callStatus.step>=1 && callStatus.call1Date && callStatus.call1Date!=='—'){
-      log += aiItem('var(--gold)','📞','1st Follow-up Call', callStatus.call1Date,
-        callStatus.call1Remarks ? '"'+callStatus.call1Remarks+'"' : '', '');
-    }
-    if(callStatus.step>=2 && callStatus.call2Date && callStatus.call2Date!=='—'){
-      log += aiItem('var(--gold)','📞','2nd Follow-up Call', callStatus.call2Date,
-        callStatus.call2Remarks ? '"'+callStatus.call2Remarks+'"' : '', '');
-    }
-    if(callStatus.step>=3 && callStatus.interviewDate && callStatus.interviewDate!=='—'){
-      log += aiItem('var(--navy)','📅','Interview Scheduled', callStatus.interviewDate,
-        callStatus.interviewRemarks ? '"'+callStatus.interviewRemarks+'"' : '', '');
-    }
-
-    // ── HR Round scores ────────────────────────────────────────
-    const hrSc = scores.rounds && scores.rounds.HR;
-    if(hrSc){
-      const tot  = hrSc.total||0, pass = tot>=36;
-      const clr  = pass ? 'var(--green)' : 'var(--red)';
-      const sc   = '<span style=\'font-size:13px;font-weight:800;color:'+clr+'\'>'+tot+'/60</span>'
-                 +'<span style=\'font-size:9px;padding:2px 7px;border-radius:4px;margin-left:6px;font-weight:700;'
-                 +'background:'+(pass?'#EAF3DE':'#FCEBEB')+';color:'+(pass?'#3B6D11':'#A32D2D')+'\''
-                 +'>'+(pass?'PASS ✓':'FAIL ✗')+'</span>';
-      log += aiItem(pass?'var(--green)':'var(--red)','🎯','HR Round — Score', '', hrSc.remarks?'"'+hrSc.remarks+'"':'', sc);
-    }
-
-    // ── Round 2 (Assigned interviewer) scores ──────────────────
-    const r2Sc = scores.rounds && (scores.rounds.ASSIGNED || scores.rounds['Round 2']);
-    if(r2Sc){
-      const tot  = r2Sc.total||0, pass = tot>=36;
-      const clr  = pass ? 'var(--green)' : 'var(--red)';
-      const sc   = '<span style=\'font-size:13px;font-weight:800;color:'+clr+'\'>'+tot+'/60</span>'
-                 +'<span style=\'font-size:9px;padding:2px 7px;border-radius:4px;margin-left:6px;font-weight:700;'
-                 +'background:'+(pass?'#EAF3DE':'#FCEBEB')+';color:'+(pass?'#3B6D11':'#A32D2D')+'\''
-                 +'>'+(pass?'PASS ✓':'FAIL ✗')+'</span>';
-      const who  = iv && iv.assignedName
-        ? '<span style=\'font-size:10px;color:#555\'>Assessed by: <b>'+iv.assignedName+'</b>'
-          +(iv.assignedDesig?' ('+iv.assignedDesig+')':'')+'</span>'
-        : '';
-      log += aiItem(pass?'var(--green)':'var(--red)','🤝','Round 2 Assessment', '',
-        r2Sc.remarks?'"'+r2Sc.remarks+'"':'', sc+(who?'<br>'+who:''));
-    } else if(iv && iv.assignedName && !r2Sc){
-      // Assigned but not yet submitted
-      log += aiItem('var(--purple)','🔗','Round 2 Assigned',
-        iv.tokenStatus==='completed'?'Submitted':'Pending',
-        '', '<span style=\'font-size:10px;color:#555\'>Assigned to: <b>'+iv.assignedName+'</b>'
-          +(iv.assignedDesig?' ('+iv.assignedDesig+')':'')+'</span>');
-    }
-
-    logEl.innerHTML = log || '<div style="font-size:10px;color:#bbb;padding:4px 0">No activity recorded yet</div>';
-
+    }).join('');
   } catch(e){
-    console.error('[ActivityLog]',e);
-    logEl.innerHTML='<div style="font-size:10px;color:#bbb">Could not load activity log</div>';
+    console.error('[Activity]',e);
+    logEl.innerHTML='<div style="font-size:10px;color:#bbb">Could not load activity</div>';
   }
 }
 

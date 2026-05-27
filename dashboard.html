@@ -124,8 +124,12 @@ const PAGE_SIZE=5;
 
 async function loadKPIs(){
   const k=await API.getKPIs('today');
-  el('k-total').textContent=k.total;el('k-short').textContent=k.shortlisted;
-  el('k-sel').textContent=k.selected;el('k-joined').textContent=k.joined;
+  el('k-total').textContent=k.total;
+  el('k-short').textContent=k.shortlisted;
+  el('k-sel').textContent=k.selected;
+  el('k-joined').textContent=k.joined;
+  if(el('k-ob'))  el('k-ob').textContent=k.onboarding||0;
+  if(el('k-int')) el('k-int').textContent=k.interviewsToday||0;
   el('k-acc').innerHTML=k.acceptanceRate+'<span style="font-size:14px">%</span>';
   el('k-days').innerHTML=(k.avgDays||0)+'<span style="font-size:13px">d</span>';
   el('k-ob').textContent=k.onboarding;el('k-int').textContent=k.interviewsToday;
