@@ -205,7 +205,7 @@ const userRole = session ? session.role : 'HR';
 let allOffers=[], filtered=[], activeFilter='all', currentPage=1;
 const PAGE_SIZE = 10;
 
-/* ── Load ─────────────────────────────────────────── */
+/* -- Load ------------------------------------------- */
 (async function load(){
   try {
     const d = await API.getOffers();
@@ -222,7 +222,7 @@ function buildKPIs(){
   el('k-decline').textContent = c('Declined');
 }
 
-/* ── Filter ───────────────────────────────────────── */
+/* -- Filter ----------------------------------------- */
 function setFilter(btn){
   document.querySelectorAll('.itab').forEach(t=>t.classList.remove('active'));
   btn.classList.add('active');
@@ -257,12 +257,12 @@ function applyFilter(){
 
 function changePage(d){ currentPage+=d; renderTable(); }
 
-/* ── Render Table ─────────────────────────────────── */
+/* -- Render Table ----------------------------------- */
 function renderTable(){
   const start=(currentPage-1)*PAGE_SIZE, page=filtered.slice(start,start+PAGE_SIZE), total=filtered.length;
   if(!page.length){
     el('offer-tbody').innerHTML='<tr><td colspan="9"><div class="empty-state"><div class="empty-icon">&#x1F4C4;</div><div class="empty-title">No offers yet</div><div class="empty-sub">Approve candidates in Interview Panel first</div></div></td></tr>';
-    el('of-page-info').textContent='—'; el('of-prev').disabled=true; el('of-next').disabled=true; return;
+    el('of-page-info').textContent='\u2014'; el('of-prev').disabled=true; el('of-next').disabled=true; return;
   }
   const rows = page.map(function(o,i){
     const idx  = start+i;
@@ -270,37 +270,37 @@ function renderTable(){
       'Pending Accept':'b-short','Accepted':'b-sel',
       'Declined':'b-rej','In Progress':'b-int','Joined':'b-sel'
     };
-    const call1done  = o.call1  && o.call1  !== '—';
-    const call2done  = o.call2  && o.call2  !== '—';
-    const confdone   = o.confirm && o.confirm !== '—';
-    const c1 = call1done ? '<span style="color:var(--green);font-size:10px">&#x2713; '+o.call1+'</span>' : '<span style="color:#bbb;font-size:10px">—</span>';
-    const c2 = call2done ? '<span style="color:var(--green);font-size:10px">&#x2713; '+o.call2+'</span>' : '<span style="color:#bbb;font-size:10px">—</span>';
-    const cf = confdone  ? '<span style="color:var(--green);font-size:10px">&#x2713; '+o.confirm+'</span>' : '<span style="color:#bbb;font-size:10px">—</span>';
+    const call1done  = o.call1  && o.call1  !== '\u2014';
+    const call2done  = o.call2  && o.call2  !== '\u2014';
+    const confdone   = o.confirm && o.confirm !== '\u2014';
+    const c1 = call1done ? '<span style="color:var(--green);font-size:10px">&#x2713; '+o.call1+'</span>' : '<span style="color:#bbb;font-size:10px">\u2014</span>';
+    const c2 = call2done ? '<span style="color:var(--green);font-size:10px">&#x2713; '+o.call2+'</span>' : '<span style="color:#bbb;font-size:10px">\u2014</span>';
+    const cf = confdone  ? '<span style="color:var(--green);font-size:10px">&#x2713; '+o.confirm+'</span>' : '<span style="color:#bbb;font-size:10px">\u2014</span>';
     return '<tr>'
       +'<td><div class="td-name"><div class="av av-'+o.color+'">'+o.initials+'</div>'
         +'<div><b>'+o.name+'</b><div style="font-size:9px;color:#aaa">'+o.appNo+'</div></div></div></td>'
       +'<td style="font-size:11px">'+o.desig+'</td>'
       +'<td>'+c1+'</td><td>'+c2+'</td><td>'+cf+'</td>'
-      +'<td style="font-size:11px">'+(o.noticePd||'<span style="color:#bbb">—</span>')+'</td>'
-      +'<td style="font-size:11px">'+(o.estDoj||'<span style="color:#bbb">—</span>')+'</td>'
+      +'<td style="font-size:11px">'+(o.noticePd||'<span style="color:#bbb">\u2014</span>')+'</td>'
+      +'<td style="font-size:11px">'+(o.estDoj||'<span style="color:#bbb">\u2014</span>')+'</td>'
       +'<td><span class="badge '+(sb[o.status]||'b-info')+'">'+o.status+'</span></td>'
       +'<td><button class="btn btn-outline btn-sm" data-idx="'+idx+'" onclick="openPanel(this)">Manage</button></td>'
     +'</tr>';
   }).join('');
   el('offer-tbody').innerHTML = rows;
-  el('of-page-info').textContent='Showing '+(start+1)+'–'+Math.min(start+PAGE_SIZE,total)+' of '+total;
+  el('of-page-info').textContent='Showing '+(start+1)+'\u2013'+Math.min(start+PAGE_SIZE,total)+' of '+total;
   el('of-prev').disabled=currentPage===1;
   el('of-next').disabled=start+PAGE_SIZE>=total;
 }
 
-/* ── Detail Panel ─────────────────────────────────── */
+/* -- Detail Panel ----------------------------------- */
 function openPanel(btn){
   const o = filtered[parseInt(btn.dataset.idx)];
   if(!o) return;
   const p = el('dp-panel');
   p.dataset.appno = o.appNo;
   el('dp-name').textContent  = o.name;
-  el('dp-desig').textContent = o.desig+' · '+o.appNo;
+  el('dp-desig').textContent = o.desig+' \u00b7 '+o.appNo;
   const sbMap = {'Pending Accept':'b-short','Accepted':'b-sel','Declined':'b-rej'};
   el('dp-status').innerHTML  = '<span class="badge '+(sbMap[o.status]||'b-info')+'">'+o.status+'</span>';
   el('dp-notice').value = o.noticePd || '';
@@ -315,7 +315,7 @@ function openPanel(btn){
       +'<button class="btn btn-outline-red btn-full" onclick="clickDecline()">&#x2717; Candidate Declined</button>';
   } else if(o.status==='Accepted'){
     acts.innerHTML =
-      '<div style="text-align:center;padding:10px;background:#EAF3DE;border-radius:8px;font-size:11px;color:var(--green);font-weight:700">&#x2713; Offer Accepted — In Joining Tracker</div>'
+      '<div style="text-align:center;padding:10px;background:#EAF3DE;border-radius:8px;font-size:11px;color:var(--green);font-weight:700">&#x2713; Offer Accepted \u2014 In Joining Tracker</div>'
       +'<button class="btn btn-outline btn-full" style="margin-top:8px" onclick="setJoiningTab()">View Joining Tracker &#x2192;</button>';
   } else if(o.status==='Declined'){
     acts.innerHTML =
@@ -328,11 +328,11 @@ function openPanel(btn){
   el('dp-panel').classList.add('open');
 }
 
-/* Build call row using DOM — no innerHTML with dynamic quotes */
+/* Build call row using DOM \u2014 no innerHTML with dynamic quotes */
 function buildCallRow(key, containerId, label, callNo, dateStr, remarks){
   const container = el(containerId);
   if(!container) return;
-  const done = !!(dateStr && dateStr !== '—');
+  const done = !!(dateStr && dateStr !== '\u2014');
   container.innerHTML = '';
   // Label
   const lbl = document.createElement('div');
@@ -348,7 +348,7 @@ function buildCallRow(key, containerId, label, callNo, dateStr, remarks){
     stat.innerHTML = '<span style="color:#bbb">Not logged</span>';
   }
   container.appendChild(stat);
-  // Button — created entirely via DOM API
+  // Button \u2014 created entirely via DOM API
   const btn = document.createElement('button');
   btn.className   = 'call-btn';
   btn.textContent = done ? 'Edit' : 'Log';
@@ -364,7 +364,7 @@ function closePanel(){
 }
 document.addEventListener('keydown',function(e){ if(e.key==='Escape') closePanel(); });
 
-/* ── Log Call Modal ───────────────────────────────── */
+/* -- Log Call Modal --------------------------------- */
 function openLogCallModal(btn){
   const callNo = parseInt(btn.getAttribute('data-callno'));
   const isDone = btn.getAttribute('data-done') === '1';
@@ -405,7 +405,7 @@ async function confirmLogCall(){
   finally{ btn.disabled=false; btn.textContent='Save'; }
 }
 
-/* ── Save Joining Details ─────────────────────────── */
+/* -- Save Joining Details --------------------------- */
 async function saveDetails(){
   const appNo  = el('dp-panel').dataset.appno;
   const notice = el('dp-notice').value.trim();
@@ -418,12 +418,12 @@ async function saveDetails(){
   }catch(e){ toast('Error: '+e.message,'error'); }
 }
 
-/* ── Accept ───────────────────────────────────────── */
+/* -- Accept ----------------------------------------- */
 function clickAccept(){
   const appNo=el('dp-panel').dataset.appno;
   const o=allOffers.find(x=>x.appNo===appNo); if(!o) return;
   el('accept-modal').dataset.appno=appNo;
-  el('accept-cand').innerHTML='<b>'+o.name+'</b> — '+o.desig;
+  el('accept-cand').innerHTML='<b>'+o.name+'</b> \u2014 '+o.desig;
   el('accept-remarks').value=''; el('accept-err').style.display='none';
   el('accept-modal').style.display='flex';
 }
@@ -437,12 +437,12 @@ async function confirmAccept(){
     await API.acceptOffer({appNo, remarks});
     closeAcceptModal(); closePanel();
     const d=await API.getOffers(); allOffers=d.offers||[]; buildKPIs(); applyFilter();
-    toast('Offer accepted — moved to Joining Tracker!','success');
+    toast('Offer accepted \u2014 moved to Joining Tracker!','success');
   }catch(e){ toast('Error: '+e.message,'error'); }
   finally{ btn.disabled=false; btn.textContent='Confirm Acceptance'; }
 }
 
-/* ── Decline / Re-engage ──────────────────────────── */
+/* -- Decline / Re-engage ---------------------------- */
 function clickDecline(){
   const appNo=el('dp-panel').dataset.appno;
   const o=allOffers.find(x=>x.appNo===appNo); if(!o) return;
@@ -454,12 +454,12 @@ async function clickReengage(){
   try{ await API.updateOfferStatus(appNo,'Pending Accept'); closePanel(); const d=await API.getOffers(); allOffers=d.offers||[]; buildKPIs(); applyFilter(); toast('Re-engaged','success'); }catch(e){ toast('Error','error'); }
 }
 
-/* ── Joining Tracker ──────────────────────────────── */
+/* -- Joining Tracker -------------------------------- */
 function renderJoiningTracker(type){
   const tbody = el('joining-tbody'); if(!tbody) return;
   const title = el('joining-panel-title');
   const isJoined = type==='Joined';
-  if(title) title.textContent = isJoined ? 'Joined Employees' : 'Joining Tracker — Awaiting Join';
+  if(title) title.textContent = isJoined ? 'Joined Employees' : 'Joining Tracker \u2014 Awaiting Join';
   const today = new Date();
   const list  = allOffers.filter(function(o){
     return isJoined ? o.status==='Joined' : (o.status==='Accepted'||o.status==='Offer Accepted');
@@ -479,25 +479,25 @@ function renderJoiningTracker(type){
       else                 dojBadge='<span class="badge b-info" style="font-size:9px">In '+dayDiff+'d</span>';
     }
     const actionCell = isJoined
-      ? '<span style="font-size:11px;font-weight:600;color:var(--green)">'+(o.actualDoj||o.estDoj||'—')+'</span>'
+      ? '<span style="font-size:11px;font-weight:600;color:var(--green)">'+(o.actualDoj||o.estDoj||'\u2014')+'</span>'
       : '<button class="btn btn-green btn-sm" data-appno="'+o.appNo+'" data-name="'+o.name+'" data-desig="'+o.desig+'" data-doj="'+(o.estDoj||'')+'" onclick="openJoinModal(this)">Enter Joining Date</button>';
     return '<tr>'
       +'<td><div class="td-name"><div class="av av-'+o.color+'">'+o.initials+'</div>'
         +'<div><b>'+o.name+'</b><div style="font-size:9px;color:#aaa">'+o.appNo+'</div></div></div></td>'
       +'<td style="font-size:11px">'+o.desig+'</td>'
-      +'<td style="font-size:11px">'+(o.noticePd||'—')+'</td>'
-      +'<td style="font-size:11px">'+(o.estDoj||'—')+' '+dojBadge+'</td>'
+      +'<td style="font-size:11px">'+(o.noticePd||'\u2014')+'</td>'
+      +'<td style="font-size:11px">'+(o.estDoj||'\u2014')+' '+dojBadge+'</td>'
       +'<td>'+(isJoined?'<span class="badge b-sel">&#x2705; Joined</span>':'<span class="badge b-short">Awaiting</span>')+'</td>'
       +'<td>'+actionCell+'</td>'
     +'</tr>';
   }).join('');
 }
 
-/* ── Mark Joined ──────────────────────────────────── */
+/* -- Mark Joined ------------------------------------ */
 function openJoinModal(btn){
   const modal = el('join-modal');
   modal.dataset.appno = btn.dataset.appno;
-  el('join-cand-info').innerHTML = '<b>'+btn.dataset.name+'</b> — '+btn.dataset.desig
+  el('join-cand-info').innerHTML = '<b>'+btn.dataset.name+'</b> \u2014 '+btn.dataset.desig
     +(btn.dataset.doj?'<br><span style="font-size:10.5px;color:#888">Est. DOJ: '+btn.dataset.doj+'</span>':'');
   el('join-date-input').value = btn.dataset.doj || new Date().toISOString().slice(0,10);
   el('join-date-err').style.display='none';
