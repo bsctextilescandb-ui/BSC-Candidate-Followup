@@ -8,20 +8,14 @@
 *{box-sizing:border-box;margin:0;padding:0}
 :root{--navy:#1E2D4E;--gold:#C9952A;--red:#C0272D;--green:#2d8a4e;--cream:#EDE8DE;--border:#ddd;--bg:#F9F7F4}
 body{font-family:'Segoe UI',system-ui,sans-serif;background:var(--cream);min-height:100vh;padding:0}
-
-/* ── Header ── */
 .fch{background:var(--navy);padding:12px 20px;display:flex;align-items:center;gap:14px}
 .fch-logo{width:72px;height:auto;border-radius:6px;flex-shrink:0}
 .fch-title{color:#fff;font-size:15px;font-weight:800}
 .fch-sub{color:rgba(255,255,255,.45);font-size:9.5px;margin-top:2px;text-transform:uppercase;letter-spacing:.07em}
 .fch-right{margin-left:auto;text-align:right}
 .fch-date{color:rgba(255,255,255,.5);font-size:10px}
-
-/* ── Progress ── */
 .progress-bar{background:rgba(255,255,255,.12);height:4px;margin-top:0}
 .progress-fill{height:100%;background:var(--gold);transition:width .4s}
-
-/* ── Steps ── */
 .steps{display:flex;background:rgba(255,255,255,.08);padding:10px 20px;gap:0}
 .step{flex:1;display:flex;align-items:center;gap:6px;font-size:10.5px;color:rgba(255,255,255,.4)}
 .step.active{color:var(--gold);font-weight:700}
@@ -29,67 +23,59 @@ body{font-family:'Segoe UI',system-ui,sans-serif;background:var(--cream);min-hei
 .step-num{width:20px;height:20px;border-radius:50%;border:1.5px solid currentColor;display:flex;align-items:center;justify-content:center;font-size:9px;font-weight:700;flex-shrink:0}
 .step.done .step-num{background:var(--gold);border-color:var(--gold);color:#fff}
 .step.active .step-num{background:var(--gold);border-color:var(--gold);color:#fff}
-
-/* ── Card ── */
 .card{background:#fff;margin:0;padding:20px;max-width:680px;margin:0 auto}
 @media(min-width:700px){.card{margin:20px auto;border-radius:12px;box-shadow:0 4px 24px rgba(0,0,0,.1)}}
-
-/* ── Section headings ── */
 .sec-title{font-size:10px;font-weight:800;color:var(--navy);text-transform:uppercase;letter-spacing:.1em;margin:18px 0 12px;padding-bottom:6px;border-bottom:2px solid var(--cream)}
 .sec-title:first-child{margin-top:0}
-
-/* ── Form grid ── */
 .fg{margin-bottom:14px}
 .fg-row{display:grid;grid-template-columns:1fr 1fr;gap:12px}
 @media(max-width:500px){.fg-row{grid-template-columns:1fr}}
 .fg label{display:block;font-size:9.5px;font-weight:700;color:#777;text-transform:uppercase;letter-spacing:.06em;margin-bottom:5px}
 .req{color:var(--red)}
+.opt-label{font-size:9px;color:#aaa;font-weight:600;margin-left:4px;text-transform:uppercase}
 .fg input,.fg select,.fg textarea{width:100%;font-size:14px;padding:10px 12px;border:1.5px solid var(--border);border-radius:8px;background:var(--bg);color:var(--navy);font-family:inherit;transition:border .15s}
 .fg input:focus,.fg select:focus,.fg textarea:focus{outline:none;border-color:var(--navy);background:#fff}
 .fg input.err,.fg select.err,.fg textarea.err{border-color:var(--red);background:#FFF5F5}
 .fg input.ok{border-color:var(--green);background:#F5FDF9}
 .field-err{font-size:10px;color:var(--red);margin-top:4px;display:none}
 .field-err.show{display:block}
-
-/* ── Phone prefix ── */
 .phone-wrap{display:flex}
 .prefix{padding:10px 12px;border:1.5px solid var(--border);border-right:none;border-radius:8px 0 0 8px;background:var(--bg);font-size:14px;color:#555;font-weight:700;white-space:nowrap}
 .phone-wrap input{border-radius:0 8px 8px 0}
-
-/* ── Source buttons ── */
+/* Source buttons */
 .src-btns{display:flex;gap:8px;flex-wrap:wrap}
 .src-btn{padding:7px 16px;border:1.5px solid var(--border);border-radius:20px;font-size:12px;cursor:pointer;background:#fff;color:#555;font-family:inherit;transition:all .15s}
 .src-btn.active{background:var(--navy);color:#fff;border-color:var(--navy)}
-
-/* ── File upload ── */
-.file-zone{border:2px dashed var(--border);border-radius:10px;padding:20px;text-align:center;cursor:pointer;transition:border .15s;background:var(--bg)}
+.src-sub{margin-top:10px;display:none}
+.src-sub-row{display:grid;grid-template-columns:1fr 1fr;gap:10px}
+@media(max-width:500px){.src-sub-row{grid-template-columns:1fr}}
+/* File upload */
+.file-zone{border:2px dashed var(--border);border-radius:10px;padding:16px;text-align:center;cursor:pointer;transition:border .15s;background:var(--bg)}
 .file-zone:hover,.file-zone.drag{border-color:var(--navy);background:#F0EDE8}
 .file-zone input{display:none}
-.file-zone-icon{font-size:28px;margin-bottom:8px}
-.file-zone-text{font-size:12px;color:#888}
+.file-zone-icon{font-size:24px;margin-bottom:6px}
+.file-zone-text{font-size:11px;color:#888}
 .file-zone-text b{color:var(--navy)}
 .file-chosen{font-size:11px;color:var(--green);margin-top:6px;font-weight:600}
 .file-zone.err{border-color:var(--red)}
-
-/* ── Q radio/select style ── */
+.uploads-grid{display:grid;grid-template-columns:1fr 1fr 1fr;gap:10px}
+@media(max-width:600px){.uploads-grid{grid-template-columns:1fr}}
+/* Q options */
 .q-options{display:flex;flex-direction:column;gap:6px;margin-top:4px}
 .q-opt{display:flex;align-items:center;gap:8px;padding:8px 12px;border:1.5px solid var(--border);border-radius:7px;cursor:pointer;font-size:12.5px;color:#555;transition:all .15s}
 .q-opt:hover{border-color:var(--navy);background:#F9F7F4}
 .q-opt input[type=radio]{width:14px;height:14px;accent-color:var(--navy)}
 .q-opt.selected{border-color:var(--navy);background:#EDE8DE;color:var(--navy);font-weight:600}
-
-/* ── Duplicate warning ── */
+/* Duplicate warning */
 .dup-warn{background:#FFF3E0;border:1.5px solid var(--gold);border-radius:8px;padding:10px 14px;font-size:11.5px;color:#854F0B;display:none;margin-top:6px}
 .dup-warn.show{display:block}
-
-/* ── Navigation buttons ── */
+/* Nav buttons */
 .nav-btns{display:flex;gap:10px;margin-top:20px}
 .nav-btns .btn-back{flex:0 0 auto;padding:12px 20px;border:1.5px solid var(--border);border-radius:9px;background:#fff;color:#666;cursor:pointer;font-size:13px;font-family:inherit}
 .nav-btns .btn-next{flex:1;padding:13px;background:var(--navy);color:#fff;border:none;border-radius:9px;font-size:14px;font-weight:700;cursor:pointer;font-family:inherit;transition:background .15s}
 .nav-btns .btn-next:hover{background:#162340}
 .nav-btns .btn-next:disabled{opacity:.5;cursor:not-allowed}
-
-/* ── Success screen ── */
+/* Success */
 .success-screen{text-align:center;padding:32px 20px;display:none}
 .success-icon{width:70px;height:70px;border-radius:50%;background:#EAF3DE;display:flex;align-items:center;justify-content:center;font-size:32px;margin:0 auto 16px}
 .success-appno{font-size:28px;font-weight:800;color:var(--navy);letter-spacing:.02em;margin:10px 0}
@@ -99,8 +85,6 @@ body{font-family:'Segoe UI',system-ui,sans-serif;background:var(--cream);min-hei
 .sdr-label{color:#aaa}
 .sdr-val{font-weight:600;color:var(--navy)}
 .btn-register-again{width:100%;padding:13px;background:var(--navy);color:#fff;border:none;border-radius:9px;font-size:14px;font-weight:700;cursor:pointer;margin-top:16px;font-family:inherit}
-
-/* ── Upload progress ── */
 .upload-prog{display:none;margin-top:8px;background:#f0ede8;border-radius:4px;height:6px;overflow:hidden}
 .upload-prog-fill{height:100%;background:var(--gold);width:0%;transition:width .3s}
 .uploading-text{font-size:10px;color:#888;margin-top:4px;display:none}
@@ -130,75 +114,157 @@ body{font-family:'Segoe UI',system-ui,sans-serif;background:var(--cream);min-hei
   <div id="step1">
     <div class="sec-title">Personal Information</div>
 
+    <!-- Name + DOB -->
     <div class="fg-row">
       <div class="fg">
         <label>Full Name <span class="req">*</span></label>
-        <input type="text" id="f-name" placeholder="Enter full name" required>
+        <input type="text" id="f-name" placeholder="Enter full name">
         <div class="field-err" id="e-name">Full name is required</div>
       </div>
       <div class="fg">
         <label>Date of Birth <span class="req">*</span></label>
-        <input type="date" id="f-dob" required>
-        <div class="field-err" id="e-dob">Date of birth required (must be 18+)</div>
+        <input type="date" id="f-dob">
+        <div class="field-err" id="e-dob">Date of birth is required</div>
       </div>
     </div>
 
-    <div class="fg">
-      <label>Contact Number <span class="req">*</span></label>
-      <div class="phone-wrap">
-        <div class="prefix">+91</div>
-        <input type="tel" id="f-phone" placeholder="10-digit mobile number" maxlength="10" inputmode="numeric"
-               oninput="this.value=this.value.replace(/\D/g,'');checkDuplicate(this.value)">
+    <!-- Phone + Email -->
+    <div class="fg-row">
+      <div class="fg">
+        <label>Contact Number <span class="req">*</span></label>
+        <div class="phone-wrap">
+          <div class="prefix">+91</div>
+          <input type="tel" id="f-phone" placeholder="10-digit mobile number" maxlength="10" inputmode="numeric"
+                 oninput="this.value=this.value.replace(/\D/g,'');checkDuplicate(this.value)">
+        </div>
+        <div class="dup-warn" id="dup-warn"></div>
+        <div class="field-err" id="e-phone">Valid 10-digit phone number required</div>
       </div>
-      <div class="dup-warn" id="dup-warn"></div>
-      <div class="field-err" id="e-phone">Valid 10-digit phone number required</div>
+      <div class="fg">
+        <label>Email ID <span class="opt-label">(optional)</span></label>
+        <input type="email" id="f-email" placeholder="your@email.com">
+        <div class="field-err" id="e-email">Enter a valid email address</div>
+      </div>
     </div>
 
+    <!-- Designation + Expected Salary -->
     <div class="fg-row">
       <div class="fg">
         <label>Designation Applied <span class="req">*</span></label>
-        <select id="f-desig" data-desig-source="form" required>
+        <select id="f-desig" data-desig-source="form">
           <option value="">Select designation</option>
         </select>
         <div class="field-err" id="e-desig">Please select a designation</div>
       </div>
       <div class="fg">
         <label>Expected Salary (&#8377;) <span class="req">*</span></label>
-        <input type="number" id="f-salary" placeholder="e.g. 18000" min="8000" required>
-        <div class="field-err" id="e-salary">Enter salary between &#8377;8,000 and &#8377;2,00,000</div>
+        <input type="number" id="f-salary" placeholder="Min &#8377;8,000" min="8000">
+        <div class="field-err" id="e-salary">Expected salary must be at least &#8377;8,000</div>
       </div>
     </div>
 
+    <!-- Current Salary -->
+    <div class="fg">
+      <label>Current Salary (&#8377;) <span class="opt-label">(optional — fill only if currently employed)</span></label>
+      <input type="number" id="f-current-salary" placeholder="Enter current monthly salary">
+    </div>
+
+    <!-- Source -->
     <div class="fg">
       <label>How did you hear about us? <span class="req">*</span></label>
       <div class="src-btns" id="src-btns">
         <button type="button" class="src-btn active" data-val="Walk-in">Walk-in</button>
-        <button type="button" class="src-btn" data-val="Employee Ref">Employee Reference</button>
-        <button type="button" class="src-btn" data-val="Online Apply">Online Apply</button>
+        <button type="button" class="src-btn" data-val="Employee Reference">Employee Reference</button>
+        <button type="button" class="src-btn" data-val="Advertisement">Advertisement</button>
         <button type="button" class="src-btn" data-val="Other">Other</button>
       </div>
       <input type="hidden" id="f-source" value="Walk-in">
-      <div id="f-referrer-wrap" style="margin-top:10px;display:none">
-        <input type="text" id="f-referrer" placeholder="Employee name who referred you">
-        <div class="field-err" id="e-referrer">Referrer name is required for Employee Reference</div>
+
+      <!-- Employee Reference sub-fields -->
+      <div class="src-sub" id="sub-empref">
+        <div style="font-size:9.5px;color:#888;margin:8px 0 8px;font-weight:600">Employee Reference Details <span class="opt-label">(optional)</span></div>
+        <div class="src-sub-row">
+          <div class="fg" style="margin-bottom:0">
+            <label>Employee Name</label>
+            <input type="text" id="f-referrer" placeholder="Name of referring employee">
+          </div>
+          <div class="fg" style="margin-bottom:0">
+            <label>Employee No.</label>
+            <input type="text" id="f-referrer-empno" placeholder="Emp No. (if known)">
+          </div>
+        </div>
       </div>
+
+      <!-- Advertisement sub-field -->
+      <div class="src-sub" id="sub-advertisement">
+        <div style="font-size:9.5px;color:#888;margin:8px 0 8px;font-weight:600">Advertisement Details <span class="req">*</span></div>
+        <input type="text" id="f-adv-detail" placeholder="e.g. Facebook, Instagram, Newspaper, Hoarding...">
+        <div class="field-err" id="e-adv-detail">Please mention the advertisement source</div>
+      </div>
+
+      <!-- Other sub-field -->
+      <div class="src-sub" id="sub-other">
+        <div style="font-size:9.5px;color:#888;margin:8px 0 8px;font-weight:600">Please specify <span class="req">*</span></div>
+        <input type="text" id="f-other-detail" placeholder="How did you hear about this vacancy?">
+        <div class="field-err" id="e-other-detail">Please specify how you heard about us</div>
+      </div>
+
+      <div class="field-err" id="e-source">Please select at least one option</div>
     </div>
 
-    <div class="fg">
-      <label>Resume / CV (PDF) <span class="req">*</span></label>
-      <div class="file-zone" id="resume-zone" onclick="el('f-resume').click()"
-           ondragover="event.preventDefault();this.classList.add('drag')"
-           ondragleave="this.classList.remove('drag')"
-           ondrop="handleResumeDrop(event)">
-        <input type="file" id="f-resume" accept=".pdf" onchange="handleResumeSelect(this)">
-        <div class="file-zone-icon">&#x1F4CB;</div>
-        <div class="file-zone-text"><b>Click to upload</b> or drag &amp; drop your resume<br>PDF only &middot; Max 5MB</div>
-        <div class="file-chosen" id="resume-chosen" style="display:none"></div>
+    <!-- Document Uploads -->
+    <div class="sec-title">Documents & Photo</div>
+    <div class="uploads-grid">
+
+      <!-- Resume -->
+      <div class="fg">
+        <label>Resume / CV (PDF) <span class="req">*</span></label>
+        <div class="file-zone" id="resume-zone" onclick="el('f-resume').click()"
+             ondragover="event.preventDefault();this.classList.add('drag')"
+             ondragleave="this.classList.remove('drag')"
+             ondrop="handleFileDrop(event,'resume')">
+          <input type="file" id="f-resume" accept=".pdf" onchange="handleFileSelect(this,'resume')">
+          <div class="file-zone-icon">&#x1F4CB;</div>
+          <div class="file-zone-text"><b>Click to upload</b><br>PDF only &middot; Max 5MB</div>
+          <div class="file-chosen" id="resume-chosen" style="display:none"></div>
+        </div>
+        <div class="field-err" id="e-resume">Resume is required (PDF, max 5MB)</div>
       </div>
-      <div class="upload-prog" id="upload-prog"><div class="upload-prog-fill" id="upload-fill"></div></div>
-      <div class="uploading-text" id="uploading-text">Uploading resume...</div>
-      <div class="field-err" id="e-resume">Resume is required (PDF only, max 5MB)</div>
+
+      <!-- Photo -->
+      <div class="fg">
+        <label>Passport Photo <span class="req">*</span></label>
+        <div class="file-zone" id="photo-zone" onclick="el('f-photo').click()"
+             ondragover="event.preventDefault();this.classList.add('drag')"
+             ondragleave="this.classList.remove('drag')"
+             ondrop="handleFileDrop(event,'photo')">
+          <input type="file" id="f-photo" accept=".jpg,.jpeg,.png" onchange="handleFileSelect(this,'photo')">
+          <div class="file-zone-icon">&#x1F4F7;</div>
+          <div class="file-zone-text"><b>Click to upload</b><br>JPG/PNG &middot; Max 2MB</div>
+          <div class="file-chosen" id="photo-chosen" style="display:none"></div>
+        </div>
+        <div class="field-err" id="e-photo">Photo is required (JPG/PNG, max 2MB)</div>
+      </div>
+
+      <!-- Aadhar -->
+      <div class="fg">
+        <label>Aadhar Card <span class="req">*</span></label>
+        <div class="file-zone" id="aadhar-zone" onclick="el('f-aadhar').click()"
+             ondragover="event.preventDefault();this.classList.add('drag')"
+             ondragleave="this.classList.remove('drag')"
+             ondrop="handleFileDrop(event,'aadhar')">
+          <input type="file" id="f-aadhar" accept=".pdf,.jpg,.jpeg,.png" onchange="handleFileSelect(this,'aadhar')">
+          <div class="file-zone-icon">&#x1F4C4;</div>
+          <div class="file-zone-text"><b>Click to upload</b><br>PDF or JPG &middot; Max 5MB</div>
+          <div class="file-chosen" id="aadhar-chosen" style="display:none"></div>
+        </div>
+        <div class="field-err" id="e-aadhar">Aadhar is required (PDF/JPG, max 5MB)</div>
+      </div>
+
     </div>
+
+    <div class="upload-prog" id="upload-prog"><div class="upload-prog-fill" id="upload-fill"></div></div>
+    <div class="uploading-text" id="uploading-text">Uploading documents...</div>
 
     <div class="nav-btns">
       <button class="btn-next" onclick="goStep2()">Continue to Questions &rarr;</button>
@@ -210,7 +276,6 @@ body{font-family:'Segoe UI',system-ui,sans-serif;background:var(--cream);min-hei
     <div class="sec-title">General Questions</div>
     <p style="font-size:11px;color:#888;margin-bottom:16px">All questions are mandatory. Please answer honestly.</p>
 
-    <!-- Q1: Experience -->
     <div class="fg">
       <label>1. How many years of retail / sales experience do you have? <span class="req">*</span></label>
       <div class="q-options" id="q1-opts">
@@ -223,7 +288,6 @@ body{font-family:'Segoe UI',system-ui,sans-serif;background:var(--cream);min-hei
       <div class="field-err" id="e-q1">Please select an option</div>
     </div>
 
-    <!-- Q2: Textile store -->
     <div class="fg">
       <label>2. Have you worked in a textile or garment store before? <span class="req">*</span></label>
       <div class="q-options">
@@ -233,7 +297,6 @@ body{font-family:'Segoe UI',system-ui,sans-serif;background:var(--cream);min-hei
       <div class="field-err" id="e-q2">Please select an option</div>
     </div>
 
-    <!-- Q3: Qualification -->
     <div class="fg">
       <label>3. Highest qualification <span class="req">*</span></label>
       <div class="q-options">
@@ -246,7 +309,6 @@ body{font-family:'Segoe UI',system-ui,sans-serif;background:var(--cream);min-hei
       <div class="field-err" id="e-q3">Please select an option</div>
     </div>
 
-    <!-- Q4: Work on weekends -->
     <div class="fg">
       <label>4. Can you work on weekends and festival days? <span class="req">*</span></label>
       <div class="q-options">
@@ -257,7 +319,6 @@ body{font-family:'Segoe UI',system-ui,sans-serif;background:var(--cream);min-hei
       <div class="field-err" id="e-q4">Please select an option</div>
     </div>
 
-    <!-- Q5: Joining -->
     <div class="fg">
       <label>5. When can you join? <span class="req">*</span></label>
       <div class="q-options">
@@ -269,10 +330,9 @@ body{font-family:'Segoe UI',system-ui,sans-serif;background:var(--cream);min-hei
       <div class="field-err" id="e-q5">Please select an option</div>
     </div>
 
-    <!-- Remarks -->
     <div class="fg">
       <label>Additional Remarks / Why do you want to join BSC? <span class="req">*</span></label>
-      <textarea id="f-remarks" rows="4" placeholder="Write a few lines about yourself and why you want to join BSC The Textile Mall..." required></textarea>
+      <textarea id="f-remarks" rows="4" placeholder="Write a few lines about yourself and why you want to join BSC The Textile Mall..."></textarea>
       <div style="display:flex;justify-content:space-between;margin-top:4px">
         <div class="field-err" id="e-remarks" style="display:none">Remarks are required (min 20 characters)</div>
         <span style="font-size:9.5px;color:#bbb;margin-left:auto" id="rem-count">0 / 500</span>
@@ -308,17 +368,22 @@ function el(id){ return document.getElementById(id); }
 // Date display
 el('fch-date').textContent = new Date().toLocaleDateString('en-IN',{weekday:'short',day:'2-digit',month:'short',year:'numeric'});
 
-// ── Source buttons ──────────────────────────────────────────────
+// ── Source buttons
 document.querySelectorAll('.src-btn').forEach(btn => {
   btn.addEventListener('click', () => {
     document.querySelectorAll('.src-btn').forEach(b => b.classList.remove('active'));
     btn.classList.add('active');
     el('f-source').value = btn.dataset.val;
-    el('f-referrer-wrap').style.display = btn.dataset.val === 'Employee Ref' ? 'block' : 'none';
+    // Hide all sub-panels
+    ['sub-empref','sub-advertisement','sub-other'].forEach(id => el(id).style.display='none');
+    // Show relevant sub-panel
+    const map = {'Employee Reference':'sub-empref','Advertisement':'sub-advertisement','Other':'sub-other'};
+    if(map[btn.dataset.val]) el(map[btn.dataset.val]).style.display='block';
+    hideErr('e-source');
   });
 });
 
-// ── Q option styling ────────────────────────────────────────────
+// ── Q option styling
 document.querySelectorAll('.q-opt input[type=radio]').forEach(radio => {
   radio.addEventListener('change', () => {
     document.querySelectorAll('.q-opt input[name="'+radio.name+'"]').forEach(r => r.closest('.q-opt').classList.remove('selected'));
@@ -326,35 +391,43 @@ document.querySelectorAll('.q-opt input[type=radio]').forEach(radio => {
   });
 });
 
-// ── Remarks counter ─────────────────────────────────────────────
+// ── Remarks counter
 el('f-remarks').addEventListener('input', function(){
   el('rem-count').textContent = this.value.length + ' / 500';
   if(this.value.length>500) this.value=this.value.slice(0,500);
 });
 
-// ── Resume file handling ─────────────────────────────────────────
-let resumeFile = null, resumeBase64 = null;
-function handleResumeSelect(input){
+// ── File handling
+let files = { resume:null, photo:null, aadhar:null };
+let base64s = { resume:null, photo:null, aadhar:null };
+
+function handleFileSelect(input, type){
   const file = input.files[0];
-  if(!file) return;
-  validateAndSetResume(file);
+  if(file) validateAndSetFile(file, type);
 }
-function handleResumeDrop(event){
+function handleFileDrop(event, type){
   event.preventDefault();
-  el('resume-zone').classList.remove('drag');
+  el(type+'-zone').classList.remove('drag');
   const file = event.dataTransfer.files[0];
-  if(file) validateAndSetResume(file);
+  if(file) validateAndSetFile(file, type);
 }
-function validateAndSetResume(file){
-  if(file.type !== 'application/pdf'){ toast('Only PDF files accepted','error'); return; }
-  if(file.size > 5*1024*1024){ toast('File too large — max 5MB','error'); return; }
-  resumeFile = file;
-  el('resume-chosen').textContent = '&#x2713; '+file.name+' ('+Math.round(file.size/1024)+'KB)';
-  el('resume-chosen').style.display = 'block';
-  el('resume-zone').classList.remove('err');
-  // Convert to base64
+function validateAndSetFile(file, type){
+  const rules = {
+    resume: { types:['application/pdf'], exts:['.pdf'], maxMB:5, label:'Resume' },
+    photo:  { types:['image/jpeg','image/png'], exts:['.jpg','.jpeg','.png'], maxMB:2, label:'Photo' },
+    aadhar: { types:['application/pdf','image/jpeg','image/png'], exts:['.pdf','.jpg','.jpeg','.png'], maxMB:5, label:'Aadhar' }
+  };
+  const r = rules[type];
+  const ext = '.'+file.name.split('.').pop().toLowerCase();
+  if(!r.exts.includes(ext)){ toast(r.label+': Only '+r.exts.join('/')+ ' accepted','error'); return; }
+  if(file.size > r.maxMB*1024*1024){ toast(r.label+': Max '+r.maxMB+'MB allowed','error'); return; }
+  files[type] = file;
+  el(type+'-chosen').innerHTML = '&#x2713; '+file.name+' ('+Math.round(file.size/1024)+'KB)';
+  el(type+'-chosen').style.display = 'block';
+  el(type+'-zone').classList.remove('err');
+  hideErr('e-'+type);
   const reader = new FileReader();
-  reader.onload = e => { resumeBase64 = e.target.result.split(',')[1]; };
+  reader.onload = e => { base64s[type] = e.target.result.split(',')[1]; };
   reader.readAsDataURL(file);
 }
 
@@ -362,10 +435,10 @@ function toast(msg,type){
   let t=document.querySelector('.toast-entry');
   if(!t){t=document.createElement('div');t.className='toast-entry';t.style.cssText='position:fixed;bottom:20px;left:50%;transform:translateX(-50%);background:#1E2D4E;color:#fff;padding:10px 20px;border-radius:8px;font-size:12px;z-index:9999;transition:opacity .3s';document.body.appendChild(t);}
   t.textContent=msg;t.style.background=type==='error'?'#C0272D':type==='success'?'#2d8a4e':'#1E2D4E';t.style.opacity='1';
-  clearTimeout(t._t);t._t=setTimeout(()=>t.style.opacity='0',3000);
+  clearTimeout(t._t);t._t=setTimeout(()=>t.style.opacity='0',3500);
 }
 
-// ── Duplicate check ──────────────────────────────────────────────
+// ── Duplicate check (show warning but allow submit)
 let dupTimer;
 async function checkDuplicate(phone){
   clearTimeout(dupTimer);
@@ -375,14 +448,14 @@ async function checkDuplicate(phone){
       const r=await fetch(SCRIPT_URL,{method:'POST',body:JSON.stringify({action:'checkDuplicate',phone})});
       const d=await r.json();
       if(d.exists){
-        el('dup-warn').innerHTML='&#x26A0; <b>'+d.name+'</b> already applied on '+d.appliedOn+' ('+d.appNo+')';
+        el('dup-warn').innerHTML='&#x26A0; This number was already used by <b>'+d.name+'</b> ('+d.appNo+', applied '+d.appliedOn+'). You can still continue submitting.';
         el('dup-warn').classList.add('show');
       }else el('dup-warn').classList.remove('show');
     }catch(e){}
   },600);
 }
 
-// ── Designation dropdown ─────────────────────────────────────────
+// ── Designation dropdown
 (async function loadDesigs(){
   try{
     const r=await fetch(SCRIPT_URL,{method:'POST',body:JSON.stringify({action:'getDesignations'})});
@@ -395,32 +468,71 @@ async function checkDuplicate(phone){
   }catch(e){}
 })();
 
-// ── Step navigation ──────────────────────────────────────────────
-function showErr(id){el(id).classList.add('show');}
-function hideErr(id){el(id).classList.remove('show');}
+// ── Helpers
+function showErr(id){const e=el(id);if(e)e.classList.add('show');}
+function hideErr(id){const e=el(id);if(e)e.classList.remove('show');}
 
+// ── Step 1 validation
 function goStep2(){
   let ok=true;
   const name=el('f-name').value.trim();
   const dob=el('f-dob').value;
   const phone=el('f-phone').value.trim();
+  const email=el('f-email').value.trim();
   const desig=el('f-desig').value;
   const salary=parseInt(el('f-salary').value)||0;
   const src=el('f-source').value;
-  const referrer=el('f-referrer')&&el('f-referrer').value.trim();
 
-  if(!name){showErr('e-name');el('f-name').classList.add('err');ok=false;}else{hideErr('e-name');el('f-name').classList.remove('err');}
-  if(!dob||calcAge(dob)<18){showErr('e-dob');el('f-dob').classList.add('err');ok=false;}else{hideErr('e-dob');el('f-dob').classList.remove('err');}
-  if(phone.length<10){showErr('e-phone');el('f-phone').classList.add('err');ok=false;}else{hideErr('e-phone');el('f-phone').classList.remove('err');}
-  if(!desig){showErr('e-desig');el('f-desig').classList.add('err');ok=false;}else{hideErr('e-desig');el('f-desig').classList.remove('err');}
-  if(salary<8000||salary>200000){showErr('e-salary');el('f-salary').classList.add('err');ok=false;}else{hideErr('e-salary');el('f-salary').classList.remove('err');}
-  if(src==='Employee Ref'&&!referrer){showErr('e-referrer');el('f-referrer').classList.add('err');ok=false;}else{hideErr('e-referrer');if(el('f-referrer'))el('f-referrer').classList.remove('err');}
-  if(!resumeFile){showErr('e-resume');el('resume-zone').classList.add('err');ok=false;}else{hideErr('e-resume');el('resume-zone').classList.remove('err');}
+  if(!name){showErr('e-name');el('f-name').classList.add('err');ok=false;}
+  else{hideErr('e-name');el('f-name').classList.remove('err');}
+
+  if(!dob){showErr('e-dob');el('f-dob').classList.add('err');ok=false;}
+  else{hideErr('e-dob');el('f-dob').classList.remove('err');}
+
+  if(phone.length<10){showErr('e-phone');el('f-phone').classList.add('err');ok=false;}
+  else{hideErr('e-phone');el('f-phone').classList.remove('err');}
+
+  // Email optional but validate format if provided
+  if(email && !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email)){
+    showErr('e-email');el('f-email').classList.add('err');ok=false;
+  }else{hideErr('e-email');el('f-email').classList.remove('err');}
+
+  if(!desig){showErr('e-desig');el('f-desig').classList.add('err');ok=false;}
+  else{hideErr('e-desig');el('f-desig').classList.remove('err');}
+
+  if(salary<8000){showErr('e-salary');el('f-salary').classList.add('err');ok=false;}
+  else{hideErr('e-salary');el('f-salary').classList.remove('err');}
+
+  if(!src){showErr('e-source');ok=false;}
+  else{hideErr('e-source');}
+
+  // Source detail validation
+  if(src==='Advertisement'){
+    const adv=el('f-adv-detail').value.trim();
+    if(!adv){showErr('e-adv-detail');el('f-adv-detail').classList.add('err');ok=false;}
+    else{hideErr('e-adv-detail');el('f-adv-detail').classList.remove('err');}
+  }
+  if(src==='Other'){
+    const oth=el('f-other-detail').value.trim();
+    if(!oth){showErr('e-other-detail');el('f-other-detail').classList.add('err');ok=false;}
+    else{hideErr('e-other-detail');el('f-other-detail').classList.remove('err');}
+  }
+
+  // File validations
+  if(!files.resume){showErr('e-resume');el('resume-zone').classList.add('err');ok=false;}
+  else{hideErr('e-resume');el('resume-zone').classList.remove('err');}
+
+  if(!files.photo){showErr('e-photo');el('photo-zone').classList.add('err');ok=false;}
+  else{hideErr('e-photo');el('photo-zone').classList.remove('err');}
+
+  if(!files.aadhar){showErr('e-aadhar');el('aadhar-zone').classList.add('err');ok=false;}
+  else{hideErr('e-aadhar');el('aadhar-zone').classList.remove('err');}
+
   if(!ok){window.scrollTo(0,0);return;}
 
   el('step1').style.display='none';
   el('step2').style.display='block';
-  el('step1-tab').classList.remove('active');
+  el('step1-tab').classList.remove('active');el('step1-tab').classList.add('done');
   el('step2-tab').classList.add('active');
   el('prog-fill').style.width='100%';
   window.scrollTo(0,0);
@@ -430,32 +542,39 @@ function goStep1(){
   el('step2').style.display='none';
   el('step1').style.display='block';
   el('step2-tab').classList.remove('active');
-  el('step1-tab').classList.add('active');
+  el('step1-tab').classList.remove('done');el('step1-tab').classList.add('active');
   el('prog-fill').style.width='50%';
   window.scrollTo(0,0);
 }
 
-function calcAge(dob){
-  try{const d=new Date(dob);return Math.floor((Date.now()-d.getTime())/(365.25*86400000));}catch{return 0;}
+// ── Build source detail string
+function getSourceDetail(){
+  const src=el('f-source').value;
+  if(src==='Employee Reference'){
+    const name=el('f-referrer').value.trim();
+    const empno=el('f-referrer-empno').value.trim();
+    if(!name&&!empno) return '';
+    return [name,empno].filter(Boolean).join(' | Emp No: ');
+  }
+  if(src==='Advertisement') return el('f-adv-detail').value.trim();
+  if(src==='Other') return el('f-other-detail').value.trim();
+  return '';
 }
 
-// ── Submit ───────────────────────────────────────────────────────
+// ── Submit
 async function submitForm(){
   let ok=true;
-  const getRadio=name=>{const r=document.querySelector('input[name="'+name+'"]:checked');return r?r.value:'';}
+  const getRadio=name=>{const r=document.querySelector('input[name="'+name+'"]:checked');return r?r.value:'';};
   const q1=getRadio('q1'),q2=getRadio('q2'),q3=getRadio('q3'),q4=getRadio('q4'),q5=getRadio('q5');
   const remarks=el('f-remarks').value.trim();
 
-  if(!q1){showErr('e-q1');ok=false;}else hideErr('e-q1');
-  if(!q2){showErr('e-q2');ok=false;}else hideErr('e-q2');
-  if(!q3){showErr('e-q3');ok=false;}else hideErr('e-q3');
-  if(!q4){showErr('e-q4');ok=false;}else hideErr('e-q4');
-  if(!q5){showErr('e-q5');ok=false;}else hideErr('e-q5');
+  ['q1','q2','q3','q4','q5'].forEach(q=>{
+    if(!getRadio(q)){showErr('e-'+q);ok=false;}else hideErr('e-'+q);
+  });
   if(remarks.length<20){
     el('e-remarks').textContent='Remarks required (min 20 characters)';
     el('e-remarks').style.display='block';
-    el('f-remarks').classList.add('err');
-    ok=false;
+    el('f-remarks').classList.add('err');ok=false;
   }else{el('e-remarks').style.display='none';el('f-remarks').classList.remove('err');}
   if(!ok){window.scrollTo(0,0);return;}
 
@@ -463,32 +582,55 @@ async function submitForm(){
   btn.textContent='Submitting...';btn.disabled=true;
 
   try{
-    // 1. Add candidate first to get appNo
+    const isDup = el('dup-warn').classList.contains('show');
     const data={
-      name:el('f-name').value.trim(),phone:'+91'+el('f-phone').value.trim(),
-      dob:el('f-dob').value,desig:el('f-desig').value,
-      source:el('f-source').value,referrer:el('f-referrer')?el('f-referrer').value.trim():'',
-      salary:el('f-salary').value,resumeUrl:'',
+      name:el('f-name').value.trim(),
+      phone:'+91'+el('f-phone').value.trim(),
+      dob:el('f-dob').value,
+      email:el('f-email').value.trim(),
+      desig:el('f-desig').value,
+      source:el('f-source').value,
+      referrer:el('f-referrer')?el('f-referrer').value.trim():'',
+      referrerEmpNo:el('f-referrer-empno')?el('f-referrer-empno').value.trim():'',
+      sourceDetail:getSourceDetail(),
+      salary:el('f-salary').value,
+      currentSalary:el('f-current-salary').value||'',
+      resumeUrl:'',photoUrl:'',aadharUrl:'',
+      isDuplicatePhone: isDup ? 'Yes' : 'No',
       q1,q2,q3,q4,q5,remarks
     };
+
+    // 1. Save candidate
     const r1=await fetch(SCRIPT_URL,{method:'POST',body:JSON.stringify({action:'addCandidate',data})});
     const d1=await r1.json();
     if(!d1.success)throw new Error(d1.error||'Submission failed');
     const appNo=d1.appNo;
 
-    // 2. Upload resume if available
-    if(resumeBase64){
-      el('upload-prog').style.display='block';
-      el('uploading-text').style.display='block';
-      el('upload-fill').style.width='40%';
-      try{
-        const r2=await fetch(SCRIPT_URL,{method:'POST',body:JSON.stringify({action:'uploadResume',appNo,fileName:'resume_'+appNo+'.pdf',base64Data:resumeBase64})});
-        const d2=await r2.json();
-        el('upload-fill').style.width='100%';
-      }catch(e2){console.warn('Resume upload failed:',e2);}
+    // 2. Upload documents
+    el('upload-prog').style.display='block';
+    el('uploading-text').style.display='block';
+
+    const uploads = [
+      {type:'resume', action:'uploadResume', fileName:'resume_'+appNo+'.pdf'},
+      {type:'photo',  action:'uploadPhoto',  fileName:'photo_'+appNo},
+      {type:'aadhar', action:'uploadAadhar', fileName:'aadhar_'+appNo}
+    ];
+
+    for(let i=0; i<uploads.length; i++){
+      const u=uploads[i];
+      el('upload-fill').style.width=((i+1)/uploads.length*100)+'%';
+      el('uploading-text').textContent='Uploading '+(i+1)+' of '+uploads.length+'...';
+      if(base64s[u.type]){
+        try{
+          const ext = files[u.type].name.split('.').pop().toLowerCase();
+          await fetch(SCRIPT_URL,{method:'POST',body:JSON.stringify({
+            action:u.action, appNo, fileName:u.fileName+'.'+ext, base64Data:base64s[u.type]
+          })});
+        }catch(e2){console.warn(u.type+' upload failed:',e2);}
+      }
     }
 
-    // Success screen
+    // Success
     el('step2').style.display='none';
     el('success-screen').style.display='block';
     el('success-appno').textContent=appNo;
@@ -504,9 +646,7 @@ async function submitForm(){
   }
 }
 
-function resetForm(){
-  window.location.reload();
-}
+function resetForm(){ window.location.reload(); }
 </script>
 </body>
 </html>
