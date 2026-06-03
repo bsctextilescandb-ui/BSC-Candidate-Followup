@@ -177,6 +177,7 @@ body{font-family:'Segoe UI',system-ui,sans-serif;background:var(--cream);min-hei
         <select id="f-qualification">
           <option value="">Select qualification</option>
           <option value="Below 10th">Below 10th</option>
+          <option value="Below 10th">10th Pass</option>
           <option value="PUC">PUC (12th)</option>
           <option value="Graduate">Graduate</option>
           <option value="Post Graduate">Post Graduate</option>
@@ -568,13 +569,13 @@ async function submitForm(){
   const q3=el('f-q3').value;
   const q4=el('f-q4').value.trim();
 
-  if(q1.length<20){showErr('e-q1');el('f-q1').classList.add('err');ok=false;}
+  if(q1.length<2){showErr('e-q1');el('f-q1').classList.add('err');ok=false;}
   else{hideErr('e-q1');el('f-q1').classList.remove('err');}
-  if(q2.length<20){showErr('e-q2');el('f-q2').classList.add('err');ok=false;}
+  if(q2.length<2){showErr('e-q2');el('f-q2').classList.add('err');ok=false;}
   else{hideErr('e-q2');el('f-q2').classList.remove('err');}
   if(!q3){showErr('e-q3');ok=false;}
   else hideErr('e-q3');
-  if(q4.length<20){showErr('e-q4');el('f-q4').classList.add('err');ok=false;}
+  if(q4.length<2){showErr('e-q4');el('f-q4').classList.add('err');ok=false;}
   else{hideErr('e-q4');el('f-q4').classList.remove('err');}
   if(!ok){window.scrollTo(0,0);return;}
 
