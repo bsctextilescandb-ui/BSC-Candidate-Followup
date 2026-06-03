@@ -26,7 +26,8 @@ const CONFIG = {
   ROLE_LABELS: {
     'HR':      'HR',
     'Manager': 'Store Manager',
-    'Admin':   'Admin'
+    'Admin':   'Admin',
+    'Owner':   'Owner'
   }
 };
 
@@ -72,7 +73,9 @@ const Auth = {
     el('sb-av')       && (el('sb-av').textContent       = init);
     el('sb-username') && (el('sb-username').textContent = session.username);
     // Show "Store Manager" for Manager role
-    // Role display removed from sidebar
+    // Show role label below name
+    const displayRole = CONFIG.ROLE_LABELS[session.role] || session.role;
+    el('sb-userrole') && (el('sb-userrole').textContent = displayRole);
     this._roleNav(session.role);
   },
   _roleNav(role) {
