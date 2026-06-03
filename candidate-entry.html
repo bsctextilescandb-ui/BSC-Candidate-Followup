@@ -142,6 +142,20 @@ body{font-family:'Segoe UI',system-ui,sans-serif;background:var(--cream);min-hei
       </div>
     </div>
 
+    <div class="fg-row">
+      <div class="fg">
+        <label>Gender <span class="req">*</span></label>
+        <select id="f-gender">
+          <option value="">Select gender</option>
+          <option value="Male">Male</option>
+          <option value="Female">Female</option>
+          <option value="Other">Other</option>
+        </select>
+        <div class="field-err" id="e-gender">Please select gender</div>
+      </div>
+      <div class="fg"></div>
+    </div>
+
     <div class="fg">
       <label>Current City &amp; State <span class="req">*</span></label>
       <input type="text" id="f-city" placeholder="e.g. Belagavi, Karnataka">
@@ -277,7 +291,7 @@ body{font-family:'Segoe UI',system-ui,sans-serif;background:var(--cream);min-hei
         <div class="field-err" id="e-resume">Resume required (PDF, max 5MB)</div>
       </div>
       <div class="fg">
-        <label>Passport Photo <span class="req">*</span></label>
+        <label>Passport Photo <span class="opt-label">(optional)</span></label>
         <div class="file-zone" id="photo-zone" onclick="el('f-photo').click()"
              ondragover="event.preventDefault();this.classList.add('drag')"
              ondragleave="this.classList.remove('drag')"
@@ -290,7 +304,7 @@ body{font-family:'Segoe UI',system-ui,sans-serif;background:var(--cream);min-hei
         <div class="field-err" id="e-photo">Photo required (JPG/PNG, max 2MB)</div>
       </div>
       <div class="fg">
-        <label>Aadhar Card <span class="req">*</span></label>
+        <label>Aadhar Card <span class="opt-label">(optional)</span></label>
         <div class="file-zone" id="aadhar-zone" onclick="el('f-aadhar').click()"
              ondragover="event.preventDefault();this.classList.add('drag')"
              ondragleave="this.classList.remove('drag')"
@@ -503,6 +517,7 @@ function goStep2(){
     {id:'f-name',   err:'e-name',   test:v=>v.trim().length>0,      msg:'Full name is required'},
     {id:'f-phone',  err:'e-phone',  test:v=>v.trim().length===10,   msg:'Valid 10-digit number required'},
     {id:'f-dob',    err:'e-dob',    test:v=>v.length>0,             msg:'Date of birth is required'},
+    {id:'f-gender', err:'e-gender', test:v=>v.length>0,             msg:'Please select gender'},
     {id:'f-city',   err:'e-city',   test:v=>v.trim().length>0,      msg:'City & State is required'},
     {id:'f-address',err:'e-address',test:v=>v.trim().length>0,      msg:'Address is required'},
     {id:'f-desig',  err:'e-desig',  test:v=>v.length>0,             msg:'Please select a position'},
@@ -542,7 +557,7 @@ function goStep2(){
   }
 
   // Files
-  ['resume','photo','aadhar'].forEach(t=>{
+  ['resume'].forEach(t=>{
     if(!files[t]){showErr('e-'+t);el(t+'-zone').classList.add('err');ok=false;}
     else{hideErr('e-'+t);el(t+'-zone').classList.remove('err');}
   });
@@ -605,6 +620,7 @@ async function submitForm(){
       phone:      '+91'+el('f-phone').value.trim(),
       email:      el('f-email').value.trim(),
       dob:        el('f-dob').value,
+      gender:     el('f-gender').value,
       cityState:  el('f-city').value.trim(),
       address:    el('f-address').value.trim(),
       desig:      el('f-desig').value,
