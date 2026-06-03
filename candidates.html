@@ -22,6 +22,13 @@
 .ai-title{font-size:11.5px;font-weight:600;color:var(--navy)}
 .ai-remarks{font-size:10.5px;color:#777;margin-top:3px;font-style:italic;background:#F9F7F4;padding:5px 8px;border-radius:5px;margin-top:4px}
 .ai-extra{font-size:10px;color:#555;margin-top:5px;display:flex;align-items:center;gap:6px;flex-wrap:wrap}
+/* Drawer tabs */
+.dr-tabs{display:flex;gap:0;border-bottom:2px solid #f0ede8;margin-bottom:14px}
+.dr-tab{padding:8px 14px;font-size:11px;font-weight:600;color:#aaa;cursor:pointer;border-bottom:2px solid transparent;margin-bottom:-2px;transition:all .15s;white-space:nowrap}
+.dr-tab.active{color:var(--navy);border-bottom-color:var(--navy)}
+.dr-tab-panel{display:none}
+.dr-tab-panel.active{display:block}
+.dr-status-bar{display:flex;align-items:center;gap:8px;padding:10px 14px;background:#F9F7F4;border-radius:8px;margin-bottom:14px}
 </style>
 </head>
 <body>
@@ -522,64 +529,114 @@ function exportCSV(){
 function updateLocal(appNo,updates){ allCandidates=allCandidates.map(c=>c.appNo===appNo?Object.assign({},c,updates):c); }
 
 // ── DRAWER — shows ALL remarks + logs + resume PDF ────────────
+function drTab(tabId){
+  document.querySelectorAll('.dr-tab').forEach(t=>t.classList.remove('active'));
+  document.querySelectorAll('.dr-tab-panel').forEach(p=>p.classList.remove('active'));
+  document.querySelector('.dr-tab[data-tab="'+tabId+'"]').classList.add('active');
+  el('dr-panel-'+tabId).classList.add('active');
+}
+
 async function openDrawer(idx){
   const c=filtered[idx]; if(!c) return;
-  el('dr-av').textContent        = c.initials;
-  el('dr-av').style.background   = AV_BG[c.color]||'#1E2D4E';
-  el('dr-name').textContent      = c.name;
-  el('dr-appno').textContent     = c.appNo+' · Applied '+c.date;
+  el('dr-av').textContent      = c.initials;
+  el('dr-av').style.background = AV_BG[c.color]||'#1E2D4E';
+  el('dr-name').textContent    = c.name;
+  el('dr-appno').textContent   = c.appNo+' · Applied '+c.date;
+
+  // Format DOB
+  let dobStr = '—';
+  if(c.dob){
+    try{
+      const d=new Date(c.dob);
+      if(!isNaN(d)) dobStr=d.toLocaleDateString('en-IN',{day:'2-digit',month:'short',year:'numeric'});
+      else dobStr=c.dob;
+    }catch(e){dobStr=c.dob;}
+  }
   const age = c.dob ? calcAge(c.dob) : '—';
 
-  // Build drawer body
-  let body = '';
-
-  // Status + days
-  body += '<div class="drawer-section"><div class="ds-title">Status</div>'
+  // Status bar
+  const statusBar = '<div class="dr-status-bar">'
     +statusBadge(c.status)
-    +(c.rejReason?'<span style="font-size:10px;color:var(--red);margin-left:7px;font-style:italic">'+c.rejReason+'</span>':'')
-    +'<span style="font-size:10px;color:#999;margin-left:8px">'+c.daysIn+'d in pipeline</span></div>';
+    +(c.rejReason?'<span style="font-size:10px;color:var(--red);font-style:italic">'+c.rejReason+'</span>':'')
+    +'<span style="font-size:10px;color:#999;margin-left:auto">'+c.daysIn+'d in pipeline</span>'
+    +'</div>';
 
-  // Personal
-  body += '<div class="drawer-section"><div class="ds-title">Personal</div>'
+  // Tabs
+  const tabs = '<div class="dr-tabs">'
+    +'<div class="dr-tab active" data-tab="overview" onclick="drTab('overview')">Overview</div>'
+    +'<div class="dr-tab" data-tab="details" onclick="drTab('details')">Details</div>'
+    +'<div class="dr-tab" data-tab="questions" onclick="drTab('questions')">Questions</div>'
+    +'<div class="dr-tab" data-tab="activity" onclick="drTab('activity')">Activity</div>'
+    +'</div>';
+
+  // ── Tab 1: Overview ──────────────────────────────────
+  let t1 = '<div class="drawer-section"><div class="ds-title">Personal</div>'
     +'<div class="drow"><span class="drow-label">Full Name</span><span class="drow-val highlight">'+c.name+'</span></div>'
-    +'<div class="drow"><span class="drow-label">DOB / Age</span><span class="drow-val">'+(c.dob||'—')+(age!=='—'?' ('+age+' yrs)':'')+'</span></div>'
+    +'<div class="drow"><span class="drow-label">Gender</span><span class="drow-val">'+(c.gender||'—')+'</span></div>'
+    +'<div class="drow"><span class="drow-label">DOB / Age</span><span class="drow-val">'+dobStr+(age!=='—'?' ('+age+' yrs)':'')+'</span></div>'
     +'<div class="drow"><span class="drow-label">Phone</span><span class="drow-val">'+formatPhone(c.phone)+'</span></div>'
+    +'<div class="drow"><span class="drow-label">Email</span><span class="drow-val">'+(c.email||'—')+'</span></div>'
     +'</div>';
 
-  // Application
-  body += '<div class="drawer-section"><div class="ds-title">Application</div>'
+  t1 += '<div class="drawer-section"><div class="ds-title">Application</div>'
     +'<div class="drow"><span class="drow-label">Designation</span><span class="drow-val highlight">'+c.desig+'</span></div>'
-    +'<div class="drow"><span class="drow-label">Salary Exp.</span><span class="drow-val salary">'+(c.salary?'&#x20B9;'+Number(c.salary).toLocaleString('en-IN'):'—')+'</span></div>'
+    +'<div class="drow"><span class="drow-label">Current Salary</span><span class="drow-val">'+(c.currentSalary||'—')+'</span></div>'
+    +'<div class="drow"><span class="drow-label">Expected Salary</span><span class="drow-val salary">'+(c.salary?'&#x20B9;'+Number(c.salary).toLocaleString('en-IN'):'—')+'</span></div>'
+    +'<div class="drow"><span class="drow-label">Notice Period</span><span class="drow-val">'+(c.noticePeriod||'—')+'</span></div>'
+    +'<div class="drow"><span class="drow-label">Own Vehicle</span><span class="drow-val">'+(c.ownVehicle||'—')+'</span></div>'
+    +'</div>';
+
+  t1 += '<div class="drawer-section"><div class="ds-title">Source</div>'
     +'<div class="drow"><span class="drow-label">Source</span><span class="drow-val">'+(c.source||'—')+'</span></div>'
-    +'<div class="drow"><span class="drow-label">Referrer</span><span class="drow-val">'+(c.referrer||'—')+'</span></div>'
+    +(c.referrer?'<div class="drow"><span class="drow-label">Referrer</span><span class="drow-val">'+c.referrer+(c.referrerEmpNo?' ('+c.referrerEmpNo+')':'')+'</span></div>':'')
+    +(c.sourceDetail?'<div class="drow"><span class="drow-label">Detail</span><span class="drow-val">'+c.sourceDetail+'</span></div>':'')
     +'</div>';
 
-  // Resume PDF — prominent button
-  body += '<div class="drawer-section"><div class="ds-title">Resume / CV</div>';
-  if(c.resumeUrl){
-    body += '<a href="'+c.resumeUrl+'" target="_blank" style="display:inline-flex;align-items:center;gap:7px;padding:9px 16px;background:var(--navy);color:#fff;border-radius:8px;text-decoration:none;font-size:12px;font-weight:700;margin-bottom:4px">&#x1F4C4; View Resume PDF &#x2197;</a>'
-      +'<div style="font-size:9.5px;color:#aaa;margin-top:4px">Saved in BSC_Resumes Google Drive folder</div>';
+  // ── Tab 2: Details ───────────────────────────────────
+  let t2 = '<div class="drawer-section"><div class="ds-title">Location</div>'
+    +'<div class="drow"><span class="drow-label">City & State</span><span class="drow-val">'+(c.cityState||'—')+'</span></div>'
+    +'<div class="drow"><span class="drow-label">Address</span><span class="drow-val">'+(c.address||'—')+'</span></div>'
+    +'</div>';
+
+  t2 += '<div class="drawer-section"><div class="ds-title">Professional Background</div>'
+    +'<div class="drow"><span class="drow-label">Occupation</span><span class="drow-val">'+(c.occupation||'—')+'</span></div>'
+    +'<div class="drow"><span class="drow-label">Qualification</span><span class="drow-val">'+(c.qualification||'—')+'</span></div>'
+    +'<div class="drow"><span class="drow-label">Experience</span><span class="drow-val">'+(c.experience||'—')+'</span></div>'
+    +'</div>';
+
+  t2 += '<div class="drawer-section"><div class="ds-title">Documents</div>';
+  t2 += c.resumeUrl
+    ? '<a href="'+c.resumeUrl+'" target="_blank" style="display:inline-flex;align-items:center;gap:7px;padding:8px 14px;background:var(--navy);color:#fff;border-radius:8px;text-decoration:none;font-size:12px;font-weight:700;margin-bottom:8px">&#x1F4C4; View Resume &#x2197;</a><br>'
+    : '<div style="font-size:11px;color:#bbb;margin-bottom:6px">No resume uploaded</div>';
+  t2 += c.photoUrl
+    ? '<a href="'+c.photoUrl+'" target="_blank" style="display:inline-flex;align-items:center;gap:7px;padding:8px 14px;background:#555;color:#fff;border-radius:8px;text-decoration:none;font-size:12px;font-weight:700;margin-bottom:8px">&#x1F4F7; View Photo &#x2197;</a><br>'
+    : '<div style="font-size:11px;color:#bbb;margin-bottom:6px">No photo uploaded</div>';
+  t2 += c.aadharUrl
+    ? '<a href="'+c.aadharUrl+'" target="_blank" style="display:inline-flex;align-items:center;gap:7px;padding:8px 14px;background:#2d8a4e;color:#fff;border-radius:8px;text-decoration:none;font-size:12px;font-weight:700;margin-bottom:8px">&#x1F4CB; View Aadhar &#x2197;</a>'
+    : '<div style="font-size:11px;color:#bbb">No Aadhar uploaded</div>';
+  t2 += '</div>';
+
+  // ── Tab 3: Questions ─────────────────────────────────
+  let t3 = '<div class="drawer-section">';
+  if(c.whyJoin||c.whyHire||c.weekendOk||c.value90Days){
+    if(c.whyJoin)     t3+='<div class="q-ans"><div class="q-ans-label">Why join BSC Exclusive?</div><div class="q-ans-val">'+c.whyJoin+'</div></div>';
+    if(c.whyHire)     t3+='<div class="q-ans"><div class="q-ans-label">Why should we hire you?</div><div class="q-ans-val">'+c.whyHire+'</div></div>';
+    if(c.weekendOk)   t3+='<div class="q-ans"><div class="q-ans-label">Comfortable on weekends/festivals?</div><div class="q-ans-val">'+c.weekendOk+'</div></div>';
+    if(c.value90Days) t3+='<div class="q-ans"><div class="q-ans-label">Value in first 90 days?</div><div class="q-ans-val">'+c.value90Days+'</div></div>';
   } else {
-    body += '<div style="font-size:11px;color:#bbb;background:#F9F7F4;padding:9px 12px;border-radius:7px">No resume uploaded yet</div>';
+    t3 += '<div style="font-size:11px;color:#bbb;padding:10px 0">No answers recorded</div>';
   }
-  body += '</div>';
+  t3 += '</div>';
 
-  // Q&A
-  if(c.q1||c.q2||c.q3||c.q4||c.q5){
-    body += '<div class="drawer-section"><div class="ds-title">Registration Q&amp;A</div>';
-    if(c.q1) body+='<div class="q-ans"><div class="q-ans-label">Retail Experience</div><div class="q-ans-val">'+c.q1+'</div></div>';
-    if(c.q2) body+='<div class="q-ans"><div class="q-ans-label">Textile Store Exp.</div><div class="q-ans-val">'+c.q2+'</div></div>';
-    if(c.q3) body+='<div class="q-ans"><div class="q-ans-label">Qualification</div><div class="q-ans-val">'+c.q3+'</div></div>';
-    if(c.q4) body+='<div class="q-ans"><div class="q-ans-label">Weekends / Festivals</div><div class="q-ans-val">'+c.q4+'</div></div>';
-    if(c.q5) body+='<div class="q-ans"><div class="q-ans-label">Can Join</div><div class="q-ans-val">'+c.q5+'</div></div>';
-    if(c.remarks) body+='<div class="q-ans"><div class="q-ans-label">Remarks (Self)</div><div class="q-ans-val">'+c.remarks+'</div></div>';
-    body+='</div>';
-  }
+  // ── Tab 4: Activity ──────────────────────────────────
+  const t4 = '<div id="dr-activity-log"><div style="font-size:10px;color:#bbb;padding:6px 0">Loading...</div></div>';
 
-  // Activity log — load call history
-  body += '<div class="drawer-section"><div class="ds-title">Activity Log</div>'
-    +'<div id="dr-activity-log"><div style="font-size:10px;color:#bbb;padding:6px 0">Loading...</div></div>'
-    +'</div>';
+  // Assemble
+  const body = statusBar + tabs
+    +'<div class="dr-tab-panel active" id="dr-panel-overview">'+t1+'</div>'
+    +'<div class="dr-tab-panel" id="dr-panel-details">'+t2+'</div>'
+    +'<div class="dr-tab-panel" id="dr-panel-questions">'+t3+'</div>'
+    +'<div class="dr-tab-panel" id="dr-panel-activity">'+t4+'</div>';
 
   el('drawer-body').innerHTML = body;
   el('drawer-actions').innerHTML = isViewOnly
@@ -589,7 +646,6 @@ async function openDrawer(idx){
   el('drawer-overlay').classList.add('show');
   el('cand-drawer').classList.add('open');
 
-  // Load activity log async
   loadActivityLog(c.appNo);
 }
 
