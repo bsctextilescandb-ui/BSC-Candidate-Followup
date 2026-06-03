@@ -57,7 +57,9 @@
         <button class="df-btn" data-range="week">This Week</button>
         <button class="df-btn" data-range="month">This Month</button>
         <button class="df-btn" data-range="last_month">Last Month</button>
-        <input type="date" class="df-date" id="df-custom">
+        <input type="date" class="df-date" id="df-from" onchange="applyCustomRange()">
+        <span style="font-size:11px;color:#888;align-self:center">to</span>
+        <input type="date" class="df-date" id="df-to" onchange="applyCustomRange()">
         <span class="df-label" id="df-label">Showing: Today</span>
       </div>
       <div class="kpi-grid">
@@ -180,11 +182,68 @@ async function loadPendingActions(){
   }).join(''):'<div class="empty-state"><div class="empty-icon">✅</div><div class="empty-title">All clear</div></div>';
 }
 
+// ── Date range helpers ────────────────────────────────────
+function getDateRange(range){
+  const now=new Date(), y=now.getFullYear(), m=now.getMonth(), d=now.getDate();
+  if(range==='today')      return {from:new Date(y,m,d), to:new Date(y,m,d,23,59,59)};
+  if(range==='week'){
+    const day=now.getDay(), diff=day===0?6:day-1;
+    const mon=new Date(y,m,d-diff);
+    return {from:mon, to:new Date(y,m,d,23,59,59)};
+  }
+  if(range==='month')      return {from:new Date(y,m,1), to:new Date(y,m,d,23,59,59)};
+  if(range==='last_month') return {from:new Date(y,m-1,1), to:new Date(y,m,0,23,59,59)};
+  return null;
+}
+function filterByDateRange(candidates, range, fromDate, toDate){
+  let from, to;
+  if(range==='custom'){
+    if(!fromDate) return candidates;
+    from = new Date(fromDate);
+    to   = toDate ? new Date(toDate) : new Date(fromDate);
+    to.setHours(23,59,59);
+  } else {
+    const dr = getDateRange(range);
+    if(!dr) return candidates;
+    from = dr.from; to = dr.to;
+  }
+  return candidates.filter(c => {
+    if(!c.rawDate) return false;
+    const d = new Date(c.rawDate);
+    return d >= from && d <= to;
+  });
+}
+
+// ── Active range state ─────────────────────────────────
+let activeRange = 'today';
+
 async function loadRecent(){
-  const data=await API.getCandidates({limit:50});
-  allCandidates=data.candidates||[];filteredC=[...allCandidates];
-  el('recent-count').textContent='Showing 1–'+Math.min(PAGE_SIZE,allCandidates.length)+' of '+(data.total||0);
+  const data=await API.getCandidates({limit:500});
+  allCandidates=data.candidates||[];
+  applyDateFilter();
+}
+function applyDateFilter(){
+  const from = el('df-from') ? el('df-from').value : '';
+  const to   = el('df-to')   ? el('df-to').value   : '';
+  filteredC = filterByDateRange(allCandidates, activeRange, from, to);
+  currentPage=1;
+  el('recent-count') && (el('recent-count').textContent='Showing 1–'+Math.min(PAGE_SIZE,filteredC.length)+' of '+filteredC.length);
   renderRecent();
+}
+function applyCustomRange(){
+  const from = el('df-from').value;
+  const to   = el('df-to').value;
+  if(!from) return;
+  // If only from is set, copy to to
+  if(from && !to) el('df-to').value = from;
+  // Deactivate preset buttons
+  document.querySelectorAll('.df-btn').forEach(b=>b.classList.remove('active'));
+  activeRange = 'custom';
+  // Update label
+  const f = new Date(from).toLocaleDateString('en-IN',{day:'2-digit',month:'short',year:'numeric'});
+  const t = to ? new Date(to||from).toLocaleDateString('en-IN',{day:'2-digit',month:'short',year:'numeric'}) : f;
+  el('df-label').textContent = f===t ? 'Showing: '+f : 'Showing: '+f+' – '+t;
+  applyDateFilter();
 }
 function renderRecent(){
   const start=(currentPage-1)*PAGE_SIZE,page=filteredC.slice(start,start+PAGE_SIZE),total=filteredC.length;
@@ -208,7 +267,21 @@ async function qAction(action,appNo){
   await API.updateCandidate(appNo,{status:sm[action]});
   toast(action+' successful','success');loadRecent();
 }
-initDateFilter(()=>{loadKPIs();loadFunnel();});
+// Date filter buttons
+document.querySelectorAll('.df-btn').forEach(btn=>{
+  btn.addEventListener('click',()=>{
+    document.querySelectorAll('.df-btn').forEach(b=>b.classList.remove('active'));
+    btn.classList.add('active');
+    activeRange = btn.dataset.range;
+    // Clear custom date inputs
+    if(el('df-from')) el('df-from').value='';
+    if(el('df-to'))   el('df-to').value='';
+    // Update label
+    const labels={today:'Today',week:'This Week',month:'This Month',last_month:'Last Month'};
+    el('df-label').textContent='Showing: '+new Date().toLocaleDateString('en-IN',{day:'2-digit',month:'long',year:'numeric'});
+    applyDateFilter();
+  });
+});
 el('df-label').textContent='Showing: '+new Date().toLocaleDateString('en-IN',{day:'2-digit',month:'long',year:'numeric'});
 </script>
 </body>
