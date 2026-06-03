@@ -86,6 +86,9 @@
         <span class="sp sp-all active" data-status="all">All · <b id="p-all">0</b></span>
         <span class="sp sp-new"   data-status="New">New · <b id="p-new">0</b></span>
         <span class="sp sp-short" data-status="Shortlisted">Shortlisted · <b id="p-short">0</b></span>
+        <span class="sp sp-short" data-status="1st Call Done">1st Call · <b id="p-call1">0</b></span>
+        <span class="sp sp-short" data-status="2nd Call Done">2nd Call · <b id="p-call2">0</b></span>
+        <span class="sp sp-int"   data-status="Interview Scheduled">Interview Scheduled · <b id="p-sch">0</b></span>
         <span class="sp sp-int"   data-status="Interviewed">Interviewed · <b id="p-int">0</b></span>
         <span class="sp sp-sel"   data-status="Selected">Selected · <b id="p-sel">0</b></span>
         <span class="sp sp-offer" data-status="Offer Sent">Offer Sent · <b id="p-offer">0</b></span>
@@ -254,7 +257,7 @@ function buildKPIs(){
   const cM= a => allCandidates.filter(x=>a.includes(x.status)).length;
   el('k-total').textContent  = allCandidates.length;
   el('k-new').textContent    = c('New');
-  el('k-short').textContent  = cM(['Shortlisted','1st Call Done','2nd Call Done','Interview Scheduled']);
+  el('k-short').textContent  = cM(['Shortlisted','1st Call Done','2nd Call Done']);
   el('k-int').textContent    = c('Interviewed');
   el('k-sel').textContent    = c('Selected');
   el('k-offer').textContent  = c('Offer Sent');
@@ -266,7 +269,10 @@ function buildPills(){
   const cM= a => allCandidates.filter(x=>a.includes(x.status)).length;
   el('p-all').textContent    = allCandidates.length;
   el('p-new').textContent    = c('New');
-  el('p-short').textContent  = cM(['Shortlisted','1st Call Done','2nd Call Done','Interview Scheduled']);
+  el('p-short').textContent  = c('Shortlisted');
+  if(el('p-call1')) el('p-call1').textContent = c('1st Call Done');
+  if(el('p-call2')) el('p-call2').textContent = c('2nd Call Done');
+  if(el('p-sch'))   el('p-sch').textContent   = c('Interview Scheduled');
   el('p-int').textContent    = c('Interviewed');
   el('p-sel').textContent    = c('Selected');
   el('p-offer').textContent  = c('Offer Sent');
