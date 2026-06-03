@@ -390,7 +390,26 @@ function doShortlist(btn){ const c=getCand(btn); if(c) showRemarkModal('shortlis
 function doHold(btn){      const c=getCand(btn); if(c) showRemarkModal('hold',c); }
 function doReject(btn){    const c=getCand(btn); if(c) showRemarkModal('reject',c); }
 function doCall(btn){      const c=getCand(btn); if(c) openCallModal(c); }
-function doReactivate(btn){ const c=getCand(btn); if(c) quickStatusChange(c.appNo,'New'); }
+function doReactivate(btn){
+  const c=getCand(btn); if(!c) return;
+  const isReengage = c.status==='Rejected';
+  const title = isReengage ? 'Re-engage' : 'Reactivate';
+  const btnTxt = isReengage ? 'Confirm Re-engage' : 'Confirm Reactivate';
+  const btnClr = '#1E2D4E';
+
+  el('rm-title').textContent            = title+' — '+c.name;
+  el('rm-remarks').value                = '';
+  el('rm-remarks').style.borderColor    = '#ddd';
+  el('rm-remarks-err').style.display    = 'none';
+  el('rm-confirm-btn').style.background = btnClr;
+  el('rm-confirm-btn').textContent      = btnTxt;
+
+  _rmAction  = isReengage ? 'reengage' : 'reactivate';
+  _rmCand    = c;
+
+  el('remark-modal').style.display = 'flex';
+  setTimeout(function(){ el('rm-remarks').focus(); }, 150);
+}
 
 // ── Quick status (no remarks needed for reactivate) ───────────
 async function quickStatusChange(appNo, status){
@@ -432,17 +451,22 @@ async function confirmRemark(){
   }
   const c=_rmCand, action=_rmAction;
   closeRemarkModal();
-  const statusMap = {shortlist:'Shortlisted', hold:'Hold', reject:'Rejected'};
+  const statusMap = {shortlist:'Shortlisted', hold:'Hold', reject:'Rejected', reactivate:'New', reengage:'New'};
   try {
     if(action==='reject'){
       await API.rejectCandidate({appNo:c.appNo, remarks:remarks});
       updateLocal(c.appNo,{status:'Rejected', rejReason:remarks});
+      toast(c.name+' — Rejected','success');
+    } else if(action==='reactivate'||action==='reengage'){
+      await API.updateCandidate(c.appNo,{status:'New', remarks:remarks});
+      updateLocal(c.appNo,{status:'New', rejReason:''});
+      toast(c.name+' — moved back to New','success');
     } else {
       await API.updateCandidate(c.appNo,{status:statusMap[action], remarks:remarks});
       updateLocal(c.appNo,{status:statusMap[action]});
+      toast(c.name+' — '+statusMap[action],'success');
     }
     buildKPIs(); buildPills(); applyFilters();
-    toast(c.name+' — '+statusMap[action],'success');
     closeDrawer();
   } catch(e){ toast('Error: '+e.message,'error'); }
 }
