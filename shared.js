@@ -108,7 +108,7 @@ const API = {
   },
   async getCandidates(f = {})           { return this.call('getCandidates', { filters: f }); },
   async addCandidate(data)               { return this.call('addCandidate', { data }); },
-  async updateCandidate(appNo, updates)  { return this.call('updateCandidate', { appNo, updates }); },
+  async updateCandidate(appNo, updates, candName, doneBy)  { return this.call('updateCandidate', { appNo, updates, candName: candName||'', doneBy: doneBy||'HR' }); },
   async checkDuplicate(phone)            { return this.call('checkDuplicate', { phone }); },
   async getNextAppNo()                   { return this.call('getNextAppNo'); },
   async getKPIs(dr)                      { return this.call('getKPIs', { dateRange: dr }); },
