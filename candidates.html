@@ -412,8 +412,8 @@ function doReactivate(btn){
 }
 
 // ── Quick status (no remarks needed for reactivate) ───────────
-async function quickStatusChange(appNo, status){
-  await API.updateCandidate(appNo,{status});
+async function quickStatusChange(appNo, status, candName){
+  await API.updateCandidate(appNo,{status}, candName||'', session?session.username:'HR');
   updateLocal(appNo,{status}); buildKPIs(); buildPills(); applyFilters();
   toast('Status updated','success');
 }
@@ -452,17 +452,21 @@ async function confirmRemark(){
   const c=_rmCand, action=_rmAction;
   closeRemarkModal();
   const statusMap = {shortlist:'Shortlisted', hold:'Hold', reject:'Rejected', reactivate:'New', reengage:'New'};
+  const doneBy = session ? session.username : 'HR';
   try {
     if(action==='reject'){
-      await API.rejectCandidate({appNo:c.appNo, remarks:remarks});
+      await API.rejectCandidate({appNo:c.appNo, remarks:remarks, candName:c.name, doneBy:doneBy});
       updateLocal(c.appNo,{status:'Rejected', rejReason:remarks});
       toast(c.name+' — Rejected','success');
     } else if(action==='reactivate'||action==='reengage'){
-      await API.updateCandidate(c.appNo,{status:'New', remarks:remarks});
+      const actLabel = action==='reengage' ? 'Re-engaged' : 'Reactivated';
+      await API.updateCandidate(c.appNo,{status:'New', remarks:remarks}, c.name, doneBy);
+      // Also log the specific action
+      await API.call('logCustomActivity',{appNo:c.appNo, candName:c.name, action:actLabel, remarks:remarks, doneBy:doneBy});
       updateLocal(c.appNo,{status:'New', rejReason:''});
-      toast(c.name+' — moved back to New','success');
+      toast(c.name+' — '+actLabel,'success');
     } else {
-      await API.updateCandidate(c.appNo,{status:statusMap[action], remarks:remarks});
+      await API.updateCandidate(c.appNo,{status:statusMap[action], remarks:remarks}, c.name, doneBy);
       updateLocal(c.appNo,{status:statusMap[action]});
       toast(c.name+' — '+statusMap[action],'success');
     }
