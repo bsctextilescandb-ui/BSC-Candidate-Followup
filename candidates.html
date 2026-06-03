@@ -168,17 +168,8 @@
   <div class="modal">
     <div class="modal-title" id="rm-title">Shortlist Candidate</div>
     <div class="modal-body">
-      <div id="rm-reason-wrap" style="display:none;margin-bottom:10px">
-        <label style="font-size:10px;font-weight:700;color:#888;display:block;margin-bottom:5px">REASON</label>
-        <select id="rm-reason" class="fsel" style="width:100%;font-size:12px;padding:8px">
-          <option value="">Select reason for rejection...</option>
-          <option>Low experience</option><option>Salary mismatch</option>
-          <option>Better candidate selected</option><option>Did not appear</option>
-          <option>Failed interview</option><option>Over-qualified</option><option>Other</option>
-        </select>
-      </div>
-      <label style="font-size:10px;font-weight:700;color:#888;display:block">REMARKS <span style="color:var(--red)">*</span></label>
-      <textarea class="rm-textarea" id="rm-remarks" placeholder="Enter your remarks (mandatory)..." maxlength="300"></textarea>
+      <label style="font-size:10px;font-weight:700;color:#888;display:block;margin-bottom:5px">REMARKS <span style="color:var(--red)">*</span></label>
+      <textarea class="rm-textarea" id="rm-remarks" placeholder="Enter your remarks..." maxlength="300"></textarea>
       <div style="font-size:10px;color:var(--red);margin-top:4px;display:none" id="rm-remarks-err">Remarks are required (min 5 characters)</div>
     </div>
     <div class="modal-btns">
@@ -412,22 +403,17 @@ async function quickStatusChange(appNo, status){
 let _rmAction=null, _rmCand=null;
 function showRemarkModal(action, cand){
   _rmAction=action; _rmCand=cand;
-  const title={shortlist:'Shortlist',hold:'Hold',reject:'Reject'}[action];
+  const titles = {shortlist:'Shortlist',hold:'Hold',reject:'Reject'};
+  const btnClrs = {shortlist:'#1E2D4E',hold:'#C9952A',reject:'#C0272D'};
+  const btnTxts = {shortlist:'Confirm Shortlist',hold:'Confirm Hold',reject:'Confirm Reject'};
 
-  // Update modal content directly
-  el('rm-title').textContent = title+' — '+cand.name;
-  el('rm-remarks').value     = '';
-  el('rm-remarks').style.borderColor = '#ddd';
-  el('rm-remarks-err').style.display = 'none';
+  el('rm-title').textContent            = titles[action]+' — '+cand.name;
+  el('rm-remarks').value                = '';
+  el('rm-remarks').style.borderColor    = '#ddd';
+  el('rm-remarks-err').style.display    = 'none';
+  el('rm-confirm-btn').style.background = btnClrs[action];
+  el('rm-confirm-btn').textContent      = btnTxts[action];
 
-  const btnClr = {shortlist:'#1E2D4E',hold:'#C9952A',reject:'#C0272D'}[action];
-  el('rm-confirm-btn').style.background = btnClr;
-  el('rm-confirm-btn').textContent      = 'Confirm '+title;
-
-  el('rm-reason-wrap').style.display = action==='reject' ? 'block' : 'none';
-  if(action==='reject') el('rm-reason').selectedIndex=0;
-
-  // Show modal
   el('remark-modal').style.display = 'flex';
   setTimeout(function(){ el('rm-remarks').focus(); }, 150);
 }
@@ -444,11 +430,7 @@ async function confirmRemark(){
     el('rm-remarks-err').style.display = 'block';
     return;
   }
-  if(_rmAction==='reject'){
-    const reason = el('rm-reason').value;
-    if(!reason){ toast('Select a reason first','error'); return; }
-  }
-  const c=_rmCand, action=_rmAction; // capture BEFORE close nullifies them
+  const c=_rmCand, action=_rmAction;
   closeRemarkModal();
   const statusMap = {shortlist:'Shortlisted', hold:'Hold', reject:'Rejected'};
   try {
