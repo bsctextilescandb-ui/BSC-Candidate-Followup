@@ -197,8 +197,15 @@ function debounce(fn, ms = 400) {
 }
 
 function maskPhone(phone) {
-  const p = String(phone || '').replace(/\D/g, '');
+  let p = String(phone || '').replace(/\D/g, '');
+  // Strip leading 91 (country code) if 12 digits
+  if(p.length === 12 && p.startsWith('91')) p = p.slice(2);
   return p ? p.slice(0, 5) + ' XXXXX' : '—';
+}
+function formatPhone(phone) {
+  let p = String(phone || '').replace(/\D/g, '');
+  if(p.length === 12 && p.startsWith('91')) p = p.slice(2);
+  return p.length === 10 ? p.slice(0,5) + ' ' + p.slice(5) : p;
 }
 
 const AV_COLORS = ['navy','gold','green','red','purple','teal'];
@@ -294,7 +301,7 @@ function initPhoneReveal() {
     if (!e.target.classList.contains('phone-mask')) return;
     const s = e.target;
     if (s.dataset.revealed) { s.textContent = maskPhone(s.dataset.real); delete s.dataset.revealed; }
-    else { s.textContent = String(s.dataset.real || '').replace(/(\d{5})(\d{5})/, '$1 $2'); s.dataset.revealed = '1'; }
+    else { s.textContent = formatPhone(s.dataset.real); s.dataset.revealed = '1'; }
   });
 }
 function initStatusPills(onFilter) {
