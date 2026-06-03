@@ -116,7 +116,7 @@
             <thead><tr>
               <th><input type="checkbox" id="chk-all" onchange="toggleAll(this)"></th>
               <th>App No</th><th>Candidate</th><th>Phone</th><th>Designation</th>
-              <th>Source</th><th>Date</th><th>Status</th><th>Actions</th>
+              <th>Gender</th><th>Source</th><th>Date</th><th>Status</th><th>Actions</th>
             </tr></thead>
             <tbody id="cand-tbody"></tbody>
           </table>
@@ -245,7 +245,7 @@ const AV_BG={navy:'#1E2D4E',gold:'#C9952A',green:'#2d8a4e',red:'#C0272D',purple:
     allCandidates = [];
     // Show connection error in table
     el('cand-tbody').innerHTML =
-      '<tr><td colspan="9" style="text-align:center;padding:30px">'
+      '<tr><td colspan="10" style="text-align:center;padding:30px">'
       +'<div style="font-size:32px;margin-bottom:10px">&#x1F4E1;</div>'
       +'<div style="font-size:13px;font-weight:600;color:#888;margin-bottom:6px">Could not load candidates</div>'
       +'<div style="font-size:11px;color:#bbb;margin-bottom:12px">Check: Apps Script deployed · Sheet ID set · Internet connection</div>'
@@ -316,7 +316,7 @@ initStatusPills(function(s){ activeStatus=s; applyFilters(); });
 function renderTable(){
   const start=(currentPage-1)*PAGE_SIZE, page=filtered.slice(start,start+PAGE_SIZE), total=filtered.length;
   if(!page.length){
-    el('cand-tbody').innerHTML = '<tr><td colspan="9"><div class="empty-state"><div class="empty-icon">&#x1F50D;</div><div class="empty-title">No candidates found</div></div></td></tr>';
+    el('cand-tbody').innerHTML = '<tr><td colspan="10"><div class="empty-state"><div class="empty-icon">&#x1F50D;</div><div class="empty-title">No candidates found</div></div></td></tr>';
     el('cand-page-info').textContent='0 results';
     el('prev-btn').disabled=true; el('next-btn').disabled=true; return;
   }
@@ -333,11 +333,12 @@ function renderTable(){
         +'<b style="color:var(--blue);text-decoration:underline dotted">'+c.name+'</b>'
       +'</div></td>'
       +'<td>'+ph+'</td>'
+      +'<td style="font-size:11px">'+(c.gender||'—')+'</td>'
       +'<td>'+c.desig+'</td>'
       +'<td>'+c.source+'</td>'
       +'<td style="font-size:10.5px;white-space:nowrap">'+c.date+'</td>'
       +'<td>'+statusBadge(c.status)+'</td>'
-      +'<td>'+(isViewOnly?'<span style="font-size:10px;color:#aaa">View only</span>':buildActionBtns(c,idx))+'</td>'
+      +'<td>'+(isViewOnly?'<span style="font-size:10px;color:#aaa">View only</span>':buildTableActionBtns(c,idx))+'</td>'
     +'</tr>';
   }).join('');
   el('cand-page-info').textContent='Showing '+(start+1)+'–'+Math.min(start+PAGE_SIZE,total)+' of '+total;
@@ -346,27 +347,46 @@ function renderTable(){
 }
 
 // ── Action buttons ────────────────────────────────────────────
+// Table actions - New status shows no buttons (must open drawer first)
+function buildTableActionBtns(c, idx){
+  const s = c.status;
+  const d = 'data-idx="'+idx+'"';
+  if(s==='New')                 return '<span style="font-size:10px;color:#bbb;font-style:italic">Open profile</span>';
+  if(s==='Shortlisted')         return '<button class="btn btn-outline-gold btn-sm" '+d+' onclick="doCall(this)">&#x1F4DE; 1st Call</button>';
+  if(s==='1st Call Done')       return '<button class="btn btn-outline-gold btn-sm" '+d+' onclick="doCall(this)">&#x1F4DE; 2nd Call</button>';
+  if(s==='2nd Call Done')       return '<button class="btn btn-primary btn-sm" '+d+' onclick="doCall(this)">&#x1F4C5; Schedule Interview</button>';
+  if(s==='Interview Scheduled') return '<span class="badge b-int" style="font-size:9px">In Interview Panel</span>';
+  if(s==='Interviewed')         return '<button class="btn btn-outline btn-sm" onclick="window.location.href=\'interview-panel.html\'">View Scores</button>';
+  if(s==='Selected')            return '<button class="btn btn-outline-green btn-sm" onclick="window.location.href=\'offer-process.html\'">Send Offer</button>';
+  if(s==='Hold')                return '<button class="btn btn-outline-gold btn-sm" '+d+' onclick="doReactivate(this)">Reactivate</button>';
+  if(s==='Rejected')            return '<button class="btn btn-muted btn-sm" '+d+' onclick="doReactivate(this)">Re-engage</button>';
+  if(s==='Onboarding')          return '<span class="badge b-board">Onboarding</span>';
+  if(s==='Offer Accepted')      return '<button class="btn btn-outline btn-sm" onclick="window.location.href=\'offer-process.html\'">View Joining</button>';
+  if(s==='Joined')              return '<span class="badge b-sel">&#x2705; Joined</span>';
+  return '';
+}
+
+// Drawer actions - full actions including Shortlist/Hold/Reject for New
 function buildActionBtns(c, idx){
   const s = c.status;
-  // Store idx in dataset for safe retrieval
   const d = 'data-idx="'+idx+'"';
   if(s==='New')
     return '<div style="display:flex;gap:3px;flex-wrap:wrap">'
       +'<button class="btn btn-outline btn-sm" '+d+' onclick="doShortlist(this)">Shortlist</button>'
-      +'<button class="btn btn-muted btn-sm"   '+d+' onclick="doHold(this)">Hold</button>'
+      +'<button class="btn btn-muted btn-sm" '+d+' onclick="doHold(this)">Hold</button>'
       +'<button class="btn btn-outline-red btn-sm" '+d+' onclick="doReject(this)">Reject</button>'
     +'</div>';
-  if(s==='Shortlisted')   return '<button class="btn btn-outline-gold btn-sm" '+d+' onclick="doCall(this)">&#x1F4DE; 1st Call</button>';
-  if(s==='1st Call Done') return '<button class="btn btn-outline-gold btn-sm" '+d+' onclick="doCall(this)">&#x1F4DE; 2nd Call</button>';
-  if(s==='2nd Call Done') return '<button class="btn btn-primary btn-sm" '+d+' onclick="doCall(this)">&#x1F4C5; Schedule Interview</button>';
+  if(s==='Shortlisted')         return '<button class="btn btn-outline-gold btn-sm" '+d+' onclick="doCall(this)">&#x1F4DE; 1st Call</button>';
+  if(s==='1st Call Done')       return '<button class="btn btn-outline-gold btn-sm" '+d+' onclick="doCall(this)">&#x1F4DE; 2nd Call</button>';
+  if(s==='2nd Call Done')       return '<button class="btn btn-primary btn-sm" '+d+' onclick="doCall(this)">&#x1F4C5; Schedule Interview</button>';
   if(s==='Interview Scheduled') return '<span class="badge b-int" style="font-size:9px">In Interview Panel</span>';
-  if(s==='Interviewed')  return '<button class="btn btn-outline btn-sm" onclick="window.location.href=\'interview-panel.html\'">View Scores</button>';
-  if(s==='Selected')     return '<button class="btn btn-outline-green btn-sm" onclick="window.location.href=\'offer-process.html\'">Send Offer</button>';
-  if(s==='Hold')         return '<button class="btn btn-outline-gold btn-sm" '+d+' onclick="doReactivate(this)">Reactivate</button>';
-  if(s==='Rejected')     return '<button class="btn btn-muted btn-sm" '+d+' onclick="doReactivate(this)">Re-engage</button>';
-  if(s==='Onboarding')   return '<span class="badge b-board">Onboarding</span>';
-  if(s==='Offer Accepted') return '<button class="btn btn-outline btn-sm" onclick="window.location.href=\'offer-process.html\'">View in Joining Tracker</button>';
-  if(s==='Joined')         return '<span class="badge b-sel">&#x2705; Joined</span>';
+  if(s==='Interviewed')         return '<button class="btn btn-outline btn-sm" onclick="window.location.href=\'interview-panel.html\'">View Scores</button>';
+  if(s==='Selected')            return '<button class="btn btn-outline-green btn-sm" onclick="window.location.href=\'offer-process.html\'">Send Offer</button>';
+  if(s==='Hold')                return '<button class="btn btn-outline-gold btn-sm" '+d+' onclick="doReactivate(this)">Reactivate</button>';
+  if(s==='Rejected')            return '<button class="btn btn-muted btn-sm" '+d+' onclick="doReactivate(this)">Re-engage</button>';
+  if(s==='Onboarding')          return '<span class="badge b-board">Onboarding</span>';
+  if(s==='Offer Accepted')      return '<button class="btn btn-outline btn-sm" onclick="window.location.href=\'offer-process.html\'">View Joining</button>';
+  if(s==='Joined')              return '<span class="badge b-sel">&#x2705; Joined</span>';
   return '';
 }
 function changePage(d){ currentPage+=d; renderTable(); }
