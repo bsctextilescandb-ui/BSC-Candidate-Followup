@@ -109,7 +109,7 @@
             <thead><tr>
               <th><input type="checkbox" id="chk-all" onchange="toggleAll(this)"></th>
               <th>App No</th><th>Candidate</th><th>Phone</th><th>Designation</th>
-              <th>Source</th><th>Referrer</th><th>Date</th><th>Status</th><th>Days In</th><th>Actions</th>
+              <th>Source</th><th>Date</th><th>Status</th><th>Actions</th>
             </tr></thead>
             <tbody id="cand-tbody"></tbody>
           </table>
@@ -238,7 +238,7 @@ const AV_BG={navy:'#1E2D4E',gold:'#C9952A',green:'#2d8a4e',red:'#C0272D',purple:
     allCandidates = [];
     // Show connection error in table
     el('cand-tbody').innerHTML =
-      '<tr><td colspan="11" style="text-align:center;padding:30px">'
+      '<tr><td colspan="9" style="text-align:center;padding:30px">'
       +'<div style="font-size:32px;margin-bottom:10px">&#x1F4E1;</div>'
       +'<div style="font-size:13px;font-weight:600;color:#888;margin-bottom:6px">Could not load candidates</div>'
       +'<div style="font-size:11px;color:#bbb;margin-bottom:12px">Check: Apps Script deployed · Sheet ID set · Internet connection</div>'
@@ -309,7 +309,7 @@ initStatusPills(function(s){ activeStatus=s; applyFilters(); });
 function renderTable(){
   const start=(currentPage-1)*PAGE_SIZE, page=filtered.slice(start,start+PAGE_SIZE), total=filtered.length;
   if(!page.length){
-    el('cand-tbody').innerHTML = '<tr><td colspan="11"><div class="empty-state"><div class="empty-icon">&#x1F50D;</div><div class="empty-title">No candidates found</div></div></td></tr>';
+    el('cand-tbody').innerHTML = '<tr><td colspan="9"><div class="empty-state"><div class="empty-icon">&#x1F50D;</div><div class="empty-title">No candidates found</div></div></td></tr>';
     el('cand-page-info').textContent='0 results';
     el('prev-btn').disabled=true; el('next-btn').disabled=true; return;
   }
@@ -328,10 +328,8 @@ function renderTable(){
       +'<td>'+ph+'</td>'
       +'<td>'+c.desig+'</td>'
       +'<td>'+c.source+'</td>'
-      +'<td style="color:var(--muted)">'+(c.referrer||'—')+'</td>'
       +'<td style="font-size:10.5px;white-space:nowrap">'+c.date+'</td>'
       +'<td>'+statusBadge(c.status)+'</td>'
-      +'<td>'+daysChip(c.daysIn)+'</td>'
       +'<td>'+(isViewOnly?'<span style="font-size:10px;color:#aaa">View only</span>':buildActionBtns(c,idx))+'</td>'
     +'</tr>';
   }).join('');
@@ -515,8 +513,8 @@ async function bulkAction(status){
   });
 }
 function exportCSV(){
-  const hdr=['App No','Name','Phone','Designation','Source','Date','Status','Days In'];
-  const rows=filtered.map(c=>[c.appNo,c.name,c.phone,c.desig,c.source,c.date,c.status,c.daysIn]);
+  const hdr=['App No','Name','Phone','Designation','Source','Date','Status'];
+  const rows=filtered.map(c=>[c.appNo,c.name,c.phone,c.desig,c.source,c.date,c.status]);
   const csv=[hdr].concat(rows).map(r=>r.map(v=>'"'+String(v||'').replace(/"/g,'""')+'"').join(',')).join('\n');
   const a=document.createElement('a'); a.href='data:text/csv;charset=utf-8,'+encodeURIComponent(csv);
   a.download='BSC_Candidates_'+new Date().toISOString().slice(0,10)+'.csv'; a.click();
