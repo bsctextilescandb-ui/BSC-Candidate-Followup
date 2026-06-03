@@ -72,8 +72,7 @@ const Auth = {
     el('sb-av')       && (el('sb-av').textContent       = init);
     el('sb-username') && (el('sb-username').textContent = session.username);
     // Show "Store Manager" for Manager role
-    const displayRole = CONFIG.ROLE_LABELS[session.role] || session.role;
-    el('sb-userrole') && (el('sb-userrole').textContent = displayRole);
+    // Role display removed from sidebar
     this._roleNav(session.role);
   },
   _roleNav(role) {
