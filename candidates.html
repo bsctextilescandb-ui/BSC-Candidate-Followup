@@ -482,13 +482,18 @@ async function openCallModal(cand){
   let status={step:0};
   try{ status = await API.getCallStatus(cand.appNo); }catch(e){}
   const step  = (status.step||0)+1; // next step to fill
-  const label = {1:'1st Follow-up Call',2:'2nd Follow-up Call',3:'Schedule Interview Date'}[step];
-  const icon  = step===3 ? '📅' : '📞';
+  const labels = {
+    1: {title:'1st Call — Acknowledgement', icon:'📞', dateLabel:'Call Date *',    btnTxt:'Confirm 1st Call'},
+    2: {title:'2nd Call — Interview Scheduling', icon:'📞', dateLabel:'Call Date *', btnTxt:'Confirm 2nd Call'},
+    3: {title:'Schedule Interview', icon:'📅', dateLabel:'Interview Date *',        btnTxt:'Confirm Schedule'}
+  };
+  const lbl = labels[step] || labels[1];
 
-  el('call-modal-title').textContent = icon+' '+label;
-  el('call-modal-cand').textContent  = cand.name+' · '+cand.desig;
-  el('call-step-num').textContent    = step;
-  el('call-date-label').textContent  = step===3 ? 'Interview Date *' : 'Call Date *';
+  el('call-modal-title').textContent   = lbl.icon+' '+lbl.title;
+  el('call-modal-cand').textContent    = cand.name+' · '+cand.desig;
+  el('call-step-num').textContent      = step;
+  el('call-date-label').textContent    = lbl.dateLabel;
+  el('call-confirm-btn').textContent   = lbl.btnTxt;
   el('call-date').value              = new Date().toISOString().slice(0,10);
   el('call-remarks').value           = '';
   el('call-remarks').style.borderColor = '#ddd';
@@ -523,14 +528,15 @@ async function confirmCallStep(){
   try{
     const res = await API.saveCallStep({
       appNo:_callCand.appNo, candidate:_callCand.name,
-      desig:_callCand.desig, step, date, remarks
+      desig:_callCand.desig, step, date, remarks,
+      doneBy: session ? session.username : 'HR'
     });
     updateLocal(_callCand.appNo,{status:res.newStatus||_callCand.status});
     buildKPIs(); buildPills(); applyFilters();
     closeCallModal(); closeDrawer();
     toast({1:'1st call logged ✓',2:'2nd call logged ✓',3:'Interview scheduled! ✓'}[step],'success');
   }catch(e){ toast('Error: '+e.message,'error'); }
-  finally{ btn.disabled=false; btn.textContent='Save & Continue'; }
+  finally{ btn.disabled=false; }
 }
 
 // ── Bulk ──────────────────────────────────────────────────────
