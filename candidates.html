@@ -543,7 +543,7 @@ async function openDrawer(idx){
   body += '<div class="drawer-section"><div class="ds-title">Personal</div>'
     +'<div class="drow"><span class="drow-label">Full Name</span><span class="drow-val highlight">'+c.name+'</span></div>'
     +'<div class="drow"><span class="drow-label">DOB / Age</span><span class="drow-val">'+(c.dob||'—')+(age!=='—'?' ('+age+' yrs)':'')+'</span></div>'
-    +'<div class="drow"><span class="drow-label">Phone</span><span class="drow-val">'+String(c.phone||'').replace(/(\d{5})(\d{5})/,'$1 $2')+'</span></div>'
+    +'<div class="drow"><span class="drow-label">Phone</span><span class="drow-val">'+formatPhone(c.phone)+'</span></div>'
     +'</div>';
 
   // Application
