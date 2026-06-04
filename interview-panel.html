@@ -55,8 +55,8 @@
       <div class="itabs">
         <div class="itab active" data-filter="all"         onclick="setTab(this)">All</div>
         <div class="itab"        data-filter="pending"     onclick="setTab(this)">Not Started</div>
-        <div class="itab"        data-filter="inprogress"  onclick="setTab(this)">In Progress</div>
-        <div class="itab"        data-filter="completed"   onclick="setTab(this)">Completed</div>
+        <div class="itab"        data-filter="inprogress"  onclick="setTab(this)">Round 1 Done</div>
+        <div class="itab"        data-filter="completed"   onclick="setTab(this)">Both Rounds Done</div>
       </div>
       <div class="table-card" style="padding:0">
         <div style="padding:12px 16px;border-bottom:1px solid #f0ede8;display:flex;align-items:center;justify-content:space-between;gap:8px;flex-wrap:wrap">
@@ -71,7 +71,7 @@
             <thead><tr>
               <th>Candidate</th><th>Designation</th><th>Interview Date</th>
               <th>HR Round</th><th>Round 2 (Assigned)</th>
-              <th>Overall</th><th>Action</th>
+              <th>Overall</th><th>Decision</th><th>Action</th>
             </tr></thead>
             <tbody id="int-tbody"></tbody>
           </table>
@@ -215,8 +215,8 @@ function applyFilter() {
     var mq = !q||iv.candidate.toLowerCase().includes(q)||iv.appNo.toLowerCase().includes(q);
     var mf = true;
     if (activeFilter==='pending')    mf = !iv.hrScore;
-    if (activeFilter==='inprogress') mf = iv.hrScore && !allDone(iv);
-    if (activeFilter==='completed')  mf = allDone(iv);
+    if (activeFilter==='inprogress') mf = !!(iv.hrScore && !iv.assignedScore);
+    if (activeFilter==='completed')  mf = !!(iv.hrScore && iv.assignedScore);
     // Manager only sees candidates where HR is done
     if (userRole==='Manager' && !iv.hrScore) return false;
     return mq && mf;
@@ -294,6 +294,14 @@ function overallBadge(iv) {
 }
 
 // ── Action Buttons ────────────────────────────────────────────
+function decisionBadge(iv) {
+  var s = String(iv.status||'');
+  if(s==='Selected')     return '<span class="badge" style="background:#EAF3DE;color:#3B6D11;font-size:9px;padding:3px 8px">&#x2713; Selected</span>';
+  if(s==='Rejected')     return '<span class="badge" style="background:#FCEBEB;color:#A32D2D;font-size:9px;padding:3px 8px">&#x2717; Rejected</span>';
+  if(s==='Interviewed')  return '<span class="badge" style="background:#FFF7E6;color:#B8860B;font-size:9px;padding:3px 8px">&#x23F3; Pending</span>';
+  return '<span style="font-size:10px;color:#bbb">—</span>';
+}
+
 function actionBtn(iv, idx) {
   var r = userRole;
 
