@@ -345,6 +345,7 @@ async function loadDesigDropdowns() {
     const res   = await API.call('getDesignations');
     const desigs = res.designations || [];
     if (!desigs.length) return;
+    CONFIG.DESIGNATIONS = desigs;
     document.querySelectorAll('select[data-desig-source]').forEach(sel => {
       while (sel.options.length > 1) sel.remove(1);
       desigs.forEach(d => {
