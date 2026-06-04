@@ -350,12 +350,15 @@ function actionBtn(iv, idx) {
   if (r==='HR'||r==='Admin') {
     if (!iv.hrScore)
       return '<button class="ib-score" data-idx="'+idx+'" onclick="clickScore(this)">Score HR Round</button>';
-    // HR done — show assign interviewer option
+    // HR scored — view only, no re-edit
     if (!iv.assignedName)
-      return '<button class="ib-score" style="background:var(--gold)" data-idx="'+idx+'" onclick="clickAssign(this)">&#x1F517; Assign Interviewer</button>';
+      return '<div style="display:flex;gap:4px">'+
+        '<button class="ib-view" data-idx="'+idx+'" onclick="clickViewHR(this)">View HR Score</button>'+
+        '<button class="ib-score" style="background:var(--gold);font-size:10px" data-idx="'+idx+'" onclick="clickAssign(this)">&#x1F517; Assign Round 2</button>'+
+      '</div>';
     if (iv.tokenStatus!=='completed')
       return '<div style="display:flex;gap:4px">'+
-        '<button class="ib-view" data-idx="'+idx+'" onclick="clickViewHR(this)">HR Score</button>'+
+        '<button class="ib-view" data-idx="'+idx+'" onclick="clickViewHR(this)">View HR Score</button>'+
         '<button class="ib-score" style="background:var(--purple);font-size:10px;padding:5px 10px" data-idx="'+idx+'" onclick="clickShareLink(this)">&#x1F517; Share Link</button>'+
       '</div>';
     return '<button class="ib-view" data-idx="'+idx+'" onclick="clickViewHR(this)">View All Scores</button>';
@@ -370,7 +373,13 @@ function actionBtn(iv, idx) {
 }
 
 // ── Click Handlers ────────────────────────────────────────────
-function clickScore(btn)    { openPanel(parseInt(btn.dataset.idx),'HR',true); }
+function clickScore(btn) {
+  var idx = parseInt(btn.dataset.idx);
+  var iv  = filtered[idx];
+  // Only allow edit if no score saved yet
+  var canEdit = !iv.hrScore;
+  openPanel(idx,'HR',canEdit);
+}
 function clickViewHR(btn)   { openPanel(parseInt(btn.dataset.idx),'HR',false); }
 function clickViewAll(btn)  { openPanel(parseInt(btn.dataset.idx),'HR',false); }
 
