@@ -238,16 +238,17 @@ function renderForm(d){
     maxTotal = questions.reduce(function(s,q){ return s+(q.max||10); }, 0);
     el('total-max').textContent = '/'+maxTotal;
     el('questions-box').innerHTML = questions.map(function(q,i){
+      var btns='';
+      for(var b=1;b<=q.max;b++){
+        btns+='<button type="button" class="tap-btn" data-idx="'+i+'" data-val="'+b+'" data-max="'+q.max+'" onclick="tapScore('+i+','+b+','+q.max+')">'+b+'</button>';
+      }
       return '<div class="q-row">'
         +'<div class="q-num">Question '+(i+1)+' of '+questions.length+'</div>'
         +'<div class="q-text">'+q.text+'</div>'
         +'<div class="q-max">Maximum: <b>'+q.max+'</b> points</div>'
-        +'<div class="score-wrap">'
-          +'<input class="score-input" type="number" id="score-'+i+'" min="0" max="'+q.max+'" placeholder="0"'
-            +' data-max="'+q.max+'" oninput="updateScore('+i+','+q.max+')">'
-          +'<div class="score-bar"><div class="score-bar-fill" id="bar-'+i+'" style="width:0%"></div></div>'
-          +'<span class="score-lbl" id="lbl-'+i+'">&mdash;</span>'
-        +'</div>'
+        +'<div class="tap-btns" id="taprow-'+i+'">'+btns+'</div>'
+        +'<div class="q-lbl" id="lbl-'+i+'" style="color:#aaa;margin-top:4px;font-size:10px;font-weight:700">—</div>'
+        +'<input type="hidden" id="score-'+i+'" value="0">'
       +'</div>';
     }).join('');
     el('total-box').style.display='flex';
