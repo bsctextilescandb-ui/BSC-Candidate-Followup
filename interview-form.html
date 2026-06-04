@@ -111,6 +111,16 @@ body{font-family:'Segoe UI',system-ui,sans-serif;background:var(--cream);min-hei
       <span style="font-size:10px;color:var(--red);display:none" id="remarks-err">Remarks required (min 10 chars)</span>
       <span style="font-size:9.5px;color:#bbb;margin-left:auto"><span id="rem-ct">0</span>/600</span>
     </div>
+    <!-- Alternative Designation — shown only on FAIL -->
+    <div id="suggest-box" style="display:none;margin-top:16px;background:#FFF7E6;border-radius:10px;padding:14px;border-left:4px solid var(--gold)">
+      <div style="font-size:11px;font-weight:800;color:#B8860B;margin-bottom:8px">&#x26A0; ROUND 2 FAIL — SUGGEST ALTERNATIVE ROLE?</div>
+      <div style="font-size:11px;color:#555;margin-bottom:10px">If you feel the candidate is better suited for another role, suggest it below. HR will review and may start a new round.</div>
+      <label style="font-size:10px;font-weight:700;color:#888;display:block;margin-bottom:4px">SUGGESTED DESIGNATION</label>
+      <input type="text" id="suggest-desig" placeholder="e.g. Sales Executive" style="width:100%;font-size:13px;padding:8px 10px;border:1.5px solid #ddd;border-radius:8px;font-family:inherit;margin-bottom:10px;box-sizing:border-box">
+      <label style="font-size:10px;font-weight:700;color:#888;display:block;margin-bottom:4px">REASON</label>
+      <textarea id="suggest-reason" placeholder="Why do you think this role suits the candidate better?" style="width:100%;font-size:12px;padding:8px 10px;border:1.5px solid #ddd;border-radius:8px;font-family:inherit;height:70px;resize:none;box-sizing:border-box"></textarea>
+    </div>
+
     <button class="submit-btn" id="submit-btn" onclick="submitAssessment()">
       <span id="submit-text">Submit Round 2 Assessment</span>
       <div class="spinner" id="submit-spin"></div>
@@ -156,6 +166,11 @@ function showError(msg){
   el('error-msg').textContent=msg;
 }
 
+function isPassing(scored, maxTotal) {
+  if(!maxTotal) return false;
+  return (scored/maxTotal*100) >= 60;
+}
+
 function renderForm(d){
   el('loading-box').style.display='none';
   el('form-box').style.display='block';
@@ -168,7 +183,8 @@ function renderForm(d){
   // ── HR Round 1 — show questions AND scores ──────────────────
   const r1el = el('r1-section');
   if(d.hrScores){
-    const pass = (d.hrScores.total||0) >= 36;
+    const hrMaxT = d.hrScores.maxTotal||hrQs.reduce(function(s,q){return s+(q.max||10);},0)||35;
+    const pass = isPassing(d.hrScores.total||0, hrMaxT);
     const bc   = pass ? 'var(--green)' : 'var(--red)';
     const bg   = pass ? '#EAF3DE' : '#FCEBEB';
     const tc   = pass ? '#3B6D11' : '#A32D2D';
@@ -204,7 +220,7 @@ function renderForm(d){
         +'<div style="font-size:9px;font-weight:800;color:#aaa;text-transform:uppercase;letter-spacing:.1em;margin-bottom:8px">HR Round Scores</div>'
         +'<div style="display:flex;align-items:center;gap:10px;margin-bottom:8px">'
           +'<span style="font-size:24px;font-weight:800;color:var(--navy)">'+(d.hrScores.total||0)+'</span>'
-          +'<span style="font-size:14px;color:#aaa">/'+(hrQs.reduce(function(s,q){return s+(q.max||10);},0)||60)+'</span>'
+          +'<span style="font-size:14px;color:#aaa">/'+hrMaxT+'</span>'
           +'<span style="font-size:10px;padding:4px 10px;border-radius:5px;font-weight:700;background:'+bg+';color:'+tc+'">'+(pass?'PASS \u2713':'FAIL \u2717')+'</span>'
         +'</div>'
         +(qrows ? '<div style="margin-top:4px">'+qrows+'</div>' : '')
@@ -259,12 +275,14 @@ function tapScore(idx,val,max){
 function updateTotal(){
   let tot=0;
   questions.forEach(function(_,i){ tot+=parseInt(document.getElementById('score-'+i)?.value)||0; });
-  const pct=maxTotal?Math.round(tot/maxTotal*100):0, pass=pct>=60;
+  const pct=maxTotal?Math.round(tot/maxTotal*100):0, pass=isPassing(tot,maxTotal);
   el('total-num').textContent=tot;
   el('total-fill').style.cssText='width:'+pct+'%;background:'+(pass?'var(--green)':'var(--red)');
-  el('total-verdict').textContent=tot>0?(pass?'PASS \u2713':'FAIL \u2717'):'\u2014';
+  el('total-verdict').textContent=tot>0?(pass?'PASS ✓':'FAIL ✗'):'—';
   el('total-verdict').style.cssText='background:'+(pass?'#EAF3DE':'#FCEBEB')+';color:'+(pass?'#3B6D11':'#A32D2D');
   el('prog-fill').style.width=Math.min(60+pct*0.3,90)+'%';
+  // Show suggestion box only if FAIL and at least one score entered
+  if(el('suggest-box')) el('suggest-box').style.display=(tot>0&&!pass)?'block':'none';
 }
 
 function updateRemarkCount(){
@@ -291,7 +309,15 @@ async function submitAssessment(){
   el('submit-spin').style.display='inline-block';
   btn.disabled=true;
   try{
-    const r=await fetch(SCRIPT_URL,{method:'POST',body:JSON.stringify({action:'submitInterviewScore',token:token,scores:scores,total:total,maxTotal:maxTotal,remarks:remarks,candidate:interviewData.candidate,assignedName:interviewData.assignedName})});
+    const suggestDesig = el('suggest-desig') ? el('suggest-desig').value.trim() : '';
+    const suggestReason = el('suggest-reason') ? el('suggest-reason').value.trim() : '';
+    const pass = isPassing(total, maxTotal);
+    const r=await fetch(SCRIPT_URL,{method:'POST',body:JSON.stringify({
+      action:'submitInterviewScore',token:token,scores:scores,total:total,maxTotal:maxTotal,remarks:remarks,
+      candidate:interviewData.candidate,assignedName:interviewData.assignedName,
+      suggestedDesig:(!pass&&suggestDesig)?suggestDesig:'',
+      suggestionReason:(!pass&&suggestDesig)?suggestReason:''
+    })});
     const d=await r.json();
     if(!d.success) throw new Error(d.error||'Submission failed');
     el('prog-fill').style.width='100%';
