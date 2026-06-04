@@ -331,12 +331,19 @@ function decisionBadge(iv) {
 function actionBtn(iv, idx) {
   var r = userRole;
 
-  // All rounds done — Manager/Admin approve or reject
+  // All rounds done
   if (allDone(iv)) {
     var maxHR2 = iv.hrScore.maxTotal||35;
     var maxR22 = iv.assignedScore.maxTotal||65;
     var g = (iv.hrScore.total||0)+(iv.assignedScore.total||0);
     var pass = isPassing(g, maxHR2+maxR22);
+    // HR sees New Role button if suggestion exists
+    if(iv.suggestedDesig && (r==='HR'||r==='Admin')) {
+      return '<div style="display:flex;gap:4px;flex-wrap:wrap">'+
+        '<button class="ib-view" data-idx="'+idx+'" onclick="clickViewAll(this)">View Scores</button>'+
+        '<button class="ib-score" style="background:var(--gold);font-size:10px" data-idx="'+idx+'" onclick="clickAssignNewRole(this)">&#x1F504; New Role</button>'+
+      '</div>';
+    }
     if (r==='Manager'||r==='Admin') {
       if (pass)
         return '<button class="ib-score" style="background:var(--green)" data-idx="'+idx+'" onclick="clickApprove(this)" title="Approve and move to Offer Process">&#x2713; Approve &amp; Select</button>';
