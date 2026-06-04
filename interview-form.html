@@ -2,6 +2,7 @@
 <html lang="en">
 <head>
 <meta charset="UTF-8"><meta name="viewport" content="width=device-width,initial-scale=1">
+<link rel="icon" type="image/jpeg" href="https://bsctextilescandb-ui.github.io/retail-crm/logo.jpg">
 <title>BSC — Round 2 Interview Assessment</title>
 <style>
 *{box-sizing:border-box;margin:0;padding:0}
@@ -27,12 +28,13 @@ body{font-family:'Segoe UI',system-ui,sans-serif;background:var(--cream);min-hei
 .q-num{font-size:9px;font-weight:800;color:#bbb;margin-bottom:4px;text-transform:uppercase;letter-spacing:.06em}
 .q-text{font-size:13px;color:#333;font-weight:500;margin-bottom:6px}
 .q-max{font-size:9.5px;color:#bbb;margin-bottom:8px}
-.score-wrap{display:flex;align-items:center;gap:12px}
-.score-input{width:72px;padding:8px;font-size:18px;border:1.5px solid #ddd;border-radius:8px;text-align:center;background:#F9F7F4;font-weight:700;color:var(--navy);transition:all .2s}
-.score-input:focus{outline:none;border-color:var(--gold);background:#fff}
-.score-bar{flex:1;height:8px;background:#f0ede8;border-radius:4px;overflow:hidden}
-.score-bar-fill{height:100%;border-radius:4px;transition:width .3s}
-.score-lbl{font-size:9px;font-weight:700;color:#aaa;min-width:30px;text-align:right}
+.tap-btns{display:flex;flex-wrap:wrap;gap:5px;margin-top:8px}
+.tap-btn{width:36px;height:36px;border-radius:8px;border:1.5px solid #ddd;background:#fff;font-size:12px;font-weight:700;color:#999;cursor:pointer;transition:all .15s;display:flex;align-items:center;justify-content:center}
+.tap-btn:hover{border-color:var(--navy);color:var(--navy)}
+.tap-btn.sel-green{background:var(--green);border-color:var(--green);color:#fff}
+.tap-btn.sel-gold{background:var(--gold);border-color:var(--gold);color:#fff}
+.tap-btn.sel-red{background:#C0272D;border-color:#C0272D;color:#fff}
+.q-lbl{font-size:10px;font-weight:700;margin-top:6px}
 .total-box{background:var(--cream);border-radius:10px;padding:14px 16px;margin:16px 0;display:flex;align-items:center;gap:14px}
 .total-num{font-size:32px;font-weight:800;color:var(--navy)}
 .total-bar{flex:1;height:10px;background:#d5d0c9;border-radius:5px;overflow:hidden}
@@ -135,7 +137,11 @@ const token = new URLSearchParams(window.location.search).get('token');
   try{
     const r = await fetch(SCRIPT_URL+'?action=getInterviewByToken&token='+encodeURIComponent(token));
     const d = await r.json();
-    if(!d.success){ showError(d.error||'This link is invalid or has already been used.'); return; }
+    if(!d.success){
+      var msg = d.error||'This link is invalid or has already been used.';
+      showError(msg);
+      return;
+    }
     interviewData = d;
     questions     = d.questions||[];
     renderForm(d);
@@ -233,17 +239,20 @@ function renderForm(d){
   el('prog-fill').style.width='60%';
 }
 
-function updateScore(idx,max){
-  const inp=document.getElementById('score-'+idx);
-  let v=parseInt(inp.value)||0;
-  if(v>max){v=max;inp.value=max;} if(v<0){v=0;inp.value=0;}
-  const pct=max?v/max*100:0;
-  const pass=pct>=70, avg=pct>=50;
-  const color=pass?'var(--green)':avg?'var(--gold)':'var(--red)';
-  document.getElementById('bar-'+idx).style.cssText='width:'+pct+'%;background:'+color;
-  const lbl=document.getElementById('lbl-'+idx);
-  lbl.innerHTML=v===0?'&mdash;':pass?'Good':avg?'Avg':'Weak';
-  lbl.style.color=color;
+function tapScore(idx,val,max){
+  document.getElementById('score-'+idx).value=val;
+  var pct=max?val/max*100:0;
+  var selCls=pct>=70?'sel-green':pct>=50?'sel-gold':'sel-red';
+  var btns=document.querySelectorAll('#taprow-'+idx+' .tap-btn');
+  btns.forEach(function(b){
+    b.classList.remove('sel-green','sel-gold','sel-red');
+    if(parseInt(b.dataset.val)===val) b.classList.add(selCls);
+  });
+  var lbl=document.getElementById('lbl-'+idx);
+  if(lbl){
+    lbl.textContent=pct>=70?'Good':pct>=50?'Average':'Needs Work';
+    lbl.style.color=pct>=70?'var(--green)':pct>=50?'var(--gold)':'var(--red)';
+  }
   updateTotal();
 }
 
@@ -282,7 +291,7 @@ async function submitAssessment(){
   el('submit-spin').style.display='inline-block';
   btn.disabled=true;
   try{
-    const r=await fetch(SCRIPT_URL,{method:'POST',body:JSON.stringify({action:'submitInterviewScore',token:token,scores:scores,total:total,remarks:remarks})});
+    const r=await fetch(SCRIPT_URL,{method:'POST',body:JSON.stringify({action:'submitInterviewScore',token:token,scores:scores,total:total,maxTotal:maxTotal,remarks:remarks,candidate:interviewData.candidate,assignedName:interviewData.assignedName})});
     const d=await r.json();
     if(!d.success) throw new Error(d.error||'Submission failed');
     el('prog-fill').style.width='100%';
