@@ -12,6 +12,19 @@
 .assign-link-row input{flex:1;font-size:11px;padding:7px 10px;border:1.5px solid #ddd;border-radius:7px;background:#F9F7F4;color:#555}
 .wa-btn{padding:7px 12px;background:#25D366;color:#fff;border:none;border-radius:7px;font-size:11px;cursor:pointer;font-weight:700;white-space:nowrap}
 .copy-btn{padding:7px 12px;background:var(--navy);color:#fff;border:none;border-radius:7px;font-size:11px;cursor:pointer;font-weight:700;white-space:nowrap}
+/* Tap button rating */
+.q-score-row{padding:12px 0;border-bottom:1px solid #f0ede8}
+.q-score-row:last-child{border-bottom:none}
+.q-text{font-size:12px;font-weight:600;color:var(--navy);margin-bottom:2px}
+.q-maxpts{font-size:9.5px;color:#aaa;margin-bottom:8px}
+.tap-btns{display:flex;flex-wrap:wrap;gap:5px}
+.tap-btn{width:34px;height:34px;border-radius:7px;border:1.5px solid #ddd;background:#fff;font-size:12px;font-weight:700;color:#999;cursor:pointer;transition:all .15s;display:flex;align-items:center;justify-content:center}
+.tap-btn:hover{border-color:var(--navy);color:var(--navy)}
+.tap-btn.selected-green{background:var(--green);border-color:var(--green);color:#fff}
+.tap-btn.selected-gold{background:var(--gold);border-color:var(--gold);color:#fff}
+.tap-btn.selected-red{background:#C0272D;border-color:#C0272D;color:#fff}
+.tap-btn.view-only{cursor:not-allowed;opacity:.7}
+.q-label{font-size:10px;font-weight:700;margin-top:6px}
 </style>
 </head>
 <body>
@@ -496,72 +509,86 @@ async function openPanel(idx, round, canEdit) {
 
   el('sp-body').innerHTML     = buildPanelBody(iv, canEdit);
   el('sp-foot').style.display = canEdit ? 'flex' : 'none';
-  if (canEdit) {
-    document.querySelectorAll('.q-inp').forEach(function(inp){
-      inp.addEventListener('input',function(){ onScoreInput(inp); });
-    });
-    updateTotal();
-  }
+  if (canEdit) { updateTotal(); }
   document.addEventListener('keydown', escCb);
+}
+
+// % based pass/fail
+function isPassing(scored, maxTotal) {
+  if(!maxTotal) return false;
+  return (scored/maxTotal*100) >= 60;
 }
 
 function buildPanelBody(iv, canEdit) {
   var html = '';
-  // Show assigned round scores if available (with actual Q&A)
+
+  // Show assigned round scores if available
   if (iv.assignedScore) {
     var sc   = iv.assignedScore;
-    var pass = sc.total>=CONFIG.INTERVIEW_CUTOFF;
+    var maxT2 = questions.reduce(function(s,q){return s+(q.max||10);},0) || 60;
+    var pass2 = isPassing(sc.total, maxT2);
     html +=
-      '<div style="background:#F9F7F4;border-radius:9px;padding:12px 14px;margin-bottom:14px;border-left:4px solid '+(pass?'var(--green)':'var(--red)')+'">'+
+      '<div style="background:#F9F7F4;border-radius:9px;padding:12px 14px;margin-bottom:14px;border-left:4px solid '+(pass2?'var(--green)':'var(--red)')+'">'+
         '<div style="font-size:9px;font-weight:800;color:#aaa;text-transform:uppercase;margin-bottom:7px">Round 2 (Assigned) — Read Only</div>'+
-        '<div><span style="font-size:22px;font-weight:800;color:var(--navy)">'+sc.total+'/60</span>'+
-          '<span style="font-size:9px;padding:3px 9px;border-radius:4px;font-weight:700;margin-left:8px;background:'+(pass?'#EAF3DE':'#FCEBEB')+';color:'+(pass?'#3B6D11':'#A32D2D')+'">'+(pass?'PASS &#x2713;':'FAIL &#x2717;')+'</span>'+
+        '<div><span style="font-size:22px;font-weight:800;color:var(--navy)">'+sc.total+'/'+maxT2+'</span>'+
+          '<span style="font-size:9px;padding:3px 9px;border-radius:4px;font-weight:700;margin-left:8px;background:'+(pass2?'#EAF3DE':'#FCEBEB')+';color:'+(pass2?'#3B6D11':'#A32D2D')+'">'+(pass2?'PASS &#x2713;':'FAIL &#x2717;')+'</span>'+
         '</div>'+
         (iv.assignedName?'<div style="font-size:10px;color:#888;margin-top:4px">Assessed by: <b>'+iv.assignedName+'</b> ('+iv.assignedDesig+')</div>':'')+
         (sc.remarks?'<div style="font-size:10.5px;color:#777;margin-top:6px;font-style:italic;background:#fff;padding:6px 10px;border-radius:6px">"'+sc.remarks+'"</div>':'')+
         (sc.scores&&questions.length?'<div style="margin-top:8px">'+
-          questions.map(function(q,i){return '<div style="display:flex;justify-content:space-between;font-size:10.5px;padding:3px 0;border-bottom:.5px solid #e8e4dd;color:#555"><span>'+q.text+'</span><b>'+(sc.scores[i]||0)+'/'+q.max+'</b></div>';}).join('')+
+          questions.map(function(q,qi){return '<div style="display:flex;justify-content:space-between;font-size:10.5px;padding:3px 0;border-bottom:.5px solid #e8e4dd;color:#555"><span>'+q.text+'</span><b>'+(sc.scores[qi]||0)+'/'+q.max+'</b></div>';}).join('')+
         '</div>':'')+
       '</div>';
   }
 
-  // HR round
+  // HR round header
   var existing = iv.hrScore;
-  html += '<div style="font-size:11px;font-weight:800;color:var(--navy);text-transform:uppercase;margin:14px 0 10px;padding-bottom:6px;border-bottom:2px solid var(--cream)">HR Round'+(canEdit?'':' \u2014 View Only')+'</div>';
+  html += '<div style="font-size:11px;font-weight:800;color:var(--navy);text-transform:uppercase;margin:14px 0 10px;padding-bottom:6px;border-bottom:2px solid var(--cream)">HR Round'+(canEdit?'':' — View Only')+'</div>';
 
   if (!questions.length) {
-    html += '<div style="font-size:11px;color:#aaa;padding:10px 0">No HR questions configured. Add to Interview_Questions sheet.</div>';
+    html += '<div style="font-size:11px;color:#aaa;padding:10px 0">No questions found for this designation. Please add to Interview_Questions sheet.</div>';
   } else {
     questions.forEach(function(q,i) {
       var saved = existing&&existing.scores ? existing.scores[i]||0 : 0;
-      var max   = q.max||10, pct = max?saved/max*100:0;
-      var cls   = pct>=70?'s-green':pct>=50?'s-amber':saved?'s-red':'';
-      var color = pct>=70?'var(--green)':pct>=50?'var(--gold)':'var(--red)';
-      var ro    = canEdit ? '' : ' readonly style="background:#f5f5f5;cursor:not-allowed"';
+      var max   = q.max||10;
+      var pct   = max ? saved/max*100 : 0;
+      var lblColor = pct>=70?'var(--green)':pct>=50?'var(--gold)':'var(--red)';
+      var lbl = saved>0?(pct>=70?'Good':pct>=50?'Average':'Needs Work'):'—';
+
+      // Build tap buttons 0 to max
+      var btns = '';
+      for(var b=1; b<=max; b++){
+        var sel = saved===b;
+        var selCls = sel ? (pct>=70?'selected-green':pct>=50?'selected-gold':'selected-red') : '';
+        var voClass = canEdit ? '' : ' view-only';
+        var onclick = canEdit ? ' onclick="tapScore('+i+','+b+','+max+')"' : '';
+        btns += '<button class="tap-btn'+selCls+voClass+'" data-idx="'+i+'" data-val="'+b+'" data-max="'+max+'"'+onclick+'>'+b+'</button>';
+      }
+
       html +=
         '<div class="q-score-row">'+
-          '<div><div class="q-text">'+q.text+'</div><div class="q-maxpts">Max '+max+' pts</div></div>'+
-          '<div class="q-inp-wrap">'+
-            '<input class="q-inp '+(canEdit?cls:'')+'" data-idx="'+i+'" data-max="'+max+'" type="number" min="0" max="'+max+'" value="'+(saved||'')+'" placeholder="0"'+ro+'>'+
-            '<div class="q-minibar"><div class="q-mb-fill" id="mb-'+i+'" style="width:'+(saved?pct:0)+'%;background:'+color+'"></div></div>'+
-            '<div class="q-lbl" id="ql-'+i+'" style="color:'+color+'">'+(saved?pct>=70?'Good':pct>=50?'Avg':'Weak':'\u2014')+'</div>'+
-          '</div>'+
+          '<div class="q-text">'+q.text+'</div>'+
+          '<div class="q-maxpts">Max '+max+' pts</div>'+
+          '<div class="tap-btns" id="taprow-'+i+'">'+btns+'</div>'+
+          '<div class="q-label" id="qlbl-'+i+'" style="color:'+lblColor+'">'+lbl+'</div>'+
+          '<input type="hidden" class="q-inp" id="qval-'+i+'" data-idx="'+i+'" data-max="'+max+'" value="'+saved+'">'+
         '</div>';
     });
   }
 
   // Total and remarks
   if (questions.length) {
-    var tot  = existing?existing.total||0:0;
+    var tot  = existing ? existing.total||0 : 0;
     var maxT = questions.reduce(function(s,q){return s+(q.max||10);},0);
-    var prog = maxT?Math.round(tot/maxT*100):0, pass=tot>=CONFIG.INTERVIEW_CUTOFF;
+    var prog = maxT ? Math.round(tot/maxT*100) : 0;
+    var pass = isPassing(tot, maxT);
     html +=
       '<div class="total-wrap" id="total-wrap">'+
         '<div class="total-prog"><div class="total-prog-fill" id="total-fill" style="width:'+prog+'%;background:'+(pass?'var(--green)':'var(--red)')+'"></div></div>'+
         '<span class="total-num" id="total-num">'+tot+'</span>'+
         '<span style="font-size:13px;color:#bbb">/ '+maxT+'</span>'+
         '<span class="total-verdict" id="total-verdict" style="background:'+(pass?'#EAF3DE':'#FCEBEB')+';color:'+(pass?'#3B6D11':'#A32D2D')+'">'+
-          (tot>0?(pass?'PASS &#x2713;':'FAIL &#x2717;'):'\u2014')+
+          (tot>0?(pass?'PASS &#x2713;':'FAIL &#x2717;'):'—')+
         '</span>'+
       '</div>'+
       '<div style="font-size:9px;font-weight:700;color:#888;margin:10px 0 5px;text-transform:uppercase">Remarks <span style="color:var(--red)">*</span> '+(canEdit?'':'(read only)')+'</div>'+
@@ -575,29 +602,40 @@ function buildPanelBody(iv, canEdit) {
   return html;
 }
 
-function onScoreInput(inp) {
-  var v=parseInt(inp.value)||0, max=parseInt(inp.dataset.max)||10;
-  if(v>max){v=max;inp.value=max;} if(v<0){v=0;inp.value=0;}
-  var pct=max?v/max*100:0,color,cls,lbl;
-  if(pct>=70){color='var(--green)';cls='s-green';lbl='Good';}
-  else if(pct>=50){color='var(--gold)';cls='s-amber';lbl='Avg';}
-  else{color='var(--red)';cls='s-red';lbl='Weak';}
-  inp.className='q-inp '+cls;
-  var mb=el('mb-'+inp.dataset.idx),ql=el('ql-'+inp.dataset.idx);
-  if(mb){mb.style.width=pct+'%';mb.style.background=color;}
-  if(ql){ql.textContent=lbl;ql.style.color=color;}
+function tapScore(idx, val, max) {
+  // Update hidden input
+  var inp = el('qval-'+idx);
+  if(inp) inp.value = val;
+  // Update button styles
+  var btns = document.querySelectorAll('#taprow-'+idx+' .tap-btn');
+  var pct = max ? val/max*100 : 0;
+  var selCls = pct>=70?'selected-green':pct>=50?'selected-gold':'selected-red';
+  btns.forEach(function(b){
+    b.classList.remove('selected-green','selected-gold','selected-red');
+    if(parseInt(b.dataset.val)===val) b.classList.add(selCls);
+  });
+  // Update label
+  var lbl = el('qlbl-'+idx);
+  if(lbl){
+    lbl.textContent = pct>=70?'Good':pct>=50?'Average':'Needs Work';
+    lbl.style.color = pct>=70?'var(--green)':pct>=50?'var(--gold)':'var(--red)';
+  }
   updateTotal();
 }
 function updateTotal() {
-  var inputs=Array.from(document.querySelectorAll('.q-inp')); if(!inputs.length)return;
-  var tot=inputs.reduce(function(s,i){return s+(parseInt(i.value)||0);},0);
-  var maxT=inputs.reduce(function(s,i){return s+(parseInt(i.dataset.max)||10);},0);
-  var prog=maxT?Math.round(tot/maxT*100):0, pass=tot>=CONFIG.INTERVIEW_CUTOFF;
+  var inputs = Array.from(document.querySelectorAll('.q-inp')); if(!inputs.length) return;
+  var tot  = inputs.reduce(function(s,i){return s+(parseInt(i.value)||0);},0);
+  var maxT = inputs.reduce(function(s,i){return s+(parseInt(i.dataset.max)||10);},0);
+  var prog = maxT ? Math.round(tot/maxT*100) : 0;
+  var pass = isPassing(tot, maxT);
   var fill=el('total-fill'),num=el('total-num'),verd=el('total-verdict');
   if(fill){fill.style.width=prog+'%';fill.style.background=pass?'var(--green)':'var(--red)';}
   if(num) num.textContent=tot;
-  if(verd){verd.textContent=tot>0?(pass?'PASS \u2713':'FAIL \u2717'):'\u2014';
-    verd.style.background=pass?'#EAF3DE':'#FCEBEB';verd.style.color=pass?'#3B6D11':'#A32D2D';}
+  if(verd){
+    verd.textContent=tot>0?(pass?'PASS ✓':'FAIL ✗'):'—';
+    verd.style.background=pass?'#EAF3DE':'#FCEBEB';
+    verd.style.color=pass?'#3B6D11':'#A32D2D';
+  }
 }
 
 async function saveScore() {
@@ -608,10 +646,12 @@ async function saveScore() {
   if (!remarks||remarks.length<5) { toast('Remarks are mandatory before saving','error'); el('remarks-ta')&&el('remarks-ta').classList.add('err'); return; }
   var btn=el('sp-save-btn'); btn.disabled=true; btn.textContent='Saving...';
   try {
+    var maxT = Array.from(document.querySelectorAll('.q-inp')).reduce(function(s,i){return s+(parseInt(i.dataset.max)||10);},0);
     await API.saveScore(currentIV.appNo,'HR',{scores:scores,total:total,remarks:remarks});
     currentIV.hrScore={scores:scores,total:total,remarks:remarks};
     allInterviews=allInterviews.map(function(iv){return iv.appNo===currentIV.appNo?currentIV:iv;});
-    toast('HR score saved \u2014 '+(total>=CONFIG.INTERVIEW_CUTOFF?'PASS \u2713':'FAIL \u2717'),total>=CONFIG.INTERVIEW_CUTOFF?'success':'warn');
+    var pass = isPassing(total, maxT);
+    toast('HR score saved — '+(pass?'PASS ✓':'FAIL ✗'),pass?'success':'warn');
     closePanel(); applyFilter();
   } catch(e) { toast('Save failed: '+e.message,'error'); btn.disabled=false; btn.textContent='Save Score'; }
 }
