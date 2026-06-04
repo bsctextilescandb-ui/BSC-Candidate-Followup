@@ -279,8 +279,8 @@ function renderTable() {
 
 function scoreChip(sc, label) {
   if (!sc) return '<span class="sc-chip sc-pending">'+label+': —</span>';
-  var t=sc.total||0;
-  var maxT = questions.reduce(function(s,q){return s+(q.max||10);},0) || 60;
+  var t   = sc.total||0;
+  var maxT = sc.maxTotal || questions.reduce(function(s,q){return s+(q.max||10);},0) || 35;
   var pass = isPassing(t, maxT);
   return '<span class="sc-chip '+(pass?'sc-done':'sc-fail')+'">'+label+': '+t+'/'+maxT+' '+(pass?'&#x2713;':'&#x2717;')+'</span>';
 }
@@ -289,7 +289,7 @@ function assignedChip(iv) {
   if (!iv.hrScore) return '<span style="font-size:10px;color:#bbb">HR pending</span>';
   if (iv.assignedScore) {
     var t=iv.assignedScore.total||0;
-    var maxT2=questions.reduce(function(s,q){return s+(q.max||10);},0)||60;
+    var maxT2=iv.assignedScore.maxTotal||questions.reduce(function(s,q){return s+(q.max||10);},0)||35;
     var pass=isPassing(t,maxT2);
     return '<span class="sc-chip '+(pass?'sc-done':'sc-fail')+'">'+t+'/'+maxT2+' '+(pass?'&#x2713;':'&#x2717;')+'</span>';
   }
@@ -309,7 +309,7 @@ function overallBadge(iv) {
     return '<span class="badge '+(pass?'b-sel':'b-rej')+'">'+g+'/'+maxAll+'</span>';
   }
   if (iv.hrScore) {
-    var maxT2=questions.reduce(function(s,q){return s+(q.max||10);},0)||60;
+    var maxT2=iv.hrScore.maxTotal||questions.reduce(function(s,q){return s+(q.max||10);},0)||35;
     var t=iv.hrScore.total||0;
     var pass2=isPassing(t,maxT2);
     return '<span class="badge '+(pass2?'b-sel':'b-rej')+'">R1: '+t+'/'+maxT2+'</span>';
@@ -668,8 +668,8 @@ async function saveScore() {
   var btn=el('sp-save-btn'); btn.disabled=true; btn.textContent='Saving...';
   try {
     var maxT = Array.from(document.querySelectorAll('.q-inp')).reduce(function(s,i){return s+(parseInt(i.dataset.max)||10);},0);
-    await API.saveScore(currentIV.appNo,'HR',{scores:scores,total:total,remarks:remarks});
-    currentIV.hrScore={scores:scores,total:total,remarks:remarks};
+    await API.saveScore(currentIV.appNo,'HR',{scores:scores,total:total,maxTotal:maxT,remarks:remarks});
+    currentIV.hrScore={scores:scores,total:total,maxTotal:maxT,remarks:remarks};
     allInterviews=allInterviews.map(function(iv){return iv.appNo===currentIV.appNo?currentIV:iv;});
     var pass = isPassing(total, maxT);
     toast('HR score saved — '+(pass?'PASS ✓':'FAIL ✗'),pass?'success':'warn');
