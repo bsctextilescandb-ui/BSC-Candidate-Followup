@@ -101,6 +101,48 @@
   </div>
 </div>
 
+<!-- New Role Modal -->
+<div class="modal-overlay" id="newrole-modal">
+  <div class="modal" style="max-width:500px">
+    <div class="modal-title">&#x1F504; Assign New Role</div>
+    <div class="modal-body">
+      <!-- Interviewer suggestion - read only -->
+      <div style="background:#FFF7E6;border-radius:9px;padding:12px 14px;margin-bottom:16px;border-left:4px solid var(--gold)">
+        <div style="font-size:9px;font-weight:800;color:#B8860B;text-transform:uppercase;margin-bottom:8px">&#x26A0; Round 2 Interviewer Suggestion</div>
+        <div style="display:flex;justify-content:space-between;font-size:11px;padding:3px 0">
+          <span style="color:#888;font-weight:600">Suggested Role</span>
+          <span id="nr-suggested" style="font-weight:700;color:var(--navy)"></span>
+        </div>
+        <div style="display:flex;justify-content:space-between;font-size:11px;padding:3px 0">
+          <span style="color:#888;font-weight:600">Reason</span>
+          <span id="nr-reason" style="color:#555;font-style:italic;text-align:right;max-width:70%"></span>
+        </div>
+      </div>
+      <!-- HR Decision -->
+      <div style="font-size:9px;font-weight:800;color:#888;text-transform:uppercase;margin-bottom:8px">&#x1F3AF; HR Decision</div>
+      <div style="margin-bottom:12px">
+        <label style="display:block;font-size:9px;font-weight:700;color:#888;margin-bottom:5px">NEW DESIGNATION <span style="color:var(--red)">*</span></label>
+        <select id="nr-desig" data-desig-source style="width:100%;font-size:13px;padding:9px 10px;border:1.5px solid #ddd;border-radius:8px;background:#F9F7F4;font-family:inherit">
+          <option value="">Select designation...</option>
+        </select>
+        <div style="font-size:10px;color:var(--red);display:none;margin-top:4px" id="nr-desig-err">Please select a designation</div>
+      </div>
+      <div>
+        <label style="display:block;font-size:9px;font-weight:700;color:#888;margin-bottom:5px">REMARKS <span style="color:var(--red)">*</span></label>
+        <textarea id="nr-remarks" placeholder="Reason for assigning new role..." style="width:100%;font-size:12px;padding:8px 10px;border:1.5px solid #ddd;border-radius:8px;font-family:inherit;height:70px;resize:none;box-sizing:border-box"></textarea>
+        <div style="font-size:10px;color:var(--red);display:none;margin-top:4px" id="nr-remarks-err">Remarks are required</div>
+      </div>
+      <div style="font-size:10px;color:#888;margin-top:10px;background:#F9F7F4;padding:8px 10px;border-radius:7px">
+        &#x2139; HR Round score will be kept. Only Round 2 will be reassigned for the new designation.
+      </div>
+    </div>
+    <div class="modal-btns">
+      <button class="btn btn-muted" onclick="closeNewRoleModal()">Cancel</button>
+      <button class="btn btn-primary" id="nr-confirm-btn" onclick="confirmNewRole()">Confirm New Role</button>
+    </div>
+  </div>
+</div>
+
 <!-- Score Panel -->
 <div class="sp-overlay" id="sp-overlay" onclick="closePanel()"></div>
 <div class="sp-panel" id="sp-panel">
@@ -220,7 +262,7 @@ function setTab(btn) {
 function filterTable() { currentPage=1; applyFilter(); }
 function changePage(d) { currentPage+=d; renderTable(); }
 function hrDone(iv)    { return !!(iv.hrScore); }
-function allDone(iv)   { return !!(iv.hrScore && iv.assignedScore); }
+function allDone(iv)   { return !!(iv.hrScore && iv.assignedScore && !iv.isNewRole); }
 
 function applyFilter() {
   var q = (el('int-search').value||'').toLowerCase();
@@ -358,6 +400,13 @@ function actionBtn(iv, idx) {
 
   // HR round
   if (r==='HR'||r==='Admin') {
+    // New role — HR round already done, skip to Assign Round 2
+    if(iv.isNewRole) {
+      return '<div style="display:flex;gap:4px">'+
+        '<button class="ib-view" data-idx="'+idx+'" onclick="clickViewHR(this)">View HR Score</button>'+
+        '<button class="ib-score" style="background:var(--gold);font-size:10px" data-idx="'+idx+'" onclick="clickAssign(this)">&#x1F517; Assign Round 2</button>'+
+      '</div>';
+    }
     if (!iv.hrScore)
       return '<button class="ib-score" data-idx="'+idx+'" onclick="clickScore(this)">Score HR Round</button>';
     // HR scored — view only, no re-edit
@@ -697,22 +746,54 @@ async function saveScore() {
 
 function clickAssignNewRole(btn) {
   var iv = filtered[parseInt(btn.dataset.idx)]; if(!iv) return;
-  var newDesig = prompt('Assign new designation for '+iv.candidate+':\n(Suggested: '+iv.suggestedDesig+'\nReason: '+iv.suggestionReason+')', iv.suggestedDesig||'');
-  if(!newDesig) return;
-  var remarks = prompt('Remarks for new role assignment:', 'Based on Round 2 suggestion');
-  if(remarks===null) return;
-  API.call('assignNewDesignation',{
-    appNo:iv.appNo, candidate:iv.candidate,
-    newDesig:newDesig.trim(), remarks:remarks,
-    doneBy: session?session.username:'HR'
-  }).then(function(r){
+  el('newrole-modal').dataset.idx = btn.dataset.idx;
+  // Fill suggestion info
+  el('nr-suggested').textContent = iv.suggestedDesig||'—';
+  el('nr-reason').textContent    = iv.suggestionReason||'—';
+  // Set suggested desig as selected
+  var sel = el('nr-desig');
+  sel.value = iv.suggestedDesig||'';
+  el('nr-remarks').value = '';
+  el('nr-desig-err').style.display='none';
+  el('nr-remarks-err').style.display='none';
+  el('nr-confirm-btn').disabled=false;
+  el('nr-confirm-btn').textContent='Confirm New Role';
+  el('newrole-modal').classList.add('show');
+}
+
+function closeNewRoleModal() {
+  el('newrole-modal').classList.remove('show');
+}
+
+async function confirmNewRole() {
+  var idx    = parseInt(el('newrole-modal').dataset.idx);
+  var iv     = filtered[idx]; if(!iv) return;
+  var newDesig = el('nr-desig').value;
+  var remarks  = el('nr-remarks').value.trim();
+  var ok = true;
+  if(!newDesig){ el('nr-desig-err').style.display='block'; ok=false; } else { el('nr-desig-err').style.display='none'; }
+  if(!remarks){ el('nr-remarks-err').style.display='block'; ok=false; } else { el('nr-remarks-err').style.display='none'; }
+  if(!ok) return;
+  var btn = el('nr-confirm-btn');
+  btn.disabled=true; btn.textContent='Saving...';
+  try {
+    var r = await API.call('assignNewDesignation',{
+      appNo:iv.appNo, candidate:iv.candidate,
+      newDesig:newDesig, remarks:remarks,
+      doneBy: session?session.username:'HR'
+    });
     if(r.success){
-      toast(iv.candidate+' assigned to '+newDesig+' — new Round 1 will start','success');
+      toast(iv.candidate+' assigned to '+newDesig+' — Round 2 will be assigned','success');
+      closeNewRoleModal();
       setTimeout(function(){ location.reload(); },1500);
     } else {
       toast('Error: '+r.error,'error');
+      btn.disabled=false; btn.textContent='Confirm New Role';
     }
-  });
+  } catch(e){
+    toast('Error: '+e.message,'error');
+    btn.disabled=false; btn.textContent='Confirm New Role';
+  }
 }
 
 function closePanel() {
