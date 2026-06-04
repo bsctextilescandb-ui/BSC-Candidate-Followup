@@ -386,16 +386,12 @@ function actionBtn(iv, idx) {
         '<button class="ib-score" style="background:var(--gold);font-size:10px" data-idx="'+idx+'" onclick="clickAssignNewRole(this)">&#x1F504; New Role</button>'+
       '</div>';
     }
-    if (r==='Manager'||r==='Admin') {
-      if (pass)
-        return '<button class="ib-score" style="background:var(--green)" data-idx="'+idx+'" onclick="clickApprove(this)" title="Approve and move to Offer Process">&#x2713; Approve &amp; Select</button>';
-      else
-        return '<div style="display:flex;gap:4px">'+
-          '<button class="ib-view" data-idx="'+idx+'" onclick="clickViewAll(this)">View Scores</button>'+
-          '<button class="ib-score" style="background:var(--red);font-size:10px;padding:5px 10px" data-idx="'+idx+'" onclick="clickRejectIV(this)">Reject</button>'+
-        '</div>';
-    }
-    return '<button class="ib-view" data-idx="'+idx+'" onclick="clickViewAll(this)">View Scores</button>';
+    // HR, Manager, Admin can all approve/reject
+    return '<div style="display:flex;gap:4px;flex-wrap:wrap">'+
+      '<button class="ib-score" style="background:var(--green);font-size:10px" data-idx="'+idx+'" onclick="clickApprove(this)">&#x2713; Select</button>'+
+      '<button class="ib-view" data-idx="'+idx+'" onclick="clickViewAll(this)">Scores</button>'+
+      '<button class="ib-score" style="background:var(--red);font-size:10px;padding:5px 8px" data-idx="'+idx+'" onclick="clickRejectIV(this)">Reject</button>'+
+    '</div>';
   }
 
   // HR round
@@ -526,28 +522,52 @@ function clickApprove(btn) {
   var iv = filtered[parseInt(btn.dataset.idx)]; if(!iv) return;
   el('approve-modal').dataset.idx = btn.dataset.idx;
   el('approve-cand').innerHTML = '<b>'+iv.candidate+'</b> &middot; '+iv.desig;
+  var maxHR = iv.hrScore.maxTotal||35;
+  var maxR2 = iv.assignedScore.maxTotal||65;
+  var maxAll = maxHR+maxR2;
   var g = (iv.hrScore.total||0)+(iv.assignedScore.total||0);
-  el('approve-scores').innerHTML =
-    '<div style="display:flex;justify-content:space-between;padding:4px 0;font-size:12px"><span>HR Round</span><b>'+(iv.hrScore.total||0)+'/60</b></div>'+
-    '<div style="display:flex;justify-content:space-between;padding:4px 0;font-size:12px;border-top:1px solid #f0ede8"><span>Round 2 (Assigned)</span><b>'+(iv.assignedScore.total||0)+'/'+(iv.assignedScore.maxTotal||65)+'</b></div>'+
-    '<div style="display:flex;justify-content:space-between;padding:6px 0 4px;font-size:13px;border-top:2px solid #e8e4dd;font-weight:800"><span>Grand Total</span><span style="color:var(--green)">'+g+'/120</span></div>';
+  var pass = isPassing(g, maxAll);
+  // Show probation warning if fail
+  var probationWarning = !pass ?
+    '<div style="background:#FFF7E6;border-radius:8px;padding:10px 12px;margin-bottom:12px;border-left:3px solid var(--gold)">'+
+      '<div style="font-size:10px;font-weight:800;color:#B8860B;margin-bottom:4px">&#x26A0; SCORE BELOW 60%</div>'+
+      '<div style="font-size:11px;color:#555">This candidate scored <b>'+g+'/'+maxAll+'</b> ('+(Math.round(g/maxAll*100))+'%). '+
+      'If approved, they will be selected under <b>Probation Monitoring</b> status.</div>'+
+    '</div>' : '';
+  el('approve-scores').innerHTML = probationWarning +
+    '<div style="display:flex;justify-content:space-between;padding:4px 0;font-size:12px"><span>HR Round</span><b>'+(iv.hrScore.total||0)+'/'+maxHR+'</b></div>'+
+    '<div style="display:flex;justify-content:space-between;padding:4px 0;font-size:12px;border-top:1px solid #f0ede8"><span>Round 2 (Assigned)</span><b>'+(iv.assignedScore.total||0)+'/'+maxR2+'</b></div>'+
+    '<div style="display:flex;justify-content:space-between;padding:6px 0 4px;font-size:13px;border-top:2px solid #e8e4dd;font-weight:800"><span>Overall</span><span style="color:'+(pass?'var(--green)':'var(--gold)')+'">'+g+'/'+maxAll+' ('+(Math.round(g/maxAll*100))+'%)</span></div>';
+  // Update confirm button text
+  el('approve-confirm-btn').textContent = pass ? 'Confirm Select' : 'Confirm Select (Probation)';
+  el('approve-confirm-btn').style.background = pass ? 'var(--green)' : 'var(--gold)';
   el('approve-remarks').value = '';
   el('approve-remarks-err').style.display = 'none';
+  el('approve-modal').dataset.probation = pass ? '0' : '1';
   el('approve-modal').classList.add('show');
 }
 
 async function confirmApprove() {
   var remarks = el('approve-remarks').value.trim();
-  if (remarks.length < 5) { el('approve-remarks-err').style.display='block'; return; }
+  if (remarks.length < 3) { el('approve-remarks-err').style.display='block'; return; }
   var iv = filtered[parseInt(el('approve-modal').dataset.idx)]; if(!iv) return;
-  var btn = el('approve-confirm-btn'); btn.disabled=true; btn.textContent='Approving...';
+  var isProbation = el('approve-modal').dataset.probation === '1';
+  var btn = el('approve-confirm-btn'); btn.disabled=true; btn.textContent='Saving...';
   try {
-    await API.approveSelection({appNo:iv.appNo, candidate:iv.candidate, desig:iv.desig, remarks:remarks});
+    await API.approveSelection({
+      appNo:iv.appNo, candidate:iv.candidate, desig:iv.desig,
+      remarks:remarks, probation:isProbation,
+      doneBy: session?session.username:'HR'
+    });
     allInterviews = allInterviews.filter(function(x){ return x.appNo!==iv.appNo; });
     closeApproveModal();
     applyFilter();
-    toast(iv.candidate+' approved \u2014 moved to Offer Process!','success');
-  } catch(e) { toast('Error: '+e.message,'error'); btn.disabled=false; btn.textContent='Confirm Approval'; }
+    toast(iv.candidate+(isProbation?' selected under Probation':' selected')+' — moved to Offer Process!','success');
+  } catch(e) {
+    toast('Error: '+e.message,'error');
+    btn.disabled=false;
+    btn.textContent = el('approve-modal').dataset.probation==='1'?'Confirm Select (Probation)':'Confirm Select';
+  }
 }
 function closeApproveModal() { el('approve-modal').classList.remove('show'); }
 
@@ -567,7 +587,7 @@ async function confirmRejectIV() {
   var iv = filtered[parseInt(el('reject-modal').dataset.idx)]; if(!iv) return;
   var btn = el('reject-confirm-btn'); btn.disabled=true; btn.textContent='Rejecting...';
   try {
-    await API.rejectCandidate({appNo:iv.appNo, remarks:remarks});
+    await API.rejectCandidate({appNo:iv.appNo, remarks:remarks, doneBy:session?session.username:'HR', candName:iv.candidate});
     allInterviews = allInterviews.filter(function(x){ return x.appNo!==iv.appNo; });
     closeRejectModal();
     applyFilter();
