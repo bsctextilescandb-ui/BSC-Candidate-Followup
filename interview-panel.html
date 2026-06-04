@@ -278,16 +278,20 @@ function renderTable() {
 }
 
 function scoreChip(sc, label) {
-  if (!sc) return '<span class="sc-chip sc-pending">'+label+': \u2014</span>';
-  var t=sc.total||0, pass=t>=CONFIG.INTERVIEW_CUTOFF;
-  return '<span class="sc-chip '+(pass?'sc-done':'sc-fail')+'">'+label+': '+t+' '+(pass?'&#x2713;':'&#x2717;')+'</span>';
+  if (!sc) return '<span class="sc-chip sc-pending">'+label+': —</span>';
+  var t=sc.total||0;
+  var maxT = questions.reduce(function(s,q){return s+(q.max||10);},0) || 60;
+  var pass = isPassing(t, maxT);
+  return '<span class="sc-chip '+(pass?'sc-done':'sc-fail')+'">'+label+': '+t+'/'+maxT+' '+(pass?'&#x2713;':'&#x2717;')+'</span>';
 }
 
 function assignedChip(iv) {
   if (!iv.hrScore) return '<span style="font-size:10px;color:#bbb">HR pending</span>';
   if (iv.assignedScore) {
-    var t=iv.assignedScore.total||0, pass=t>=CONFIG.INTERVIEW_CUTOFF;
-    return '<span class="sc-chip '+(pass?'sc-done':'sc-fail')+'">'+t+' '+(pass?'&#x2713;':'&#x2717;')+'</span>';
+    var t=iv.assignedScore.total||0;
+    var maxT2=questions.reduce(function(s,q){return s+(q.max||10);},0)||60;
+    var pass=isPassing(t,maxT2);
+    return '<span class="sc-chip '+(pass?'sc-done':'sc-fail')+'">'+t+'/'+maxT2+' '+(pass?'&#x2713;':'&#x2717;')+'</span>';
   }
   if (iv.assignedName) {
     var st = iv.tokenStatus==='completed'?'Submitted':'Link Sent';
@@ -298,11 +302,18 @@ function assignedChip(iv) {
 
 function overallBadge(iv) {
   if (allDone(iv)) {
+    var maxT = questions.reduce(function(s,q){return s+(q.max||10);},0)||60;
     var g=(iv.hrScore.total||0)+(iv.assignedScore.total||0);
-    var pass = g >= (CONFIG.INTERVIEW_CUTOFF * 2 * 0.6);
-    return '<span class="badge '+(pass?'b-sel':'b-rej')+'">'+g+'/120</span>';
+    var maxAll = maxT*2;
+    var pass = isPassing(g, maxAll);
+    return '<span class="badge '+(pass?'b-sel':'b-rej')+'">'+g+'/'+maxAll+'</span>';
   }
-  if (iv.hrScore) return '<span class="badge b-short">Round 2 Pending</span>';
+  if (iv.hrScore) {
+    var maxT2=questions.reduce(function(s,q){return s+(q.max||10);},0)||60;
+    var t=iv.hrScore.total||0;
+    var pass2=isPassing(t,maxT2);
+    return '<span class="badge '+(pass2?'b-sel':'b-rej')+'">R1: '+t+'/'+maxT2+'</span>';
+  }
   return '<span class="badge b-new">Not Started</span>';
 }
 
@@ -320,8 +331,9 @@ function actionBtn(iv, idx) {
 
   // All rounds done — Manager/Admin approve or reject
   if (allDone(iv)) {
+    var maxT=questions.reduce(function(s,q){return s+(q.max||10);},0)||60;
     var g = (iv.hrScore.total||0)+(iv.assignedScore.total||0);
-    var pass = g >= (CONFIG.INTERVIEW_CUTOFF * 2 * 0.6);
+    var pass = isPassing(g, maxT*2);
     if (r==='Manager'||r==='Admin') {
       if (pass)
         return '<button class="ib-score" style="background:var(--green)" data-idx="'+idx+'" onclick="clickApprove(this)" title="Approve and move to Offer Process">&#x2713; Approve &amp; Select</button>';
