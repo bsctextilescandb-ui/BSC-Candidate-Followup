@@ -303,9 +303,10 @@ function assignedChip(iv) {
 
 function overallBadge(iv) {
   if (allDone(iv)) {
-    var maxT = questions.reduce(function(s,q){return s+(q.max||10);},0)||60;
+    var maxHR = iv.hrScore.maxTotal || 35;
+    var maxR2 = iv.assignedScore.maxTotal || 65;
     var g=(iv.hrScore.total||0)+(iv.assignedScore.total||0);
-    var maxAll = maxT*2;
+    var maxAll = maxHR + maxR2;
     var pass = isPassing(g, maxAll);
     return '<span class="badge '+(pass?'b-sel':'b-rej')+'">'+g+'/'+maxAll+'</span>';
   }
@@ -332,9 +333,10 @@ function actionBtn(iv, idx) {
 
   // All rounds done — Manager/Admin approve or reject
   if (allDone(iv)) {
-    var maxT=questions.reduce(function(s,q){return s+(q.max||10);},0)||60;
+    var maxHR2 = iv.hrScore.maxTotal||35;
+    var maxR22 = iv.assignedScore.maxTotal||65;
     var g = (iv.hrScore.total||0)+(iv.assignedScore.total||0);
-    var pass = isPassing(g, maxT*2);
+    var pass = isPassing(g, maxHR2+maxR22);
     if (r==='Manager'||r==='Admin') {
       if (pass)
         return '<button class="ib-score" style="background:var(--green)" data-idx="'+idx+'" onclick="clickApprove(this)" title="Approve and move to Offer Process">&#x2713; Approve &amp; Select</button>';
@@ -471,7 +473,7 @@ function clickApprove(btn) {
   var g = (iv.hrScore.total||0)+(iv.assignedScore.total||0);
   el('approve-scores').innerHTML =
     '<div style="display:flex;justify-content:space-between;padding:4px 0;font-size:12px"><span>HR Round</span><b>'+(iv.hrScore.total||0)+'/60</b></div>'+
-    '<div style="display:flex;justify-content:space-between;padding:4px 0;font-size:12px;border-top:1px solid #f0ede8"><span>Round 2 (Assigned)</span><b>'+(iv.assignedScore.total||0)+'/60</b></div>'+
+    '<div style="display:flex;justify-content:space-between;padding:4px 0;font-size:12px;border-top:1px solid #f0ede8"><span>Round 2 (Assigned)</span><b>'+(iv.assignedScore.total||0)+'/'+(iv.assignedScore.maxTotal||65)+'</b></div>'+
     '<div style="display:flex;justify-content:space-between;padding:6px 0 4px;font-size:13px;border-top:2px solid #e8e4dd;font-weight:800"><span>Grand Total</span><span style="color:var(--green)">'+g+'/120</span></div>';
   el('approve-remarks').value = '';
   el('approve-remarks-err').style.display = 'none';
@@ -555,7 +557,7 @@ function buildPanelBody(iv, canEdit) {
   // Show assigned round scores if available
   if (iv.assignedScore) {
     var sc   = iv.assignedScore;
-    var maxT2 = questions.reduce(function(s,q){return s+(q.max||10);},0) || 60;
+    var maxT2 = sc.maxTotal || 65;
     var pass2 = isPassing(sc.total, maxT2);
     html +=
       '<div style="background:#F9F7F4;border-radius:9px;padding:12px 14px;margin-bottom:14px;border-left:4px solid '+(pass2?'var(--green)':'var(--red)')+'">'+
