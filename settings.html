@@ -305,8 +305,19 @@ function renderQuestions(){
 }
 function deleteQuestion(btn){
   const i=parseInt(btn.dataset.idx);
-  showModal({title:'Remove Question',body:'Remove: <b>'+allQuestions[i].text+'</b>?',confirmText:'Remove',confirmClass:'btn-red',
-    onConfirm:async function(){ allQuestions.splice(i,1); renderQuestions(); toast('Removed (save sheet manually)','warn'); }});
+  const q=allQuestions[i];
+  showModal({title:'Remove Question',body:'Remove: <b>'+q.text+'</b>?',confirmText:'Remove',confirmClass:'btn-red',
+    onConfirm:async function(){
+      try{
+        const r=await API.call('deleteInterviewQuestion',{desig:q.desig,round:q.round,text:q.text});
+        if(r.success){
+          allQuestions.splice(i,1); renderQuestions();
+          toast('Question removed from sheet!','success');
+        } else {
+          toast('Error: '+(r.error||'Failed to delete'),'error');
+        }
+      }catch(e){ toast('Error: '+e.message,'error'); }
+    }});
 }
 
 // ── Designations ──────────────────────────────────────────────
