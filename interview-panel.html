@@ -542,8 +542,12 @@ function clickApprove(btn) {
     '<div style="display:flex;justify-content:space-between;padding:4px 0;font-size:12px;border-top:1px solid #f0ede8"><span>Round 2 (Assigned)</span><b>'+(iv.assignedScore.total||0)+'/'+maxR2+'</b></div>'+
     '<div style="display:flex;justify-content:space-between;padding:6px 0 4px;font-size:13px;border-top:2px solid #e8e4dd;font-weight:800"><span>Overall</span><span style="color:'+(pass?'var(--green)':'var(--gold)')+'">'+g+'/'+maxAll+' ('+(Math.round(g/maxAll*100))+'%)</span></div>';
   // Update confirm button text
-  el('approve-confirm-btn').textContent = pass ? 'Confirm Select' : 'Confirm Select (Probation)';
-  el('approve-confirm-btn').style.background = pass ? 'var(--green)' : 'var(--gold)';
+  var confirmBtn = el('approve-confirm-btn');
+  confirmBtn.textContent = pass ? 'Confirm Select' : 'Confirm Select (Probation)';
+  confirmBtn.className   = pass ? 'btn btn-green' : 'btn btn-primary';
+  confirmBtn.style.background = pass ? '' : 'var(--gold)';
+  confirmBtn.style.color = '#fff';
+  confirmBtn.disabled = false;
   el('approve-remarks').value = '';
   el('approve-remarks-err').style.display = 'none';
   el('approve-modal').dataset.probation = pass ? '0' : '1';
