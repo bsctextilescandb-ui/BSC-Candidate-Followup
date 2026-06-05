@@ -22,7 +22,7 @@
 .toggle-knob::before{content:'';position:absolute;width:14px;height:14px;background:#fff;border-radius:50%;top:3px;left:3px;transition:.2s}
 .toggle-sw input:checked + .toggle-knob{background:var(--green)}
 .toggle-sw input:checked + .toggle-knob::before{transform:translateX(16px)}
-.q-add-form{display:grid;grid-template-columns:1fr auto auto auto;gap:8px;align-items:end;background:#F9F7F4;padding:12px;border-radius:9px;margin-top:12px}
+.q-add-form{display:grid;grid-template-columns:auto auto 1fr auto auto;gap:8px;align-items:end;background:#F9F7F4;padding:12px;border-radius:9px;margin-top:12px}
 </style>
 </head>
 <body>
@@ -97,7 +97,7 @@
           <div class="card-sub">Toggle which pages each role can access. Changes save immediately.</div>
           <div style="overflow-x:auto;margin-top:14px">
             <table class="pg-grid">
-              <thead><tr><th>Page</th><th>HR</th><th>Store Manager</th><th>Admin</th></tr></thead>
+              <thead><tr><th>Page</th><th>HR</th><th>Store Manager</th><th>Admin</th><th>Owner</th></tr></thead>
               <tbody id="page-settings-grid"></tbody>
             </table>
           </div>
@@ -111,7 +111,7 @@
           <div style="padding:12px 16px;border-bottom:1px solid #f0ede8"><span class="card-title">Interview Questions</span>
             <span style="font-size:10px;color:#aaa;margin-left:8px">Edit in Google Sheet → Interview_Questions tab for full control</span></div>
           <div class="table-wrap"><table>
-            <thead><tr><th>Question</th><th>Round</th><th>Max Score</th><th>Action</th></tr></thead>
+            <thead><tr><th>Designation</th><th>Round</th><th>Question</th><th>Max Score</th><th>Action</th></tr></thead>
             <tbody id="q-tbody"></tbody>
           </table></div>
         </div>
@@ -121,7 +121,7 @@
             <div><label style="font-size:9px;font-weight:700;color:#888;display:block;margin-bottom:4px">QUESTION TEXT</label>
               <input type="text" id="new-q-text" placeholder="Enter question..." style="width:100%;font-size:12px;padding:8px 10px;border:1.5px solid #ddd;border-radius:7px"></div>
             <div><label style="font-size:9px;font-weight:700;color:#888;display:block;margin-bottom:4px">ROUND</label>
-              <select id="new-q-round" style="font-size:12px;padding:8px 10px;border:1.5px solid #ddd;border-radius:7px"><option value="HR">HR</option><option value="ASSIGNED">Assigned</option></select></div>
+              <select id="new-q-round" style="font-size:12px;padding:8px 10px;border:1.5px solid #ddd;border-radius:7px"><option value="HR">HR</option><option value="Round 2">Round 2</option></select></div>
             <div><label style="font-size:9px;font-weight:700;color:#888;display:block;margin-bottom:4px">MAX PTS</label>
               <input type="number" id="new-q-max" value="10" min="5" max="20" style="width:70px;font-size:12px;padding:8px 10px;border:1.5px solid #ddd;border-radius:7px;text-align:center"></div>
             <button class="btn btn-primary" onclick="addQuestion()" style="margin-top:0">Add</button>
@@ -149,10 +149,13 @@
 <script src="shared.js"></script>
 <script>
 function addQuestion(){
-  const text=el('new-q-text').value.trim(), round=el('new-q-round').value, max=parseInt(el('new-q-max').value)||10;
+  const desig=el('new-q-desig').value, round=el('new-q-round').value;
+  const text=el('new-q-text').value.trim(), max=parseInt(el('new-q-max').value)||10;
   if(!text){ toast('Enter question text','error'); return; }
-  allQuestions.push({text,round,max}); renderQuestions();
-  el('new-q-text').value=''; toast('Added (update Interview_Questions sheet to save permanently)','success');
+  if(!round){ toast('Select a round','error'); return; }
+  allQuestions.push({desig:desig||'All',round,text,max}); renderQuestions();
+  el('new-q-text').value='';
+  toast('Added — please update Interview_Questions sheet to save permanently','success');
 }
 
 'use strict';
@@ -221,7 +224,7 @@ const ALL_PAGES=[
   {key:'offer',label:'Offer Process'},
   {key:'settings',label:'Settings'}
 ];
-const ALL_ROLES=['HR','Manager','Admin'];
+const ALL_ROLES=['HR','Manager','Admin','Owner'];
 let pageSettings={};
 
 async function loadPageSettings(){
@@ -268,18 +271,19 @@ loadPageSettings();
 
 // ── Interview Questions ───────────────────────────────────────
 async function loadQuestions(){
-  try{ const d=await API.getInterviewQuestions('All','HR'); allQuestions=d.questions||[]; renderQuestions(); }
+  try{ const d=await API.call('getAllInterviewQuestions',{}); allQuestions=d.questions||[]; renderQuestions(); }
   catch(e){ allQuestions=[]; renderQuestions(); }
 }
 function renderQuestions(){
   el('q-tbody').innerHTML=allQuestions.length?allQuestions.map(function(q,i){
     return '<tr>'
+      +'<td style="font-size:10px;color:#888">'+(q.desig||q.designation||'All')+'</td>'
+      +'<td><span class="badge '+(q.round==='HR'?'b-short':'b-int')+'" style="font-size:9px">'+(q.round||'HR')+'</span></td>'
       +'<td style="font-size:11px">'+q.text+'</td>'
-      +'<td style="font-size:10px">'+(q.round||'HR')+'</td>'
-      +'<td style="font-size:10px">'+q.max+'</td>'
+      +'<td style="font-size:10px;text-align:center">'+q.max+'</td>'
       +'<td><button class="btn btn-outline-red btn-sm" data-idx="'+i+'" onclick="deleteQuestion(this)">Remove</button></td>'
     +'</tr>';
-  }).join(''):'<tr><td colspan="4" style="text-align:center;color:#bbb;padding:16px">No questions — add below</td></tr>';
+  }).join(''):'<tr><td colspan="5" style="text-align:center;color:#bbb;padding:16px">No questions — add below</td></tr>';
 }
 function deleteQuestion(btn){
   const i=parseInt(btn.dataset.idx);
