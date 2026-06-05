@@ -22,7 +22,7 @@
 .toggle-knob::before{content:'';position:absolute;width:14px;height:14px;background:#fff;border-radius:50%;top:3px;left:3px;transition:.2s}
 .toggle-sw input:checked + .toggle-knob{background:var(--green)}
 .toggle-sw input:checked + .toggle-knob::before{transform:translateX(16px)}
-.q-add-form{display:grid;grid-template-columns:auto auto 1fr auto auto;gap:8px;align-items:end;background:#F9F7F4;padding:12px;border-radius:9px;margin-top:12px}
+.q-add-form{display:flex;flex-wrap:wrap;gap:8px;align-items:end;background:#F9F7F4;padding:12px;border-radius:9px;margin-top:12px}
 </style>
 </head>
 <body>
@@ -118,12 +118,19 @@
         <div class="card" style="margin-top:12px">
           <div class="card-title">Add Question (saves to sheet on next deploy)</div>
           <div class="q-add-form">
-            <div><label style="font-size:9px;font-weight:700;color:#888;display:block;margin-bottom:4px">QUESTION TEXT</label>
-              <input type="text" id="new-q-text" placeholder="Enter question..." style="width:100%;font-size:12px;padding:8px 10px;border:1.5px solid #ddd;border-radius:7px"></div>
+            <div><label style="font-size:9px;font-weight:700;color:#888;display:block;margin-bottom:4px">DESIGNATION</label>
+              <select id="new-q-desig" data-desig-source style="font-size:12px;padding:8px 10px;border:1.5px solid #ddd;border-radius:7px;min-width:130px">
+                <option value="">Select...</option>
+              </select></div>
             <div><label style="font-size:9px;font-weight:700;color:#888;display:block;margin-bottom:4px">ROUND</label>
-              <select id="new-q-round" style="font-size:12px;padding:8px 10px;border:1.5px solid #ddd;border-radius:7px"><option value="HR">HR</option><option value="Round 2">Round 2</option></select></div>
+              <select id="new-q-round" style="font-size:12px;padding:8px 10px;border:1.5px solid #ddd;border-radius:7px">
+                <option value="HR">HR</option>
+                <option value="Round 2">Round 2</option>
+              </select></div>
+            <div style="flex:1"><label style="font-size:9px;font-weight:700;color:#888;display:block;margin-bottom:4px">QUESTION TEXT</label>
+              <input type="text" id="new-q-text" placeholder="Enter question text..." style="width:100%;font-size:12px;padding:8px 10px;border:1.5px solid #ddd;border-radius:7px"></div>
             <div><label style="font-size:9px;font-weight:700;color:#888;display:block;margin-bottom:4px">MAX PTS</label>
-              <input type="number" id="new-q-max" value="10" min="5" max="20" style="width:70px;font-size:12px;padding:8px 10px;border:1.5px solid #ddd;border-radius:7px;text-align:center"></div>
+              <input type="number" id="new-q-max" value="10" min="1" max="30" style="width:70px;font-size:12px;padding:8px 10px;border:1.5px solid #ddd;border-radius:7px;text-align:center"></div>
             <button class="btn btn-primary" onclick="addQuestion()" style="margin-top:0">Add</button>
           </div>
         </div>
