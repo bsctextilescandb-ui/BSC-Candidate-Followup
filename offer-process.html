@@ -401,8 +401,8 @@ async function confirmLogCall(){
     closeLcModal();
     const d=await API.getOffers(); allOffers=d.offers||[]; buildKPIs(); applyFilter();
     // Re-open panel
-    const o=allOffers.find(x=>x.appNo===appNo);
-    if(o){
+    const oRefresh=allOffers.find(x=>x.appNo===appNo);
+    if(oRefresh){
       const idx=filtered.findIndex(x=>x.appNo===appNo);
       if(idx>=0){
         const fakebtn={dataset:{idx:String(idx)}};
