@@ -216,7 +216,7 @@ const PAGE_SIZE = 10;
 function buildKPIs(){
   const c = s => allOffers.filter(x=>x.status===s).length;
   el('k-total').textContent   = allOffers.length;
-  el('k-pending').textContent = c('Pending Accept');
+  el('k-pending').textContent = allOffers.filter(function(o){return o.status==='Pending Accept'||o.status==='Probation';}).length;
   el('k-accept').textContent  = c('Accepted');
   el('k-decline').textContent = c('Declined');
 }
@@ -247,7 +247,13 @@ function setJoiningTab(){
 function applyFilter(){
   const q = (el('of-search').value||'').toLowerCase();
   filtered = allOffers.filter(function(o){
-    if(activeFilter!=='all'&&o.status!==activeFilter) return false;
+    if(activeFilter!=='all'){
+      if(activeFilter==='Pending Accept'){
+        if(o.status!=='Pending Accept'&&o.status!=='Probation') return false;
+      } else {
+        if(o.status!==activeFilter) return false;
+      }
+    }
     if(q&&!o.name.toLowerCase().includes(q)&&!o.appNo.toLowerCase().includes(q)) return false;
     return true;
   });
