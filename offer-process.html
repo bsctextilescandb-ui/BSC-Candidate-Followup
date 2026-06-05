@@ -81,7 +81,7 @@
         <div class="table-wrap">
           <table>
             <thead><tr><th>Candidate</th><th>Designation</th><th>Offer Call</th><th>Notice Period</th><th>Est. DOJ</th><th>Status</th><th>Action</th></tr></thead>
-            <tbody id="offer-tbody"><tr><td colspan="9" style="text-align:center;padding:24px"><div class="skel" style="height:14px;width:50%;margin:auto"></div></td></tr></tbody>
+            <tbody id="offer-tbody"><tr><td colspan="7" style="text-align:center;padding:24px"><div class="skel" style="height:14px;width:50%;margin:auto"></div></td></tr></tbody>
           </table>
         </div>
         <div class="table-pagination">
@@ -260,7 +260,7 @@ function changePage(d){ currentPage+=d; renderTable(); }
 function renderTable(){
   const start=(currentPage-1)*PAGE_SIZE, page=filtered.slice(start,start+PAGE_SIZE), total=filtered.length;
   if(!page.length){
-    el('offer-tbody').innerHTML='<tr><td colspan="9"><div class="empty-state"><div class="empty-icon">&#x1F4C4;</div><div class="empty-title">No offers yet</div><div class="empty-sub">Approve candidates in Interview Panel first</div></div></td></tr>';
+    el('offer-tbody').innerHTML='<tr><td colspan="7"><div class="empty-state"><div class="empty-icon">&#x1F4C4;</div><div class="empty-title">No offers yet</div><div class="empty-sub">Approve candidates in Interview Panel first</div></div></td></tr>';
     el('of-page-info').textContent='\u2014'; el('of-prev').disabled=true; el('of-next').disabled=true; return;
   }
   const rows = page.map(function(o,i){
