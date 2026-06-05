@@ -116,7 +116,7 @@
           </table></div>
         </div>
         <div class="card" style="margin-top:12px">
-          <div class="card-title">Add Question (saves to sheet on next deploy)</div>
+          <div class="card-title">Add Question</div>
           <div class="q-add-form">
             <div><label style="font-size:9px;font-weight:700;color:#888;display:block;margin-bottom:4px">DESIGNATION</label>
               <select id="new-q-desig" data-desig-source style="font-size:12px;padding:8px 10px;border:1.5px solid #ddd;border-radius:7px;min-width:130px">
@@ -155,14 +155,25 @@
 </div>
 <script src="shared.js"></script>
 <script>
-function addQuestion(){
+async function addQuestion(){
   const desig=el('new-q-desig').value, round=el('new-q-round').value;
   const text=el('new-q-text').value.trim(), max=parseInt(el('new-q-max').value)||10;
+  if(!desig){ toast('Select a designation','error'); return; }
   if(!text){ toast('Enter question text','error'); return; }
-  if(!round){ toast('Select a round','error'); return; }
-  allQuestions.push({desig:desig||'All',round,text,max}); renderQuestions();
-  el('new-q-text').value='';
-  toast('Added — please update Interview_Questions sheet to save permanently','success');
+  const btn=document.querySelector('[onclick="addQuestion()"]');
+  btn.disabled=true; btn.textContent='Saving...';
+  try{
+    const r = await API.call('addInterviewQuestion',{desig,round,text,max});
+    if(r.success){
+      allQuestions.push({desig,round,text,max});
+      renderQuestions();
+      el('new-q-text').value='';
+      toast('Question added to sheet successfully!','success');
+    } else {
+      toast('Error: '+(r.error||'Failed to save'),'error');
+    }
+  }catch(e){ toast('Error: '+e.message,'error'); }
+  finally{ btn.disabled=false; btn.textContent='Add'; }
 }
 
 'use strict';
