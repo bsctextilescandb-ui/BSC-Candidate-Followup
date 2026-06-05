@@ -1,938 +1,288 @@
-/**
- * BSC Candidate CRM — code.gs v5
- * Columns: 33 total (A–AG)
- */
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8"><meta name="viewport" content="width=device-width,initial-scale=1">
+<title>Dashboard — BSC Candidate CRM</title>
+<link rel="icon" type="image/jpeg" href="https://bsctextilescandb-ui.github.io/retail-crm/logo.jpg">
+<link rel="icon" type="image/jpeg" href="https://bsctextilescandb-ui.github.io/retail-crm/logo.jpg">
+<link rel="stylesheet" href="shared.css">
+<script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.1/dist/chart.umd.min.js"></script>
+<style>
+.chart-grid{display:grid;grid-template-columns:1.7fr 1fr 1fr;gap:10px;margin-bottom:12px}
+@media(max-width:1100px){.chart-grid{grid-template-columns:1fr 1fr}}
+@media(max-width:700px){.chart-grid{grid-template-columns:1fr}}
+</style>
+</head>
+<body>
+<button class="sb-toggle" id="sb-toggle" aria-label="Open menu">
+  <span></span><span></span><span></span>
+</button>
+<div class="sb-mob-overlay" id="sb-mob-overlay"></div>
+<div class="app-shell">
+<aside class="sidebar">
+  <div class="sb-logo-box"><img src="https://bsctextilescandb-ui.github.io/retail-crm/logo.jpg" alt="BSC The Textile Mall"></div>
+  <div class="sb-user"><div class="sb-avatar" id="sb-av">HR</div>
+    <div><div class="sb-user-name" id="sb-username">HR Admin</div>
+         <div class="sb-user-role" id="sb-userrole">HR</div></div>
+  </div>
+  <div class="sb-section">Main</div>
+    <a class="nav-item active" data-page="dashboard" href="dashboard.html"><span class="nav-icon">📊</span> Dashboard </a>
+    <a class="nav-item" data-page="candidates" href="candidates.html"><span class="nav-icon">👥</span> Candidates <span class="nav-badge" id="nb-cand">0</span></a>
+    <a class="nav-item" data-page="interview" href="interview-panel.html"><span class="nav-icon">🎯</span> Interview Panel </a>
+    <a class="nav-item" data-page="offer" href="offer-process.html"><span class="nav-icon">📄</span> Offer Process <span class="nav-badge" id="nb-offer">0</span></a>
+    <a class="nav-item" data-page="onboarding" style="display:none" href="onboarding.html"><span class="nav-icon">✅</span> Onboarding </a>
+    <a class="nav-item" data-page="exit" style="display:none" href="employee-exit.html"><span class="nav-icon">🚪</span> Employee Exit </a>
+  <div class="sb-section">Public</div>
+  <a class="nav-item" data-page="form" href="candidate-entry.html" target="_blank"><span class="nav-icon">📋</span> Entry Form (QR)</a>
+  <div class="sb-section">Admin</div>
+  <a class="nav-item" data-page="settings" href="#"><span class="nav-icon">⚙️</span> Settings</a>
+  <div class="sb-bottom">
+    <button class="logout-btn" id="logout-btn">↩ &nbsp;Logout</button>
+    <div class="sb-cnb-box"><img src="https://bsctextilescandb-ui.github.io/retail-crm/cnb-logo.png" alt="Consulting &amp; Beyond"></div>
+  </div>
+</aside>
+  <div class="main">
+    <header class="topbar">
+      <div class="topbar-left"><div class="topbar-title">Dashboard</div>
+        <div class="breadcrumb"><span>BSC CRM</span><span class="bc-sep">›</span><span>Dashboard</span></div></div>
+      <div class="topbar-right">
+        <span class="topbar-time" id="live-clock"></span>
+        <span class="live-ind"><span class="live-dot"></span>Live</span>
+        <div class="bell-btn">🔔<div class="bell-dot" id="bell-dot" style="display:none"></div></div>
+      </div>
+    </header>
+    <main class="content">
+      <div class="df-bar">
+        <button class="df-btn active" data-range="today">Today</button>
+        <button class="df-btn" data-range="week">This Week</button>
+        <button class="df-btn" data-range="month">This Month</button>
+        <button class="df-btn" data-range="last_month">Last Month</button>
+        <input type="date" class="df-date" id="df-from" onchange="applyCustomRange()">
+        <span style="font-size:11px;color:#888;align-self:center">to</span>
+        <input type="date" class="df-date" id="df-to" onchange="applyCustomRange()">
+        <span class="df-label" id="df-label">Showing: Today</span>
+      </div>
+      <div class="kpi-grid">
+        <div class="kpi gold"><div class="kpi-label">Total Pipeline</div><div class="kpi-val" id="k-total">0</div><div class="kpi-sub">All candidates</div><div class="kpi-trend kt-up" id="k-trend"></div></div>
+        <div class="kpi navy"><div class="kpi-label">Shortlisted</div><div class="kpi-val" id="k-short">0</div><div class="kpi-sub">Awaiting interview</div></div>
+        <div class="kpi green"><div class="kpi-label">Selected</div><div class="kpi-val" id="k-sel">0</div><div class="kpi-sub">Passed all rounds</div></div>
+        <div class="kpi teal"><div class="kpi-label">Joined</div><div class="kpi-val" id="k-joined">0</div><div class="kpi-sub">Actual joined</div></div>
+      </div>
+      <div class="kpi-grid" style="margin-top:-4px">
+        <div class="kpi blue"><div class="kpi-label">Offer Acceptance Rate</div><div class="kpi-val" id="k-acc">0<span style="font-size:14px">%</span></div><div class="kpi-sub" id="k-acc-sub">of offers accepted</div></div>
+        <div class="kpi orange"><div class="kpi-label">Avg Days to Hire</div><div class="kpi-val" id="k-days">0<span style="font-size:13px">d</span></div><div class="kpi-sub">Applied → Joined</div></div>
+        <div class="kpi purple"><div class="kpi-label">Awaiting Joining</div><div class="kpi-val" id="k-ob">0</div><div class="kpi-sub">Offer accepted</div></div>
+        <div class="kpi red"><div class="kpi-label">Interviews Today</div><div class="kpi-val" id="k-int">0</div><div class="kpi-sub">Scheduled</div></div>
+      </div>
+      <div class="chart-grid">
+        <div class="card">
+          <div class="card-title">Hiring Funnel</div>
+          <div class="card-sub">Conversion at each stage · drop-off % shown</div>
+          <div id="funnel-container"></div>
+        </div>
+        <div class="card">
+          <div class="card-title">Source Breakdown</div>
+          <div class="card-sub">Where candidates come from</div>
+          <canvas id="srcChart" height="190"></canvas>
+        </div>
+        <div class="card">
+          <div class="card-title" style="display:flex;align-items:center;gap:7px">Pending Actions <span class="nav-badge" id="pa-count" style="margin-left:0">0</span></div>
+          <div class="card-sub">Requires your attention</div>
+          <div id="pending-actions"><div class="empty-state"><div class="empty-icon">✅</div><div class="empty-title">All clear</div></div></div>
+        </div>
+      </div>
+      <div class="table-card">
+        <div class="card-header">
+          <span class="card-title">Recent Candidates</span>
+          <div style="display:flex;align-items:center;gap:8px;flex-wrap:wrap">
+            <span style="font-size:10px;color:var(--muted)" id="recent-count">Loading…</span>
+            <input class="search-input" id="rc-search" placeholder="🔍 Search…" oninput="filterRecent(this.value)">
+            <button class="btn btn-outline btn-sm" onclick="window.location.href='candidates.html'">View All →</button>
+          </div>
+        </div>
+        <div class="table-wrap">
+          <table><thead><tr><th>App No</th><th>Candidate</th><th>Designation</th><th>Source</th><th>Date</th><th>Status</th><th>Days In</th><th>Action</th></tr></thead>
+          <tbody id="recent-tbody"><tr><td colspan="8" style="text-align:center;padding:24px"><div class="skel" style="height:14px;margin:6px auto;width:50%"></div></td></tr></tbody></table>
+        </div>
+        <div class="table-pagination">
+          <span id="recent-page-info">—</span>
+          <div style="display:flex;gap:6px">
+            <button class="btn btn-muted btn-sm" id="prev-btn" onclick="changePage(-1)" disabled>← Prev</button>
+            <button class="btn btn-outline btn-sm" id="next-btn" onclick="changePage(1)">Next →</button>
+          </div>
+        </div>
+      </div>
+    </main>
+  </div>
+</div>
+<script src="shared.js"></script>
+<script>
+'use strict';
+initPage('dashboard');
+let allCandidates=[],filteredC=[],currentPage=1,srcChart=null;
+const PAGE_SIZE=5;
 
-const SHEET_ID = '1r4HTOHlphHy0sovP7p7aAfuI29dZqw3IAxTJ3XGKyzo';
+(async function load(){
+  await Promise.all([loadKPIs(),loadFunnel(),loadPendingActions(),loadRecent()]);
+})();
 
-var FOLDER_IDS = {
-  resume: '14d8qazrYOABTxbR7DVNJfyyjyB3PVfgZ',
-  photo:  '1LcvQCHck25ZEmzA7kA2E9w01LtPu-Nev',
-  aadhar: '12bNBmqHY7IyCnGv0kM2ZkPZiqrMHpZfw'
-};
-
-const COL = {
-  Candidates: {
-    APP_NO:1, NAME:2, PHONE:3, DOB:4, DESIG:5, SOURCE:6, REFERRER:7,
-    STATUS:8, DATE:9, SALARY:10, RESUME_URL:11,
-    WHY_JOIN:12, WHY_HIRE:13, WEEKEND_OK:14, VALUE_90DAYS:15,
-    OWN_VEHICLE:16,
-    REMARKS:17, DAYS_IN:18, CREATED_AT:19, UPDATED_AT:20,
-    EMAIL:21, CURRENT_SALARY:22, REFERRER_EMP_NO:23, SOURCE_DETAIL:24,
-    PHOTO_URL:25, AADHAR_URL:26, IS_DUPLICATE_PHONE:27,
-    CITY_STATE:28, ADDRESS:29, OCCUPATION:30, QUALIFICATION:31,
-    EXPERIENCE:32, NOTICE_PERIOD:33, GENDER:34
-  },
-  Interview_Schedule: {
-    APP_NO:1, CANDIDATE:2, DESIG:3,
-    CALL1_DATE:4, CALL1_REMARKS:5,
-    CALL2_DATE:6, CALL2_REMARKS:7,
-    INTERVIEW_DATE:8, INTERVIEW_REMARKS:9,
-    STEP:10, STATUS:11, CREATED_AT:12
-  },
-  Interview_Tokens: {
-    APP_NO:1, CANDIDATE:2, DESIG:3, TOKEN:4,
-    ASSIGNED_NAME:5, ASSIGNED_DESIG:6,
-    CREATED_AT:7, EXPIRES_AT:8, STATUS:9, COMPLETED_AT:10,
-    SUGGESTED_DESIG:11, SUGGESTION_REASON:12
-  },
-  Interview_Questions: {
-    DESIG:1, ROUND:2, Q_ID:3, QUESTION:4, TYPE:5, MAX_SCORE:6, OPTIONS:7
-  },
-  HR_Status: { APP_NO:1, HR:2, ASSIGNED:3, UPDATED_AT:4, DESIG:5 },
-  Selection_Offer: {
-    APP_NO:1, NAME:2, DESIG:3, NOTICE_PD:4, EST_DOJ:5,
-    CALL1_DATE:6, CALL2_DATE:7, CONFIRM_DATE:8,
-    OFFER_LINK:9, STATUS:10, CREATED_AT:11, UPDATED_AT:12
-  },
-  Selected_Candidates: {
-    APP_NO:1, NAME:2, PHONE:3, DESIG:4, SOURCE:5,
-    HR_SCORE:6, ASSIGNED_SCORE:7, TOTAL_SCORE:8,
-    DECISION_DATE:9, DECISION_BY:10, REMARKS:11
-  },
-  Rejected_Candidates: {
-    APP_NO:1, NAME:2, PHONE:3, DESIG:4, SOURCE:5,
-    STAGE:6, REJECTION_DATE:7, REJECTED_BY:8, REMARKS:9
-  },
-  Roles_Config: { ROLE:1, DESIG:2, ACTIVE:3 },
-  Users: { USERNAME:1, PASSWORD:2, ROLE:3, ACTIVE:4, FULLNAME:5, CREATED_AT:6 },
-  Activity_Log: { APP_NO:1, CAND_NAME:2, ACTION:3, REMARKS:4, DONE_BY:5, TIMESTAMP:6 }
-};
-
-function logCustomActivity(p) {
-  try {
-    logActivity(p.appNo, p.candName||'', p.action||'', p.remarks||'', p.doneBy||'HR');
-    return {success:true};
-  } catch(e) { return {success:false, error:e.message}; }
-}
-
-/* ── Utilities ─────────────────────────────────────────────── */
-function getSheet(name) {
-  var sh = SpreadsheetApp.openById(SHEET_ID).getSheetByName(name);
-  if (!sh) throw new Error('Sheet "'+name+'" not found');
-  return sh;
-}
-function getRows(sheetName, colMap) {
-  var data = getSheet(sheetName).getDataRange().getValues();
-  if (data.length <= 1) return [];
-  return data.slice(1).map(function(row) {
-    var obj = {};
-    Object.keys(colMap).forEach(function(k){ obj[k] = row[colMap[k]-1] !== undefined ? row[colMap[k]-1] : ''; });
-    return obj;
-  });
-}
-function appendRow(sheet, values) { getSheet(sheet).appendRow(values); }
-function updateRow(sheet, matchCol, matchVal, updates) {
-  var sh = getSheet(sheet), data = sh.getDataRange().getValues();
-  for (var i = 1; i < data.length; i++) {
-    if (String(data[i][matchCol-1]) === String(matchVal)) {
-      Object.keys(updates).forEach(function(col){ sh.getRange(i+1,parseInt(col)).setValue(updates[col]); });
-      return true;
-    }
-  }
-  return false;
-}
-function jsonRes(data) {
-  return ContentService.createTextOutput(JSON.stringify(data)).setMimeType(ContentService.MimeType.JSON);
-}
-function getInitials(name) {
-  return String(name||'').split(' ').slice(0,2).map(function(w){return w[0]||'';}).join('').toUpperCase();
-}
-var AV_COLORS = ['navy','gold','green','red','purple','teal'];
-
-/* ── Activity Logger ───────────────────────────────────────── */
-function logActivity(appNo, candName, action, remarks, doneBy) {
-  try {
-    appendRow('Activity_Log', [
-      appNo,
-      candName || '',
-      action,
-      remarks || '',
-      doneBy || 'HR',
-      new Date().toISOString()
-    ]);
-  } catch(e) {
-    Logger.log('logActivity error: ' + e.message);
-  }
-}
-function getAvatarColor(name) {
-  var s=String(name||'');
-  return AV_COLORS[((s.charCodeAt(0)||0)+(s.charCodeAt(1)||0))%AV_COLORS.length];
-}
-function formatDate(val) {
-  if (!val) return '—';
-  try { var d=new Date(val); return isNaN(d)?String(val):d.toLocaleDateString('en-IN',{day:'2-digit',month:'short',year:'numeric'}); }
-  catch(e){ return String(val); }
-}
-function calcDaysIn(val) {
-  try { var d=new Date(val); return isNaN(d)?0:Math.max(0,Math.floor((Date.now()-d.getTime())/86400000)); }
-  catch(e){ return 0; }
-}
-function safeJSON(str) { try{ return JSON.parse(str); }catch(e){ return null; } }
-function generateToken() {
-  return Utilities.base64Encode(Utilities.computeDigest(
-    Utilities.DigestAlgorithm.MD5,
-    new Date().toISOString() + Math.random().toString()
-  )).replace(/[^a-zA-Z0-9]/g,'').slice(0,24);
-}
-
-/* ── Entry Points ──────────────────────────────────────────── */
-function doGet(e) {
-  if (e && e.parameter && e.parameter.action === 'getInterviewByToken') {
-    return jsonRes(getInterviewByToken(e.parameter));
-  }
-  return jsonRes({status:'BSC CRM API v5 online'});
-}
-function doPost(e) {
-  try {
-    var body = JSON.parse(e.postData.contents);
-    var action = body.action; delete body.action;
-    return jsonRes(dispatch(action, body));
-  } catch(err) { return jsonRes({error:err.message}); }
-}
-function dispatch(action, p) {
-  var map = {
-    verifyUser:verifyUser,
-    getCandidates:getCandidates, addCandidate:addCandidate, getActivityFull:getActivityFull,
-    updateCandidate:updateCandidate, checkDuplicate:checkDuplicate, getNextAppNo:getNextAppNo,
-    getKPIs:getKPIs, getPendingActions:getPendingActions,
-    getSourceBreakdown:getSourceBreakdown, getDesignations:getDesignations,
-    saveCallStep:saveCallStep, getCallStatus:getCallStatus,
-    scheduleInterview:scheduleInterview, getInterviews:getInterviews,
-    getInterviewQuestions:getInterviewQuestions,
-    saveScore:saveScore, getScores:getScores,
-    generateInterviewToken:generateInterviewToken,
-    getInterviewByToken:getInterviewByToken,
-    submitInterviewScore:submitInterviewScore,
-    getOffers:getOffers, logOfferCall:logOfferCall,
-    updateOfferDetails:updateOfferDetails, acceptOffer:acceptOffer,
-    updateOfferStatus:updateOfferStatus,
-    approveSelection:approveSelection, rejectCandidate:rejectCandidate,
-    getSelectedCandidates:getSelectedCandidates,
-    getRejectedCandidates:getRejectedCandidates,
-    uploadResume:uploadResume, uploadPhoto:uploadPhoto, uploadAadhar:uploadAadhar,
-    logCustomActivity:logCustomActivity,
-    assignNewDesignation:assignNewDesignation,
-    getUsers:getUsers, addUser:addUser, updateUser:updateUser,
-    getPageSettings:getPageSettings, savePageSettings:savePageSettings
-  };
-  if (!map[action]) throw new Error('Unknown action: '+action);
-  return map[action](p);
+async function loadKPIs(){
+  const k=await API.getKPIs('today');
+  el('k-total').textContent=k.total;
+  el('k-short').textContent=k.shortlisted;
+  el('k-sel').textContent=k.selected;
+  el('k-joined').textContent=k.joined;
+  if(el('k-ob'))  el('k-ob').textContent=k.onboarding||0;
+  if(el('k-int')) el('k-int').textContent=k.interviewsToday||0;
+  el('k-acc').innerHTML=k.acceptanceRate+'<span style="font-size:14px">%</span>';
+  el('k-days').innerHTML=(k.avgDays||0)+'<span style="font-size:13px">d</span>';
+  el('k-ob').textContent=k.onboarding;el('k-int').textContent=k.interviewsToday;
+  el('k-acc-sub').textContent='of '+(k.selected||0)+' offers';
+  if(k.interviewsToday>0)el('bell-dot').style.display='';
 }
 
-/* ── Auth ──────────────────────────────────────────────────── */
-function verifyUser(p) {
-  try {
-    var rows = getRows('Users',COL.Users);
-    var u = rows.find(function(r){
-      return String(r.USERNAME).toLowerCase()===String(p.username).toLowerCase()
-          && String(r.PASSWORD)===String(p.password)
-          && String(r.ACTIVE).toUpperCase()==='TRUE';
-    });
-    if (!u) return {success:false};
-    return {success:true, role:u.ROLE, displayName:String(u.FULLNAME||u.ROLE)};
-  } catch(e) {
-    var demo=[
-      {u:'hr@bsctextiles.com',p:'bsc@2026',role:'HR',n:'HR Admin'},
-      {u:'manager@bsctextiles.com',p:'bsc@2026',role:'Manager',n:'Store Manager'},
-      {u:'admin@bsctextiles.com',p:'bsc@2026',role:'Admin',n:'Admin'}
+async function loadFunnel(){
+  const k=await API.getKPIs('today');
+  const total=k.total||0;
+  const container=el('funnel-container');
+  if(total===0){container.innerHTML='<div style="text-align:center;padding:28px;color:#bbb;font-size:12px">📋 No candidates yet — add via Entry Form (QR)</div>';}
+  else{
+    const stages=[
+      {label:'Applied',    val:total,                             color:'#1E2D4E'},
+      {label:'Shortlisted',val:k.shortlisted||0,                 color:'#2a3f6e'},
+      {label:'Interviewed',val:Math.round((k.shortlisted||0)*.74),color:'#C9952A'},
+      {label:'Selected',   val:k.selected||0,                    color:'#2d8a4e'},
+      {label:'Offer Sent', val:Math.round((k.selected||0)*.64),  color:'#3da060'},
+      {label:'Joined',     val:k.joined||0,                      color:'#1a8a84'}
     ];
-    var m=demo.find(function(d){return d.u.toLowerCase()===String(p.username).toLowerCase()&&d.p===String(p.password);});
-    return m?{success:true,role:m.role,displayName:m.n}:{success:false};
+    container.innerHTML=stages.map((s,i)=>{
+      const pct=total>0?Math.round(s.val/total*100):0;
+      const prev=(stages[i-1]||{}).val||0;
+      const dropPct=(i===0||prev===0)?'':'−'+Math.round((1-s.val/prev)*100)+'%';
+      const drop=dropPct?'<span class="f-drop">'+dropPct+'</span>':'<span class="f-drop"></span>';
+      return '<div class="funnel-row"><div class="f-lbl">'+s.label+'</div><div class="f-bg"><div class="f-bar" style="width:'+Math.max(pct,1)+'%;background:'+s.color+'">'+s.val+'</div></div><div class="f-num">'+s.val+'</div>'+drop+'</div>';
+    }).join('');
+  }
+  // Source donut
+  const src=await API.call('getSourceBreakdown').catch(()=>({walkin:0,empref:0,online:0,other:0}));
+  const ctx=el('srcChart');
+  if(ctx){if(srcChart)srcChart.destroy();
+    srcChart=new Chart(ctx,{type:'doughnut',data:{labels:['Walk-in','Employee Reference','Advertisement','Other'],datasets:[{data:[src.walkin||0,src.empref||0,src.online||0,src.other||0],backgroundColor:['#1E2D4E','#C9952A','#2d8a4e','#C0272D'],borderWidth:3,borderColor:'#fff',hoverOffset:4}]},options:{responsive:true,plugins:{legend:{position:'bottom',labels:{font:{size:9.5},boxWidth:10,padding:8}}},cutout:'58%'}});
   }
 }
 
-/* ── Candidates ────────────────────────────────────────────── */
-function getCandidates(params) {
-  var f=(params&&params.filters)||{};
-  var rows=[];
-  try{ rows=getRows('Candidates',COL.Candidates); }catch(e){ return {candidates:[],total:0}; }
-  var list=rows.map(function(r){
-    return {
-      appNo:        String(r.APP_NO||''),
-      name:         String(r.NAME||''),
-      initials:     getInitials(String(r.NAME||'')),
-      color:        getAvatarColor(String(r.NAME||'')),
-      phone:        String(r.PHONE||''),
-      dob:          String(r.DOB||''),
-      email:        String(r.EMAIL||''),
-      cityState:    String(r.CITY_STATE||''),
-      address:      String(r.ADDRESS||''),
-      desig:        String(r.DESIG||''),
-      source:       String(r.SOURCE||''),
-      referrer:     String(r.REFERRER||''),
-      referrerEmpNo:String(r.REFERRER_EMP_NO||''),
-      sourceDetail: String(r.SOURCE_DETAIL||''),
-      occupation:   String(r.OCCUPATION||''),
-      qualification:String(r.QUALIFICATION||''),
-      experience:   String(r.EXPERIENCE||''),
-      noticePeriod: String(r.NOTICE_PERIOD||''),
-      gender:       String(r.GENDER||''),
-      ownVehicle:   String(r.OWN_VEHICLE||''),
-      date:         formatDate(r.DATE),
-      rawDate:      r.DATE ? new Date(r.DATE).getTime() : 0,
-      status:       String(r.STATUS||'New'),
-      daysIn:       calcDaysIn(r.DATE),
-      salary:       String(r.SALARY||''),
-      currentSalary:String(r.CURRENT_SALARY||''),
-      resumeUrl:    String(r.RESUME_URL||''),
-      photoUrl:     String(r.PHOTO_URL||''),
-      aadharUrl:    String(r.AADHAR_URL||''),
-      isDuplicatePhone: String(r.IS_DUPLICATE_PHONE||'No'),
-      whyJoin:      String(r.WHY_JOIN||''),
-      whyHire:      String(r.WHY_HIRE||''),
-      weekendOk:    String(r.WEEKEND_OK||''),
-      value90Days:  String(r.VALUE_90DAYS||''),
-      remarks:      String(r.REMARKS||''),
-      rejReason:    String(r.REMARKS||'')
-    };
+async function loadPendingActions(){
+  const data=await API.getPendingActions();
+  const items=data.items||[];
+  el('pa-count').textContent=items.filter(i=>i.priority==='urgent').length;
+  const pm={urgent:{dot:'red',tag:'pt-urgent',label:'Urgent'},warn:{dot:'amber',tag:'pt-warn',label:'Due Soon'},info:{dot:'navy',tag:'pt-info',label:'Review'}};
+  el('pending-actions').innerHTML=items.length?items.map(item=>{
+    const p=pm[item.priority]||pm.info;
+    return '<div class="pa-row"><div class="pa-dot '+p.dot+'"></div><div class="pa-text">'+item.text+'</div><span class="pa-tag '+p.tag+'">'+p.label+'</span></div>';
+  }).join(''):'<div class="empty-state"><div class="empty-icon">✅</div><div class="empty-title">All clear</div></div>';
+}
+
+// ── Date range helpers ────────────────────────────────────
+function getDateRange(range){
+  const now=new Date(), y=now.getFullYear(), m=now.getMonth(), d=now.getDate();
+  if(range==='today')      return {from:new Date(y,m,d), to:new Date(y,m,d,23,59,59)};
+  if(range==='week'){
+    const day=now.getDay(), diff=day===0?6:day-1;
+    const mon=new Date(y,m,d-diff);
+    return {from:mon, to:new Date(y,m,d,23,59,59)};
+  }
+  if(range==='month')      return {from:new Date(y,m,1), to:new Date(y,m,d,23,59,59)};
+  if(range==='last_month') return {from:new Date(y,m-1,1), to:new Date(y,m,0,23,59,59)};
+  return null;
+}
+function filterByDateRange(candidates, range, fromDate, toDate){
+  let from, to;
+  if(range==='custom'){
+    if(!fromDate) return candidates;
+    from = new Date(fromDate);
+    to   = toDate ? new Date(toDate) : new Date(fromDate);
+    to.setHours(23,59,59);
+  } else {
+    const dr = getDateRange(range);
+    if(!dr) return candidates;
+    from = dr.from; to = dr.to;
+  }
+  return candidates.filter(c => {
+    if(!c.rawDate) return false;
+    const d = new Date(c.rawDate);
+    return d >= from && d <= to;
   });
-  list.sort(function(a,b){ return a.rawDate - b.rawDate; });
-  if (f.status&&f.status!=='all') list=list.filter(function(c){return c.status.toLowerCase()===f.status.toLowerCase();});
-  if (f.desig)  list=list.filter(function(c){return c.desig===f.desig;});
-  if (f.source) list=list.filter(function(c){return c.source===f.source;});
-  if (f.q) { var q=String(f.q).toLowerCase(); list=list.filter(function(c){return c.name.toLowerCase().includes(q)||c.appNo.toLowerCase().includes(q)||c.phone.includes(q);}); }
-  var total=list.length, page=parseInt(f.page)||1, limit=parseInt(f.limit)||100;
-  return {candidates:list.slice((page-1)*limit,page*limit), total:total, page:page};
 }
 
-function addCandidate(p) {
-  var d=p.data||{}, now=new Date().toISOString(), appNo=generateAppNo();
-  appendRow('Candidates',[
-    appNo, d.name, d.phone, d.dob, d.desig, d.source, d.referrer||'',
-    'New', new Date(), d.salary, d.resumeUrl||'',
-    d.q1||'', d.q2||'', d.q3||'', d.q4||'',
-    d.ownVehicle||'',
-    d.remarks||'', 0, now, now,
-    d.email||'', d.currentSalary||'', d.referrerEmpNo||'',
-    d.sourceDetail||'', '', '', d.isDuplicatePhone||'No',
-    d.cityState||'', d.address||'', d.occupation||'',
-    d.qualification||'', d.experience||'', d.noticePeriod||'', d.gender||''
-  ]);
-  logActivity(appNo, d.name, 'Applied', 'Source: '+(d.source||'')+(d.sourceDetail?' — '+d.sourceDetail:''), 'Candidate');
-  return {success:true, appNo:appNo};
-}
+// ── Active range state ─────────────────────────────────
+let activeRange = 'today';
 
-function updateCandidate(p) {
-  var now=new Date().toISOString();
-  var cm={
-    status:COL.Candidates.STATUS, remarks:COL.Candidates.REMARKS,
-    resumeUrl:COL.Candidates.RESUME_URL
-  };
-  var upd={};
-  Object.keys(p.updates||{}).forEach(function(k){ if(cm[k]) upd[cm[k]]=p.updates[k]; });
-  upd[COL.Candidates.UPDATED_AT]=now;
-  var ok = updateRow('Candidates',COL.Candidates.APP_NO,p.appNo,upd);
-  // Log status changes
-  if(p.updates && p.updates.status) {
-    logActivity(p.appNo, p.candName||'', p.updates.status, p.updates.remarks||'', p.doneBy||'HR');
-  }
-  if (p.updates&&p.updates.status==='Selected') autoMoveSelected(p.appNo, p.updates.remarks||'');
-  if (p.updates&&p.updates.status==='Rejected') autoMoveRejected(p.appNo, p.updates.remarks||'');
-  return {success:ok};
+async function loadRecent(){
+  const data=await API.getCandidates({limit:500});
+  allCandidates=data.candidates||[];
+  applyDateFilter();
 }
-
-function checkDuplicate(p) {
-  try {
-    var rows=getRows('Candidates',COL.Candidates);
-    var ph=String(p.phone||'').replace(/\D/g,'');
-    var m=rows.find(function(r){return String(r.PHONE||'').replace(/\D/g,'')===ph;});
-    return m?{exists:true,name:m.NAME,appNo:m.APP_NO,appliedOn:formatDate(m.DATE)}:{exists:false};
-  }catch(e){return {exists:false};}
+function applyDateFilter(){
+  const from = el('df-from') ? el('df-from').value : '';
+  const to   = el('df-to')   ? el('df-to').value   : '';
+  filteredC = filterByDateRange(allCandidates, activeRange, from, to);
+  currentPage=1;
+  el('recent-count') && (el('recent-count').textContent='Showing 1–'+Math.min(PAGE_SIZE,filteredC.length)+' of '+filteredC.length);
+  renderRecent();
 }
-function getNextAppNo() { return {appNo:generateAppNo()}; }
-function generateAppNo() {
-  try{ var n=Math.max(getSheet('Candidates').getLastRow()-1,0); return 'BSC-'+new Date().getFullYear()+'-'+String(n+1).padStart(4,'0'); }
-  catch(e){return 'BSC-'+new Date().getFullYear()+'-0001';}
+function applyCustomRange(){
+  const from = el('df-from').value;
+  const to   = el('df-to').value;
+  if(!from) return;
+  // If only from is set, copy to to
+  if(from && !to) el('df-to').value = from;
+  // Deactivate preset buttons
+  document.querySelectorAll('.df-btn').forEach(b=>b.classList.remove('active'));
+  activeRange = 'custom';
+  // Update label
+  const f = new Date(from).toLocaleDateString('en-IN',{day:'2-digit',month:'short',year:'numeric'});
+  const t = to ? new Date(to||from).toLocaleDateString('en-IN',{day:'2-digit',month:'short',year:'numeric'}) : f;
+  el('df-label').textContent = f===t ? 'Showing: '+f : 'Showing: '+f+' – '+t;
+  applyDateFilter();
 }
-
-/* ── File Uploads ───────────────────────────────────────────── */
-function getFolderById(folderId) { return DriveApp.getFolderById(folderId); }
-
-function uploadResume(p) {
-  try {
-    var folder=getFolderById(FOLDER_IDS.resume);
-    var blob=Utilities.newBlob(Utilities.base64Decode(p.base64Data),'application/pdf',p.fileName||('resume_'+p.appNo+'.pdf'));
-    var ex=folder.getFilesByName(blob.getName()); if(ex.hasNext()) ex.next().setTrashed(true);
-    var file=folder.createFile(blob);
-    file.setSharing(DriveApp.Access.ANYONE_WITH_LINK,DriveApp.Permission.VIEW);
-    var url='https://drive.google.com/file/d/'+file.getId()+'/view';
-    updateRow('Candidates',COL.Candidates.APP_NO,p.appNo,{[COL.Candidates.RESUME_URL]:url,[COL.Candidates.UPDATED_AT]:new Date().toISOString()});
-    return {success:true,fileUrl:url};
-  }catch(e){return {success:false,error:e.message};}
+function renderRecent(){
+  const start=(currentPage-1)*PAGE_SIZE,page=filteredC.slice(start,start+PAGE_SIZE),total=filteredC.length;
+  if(!page.length){el('recent-tbody').innerHTML='<tr><td colspan="8"><div class="empty-state"><div class="empty-icon">🔍</div><div class="empty-title">No candidates found</div></div></td></tr>';return;}
+  el('recent-tbody').innerHTML=page.map(c=>{
+    const am={'New':'<button class="btn btn-outline btn-sm" onclick="qAction(\'shortlist\',\''+c.appNo+'\')">Shortlist</button>',
+      'Shortlisted':'<button class="btn btn-outline-gold btn-sm" onclick="window.location.href=\'candidates.html\'">Schedule</button>',
+      'Selected':'<button class="btn btn-outline-green btn-sm">Send Offer</button>',
+      'Hold':'<button class="btn btn-outline-gold btn-sm" onclick="qAction(\'reactivate\',\''+c.appNo+'\')">Reactivate</button>',
+      'Rejected':'<button class="btn btn-muted btn-sm">Re-engage</button>',
+      'Onboarding':'<button class="btn btn-outline-green btn-sm">Checklist</button>'};
+    return '<tr><td style="font-size:10px">'+c.appNo+'</td><td><div class="td-name"><div class="av av-'+c.color+'">'+c.initials+'</div><b>'+c.name+'</b></div></td><td>'+c.desig+'</td><td>'+c.source+'</td><td style="white-space:nowrap;font-size:10.5px">'+c.date+'</td><td>'+statusBadge(c.status)+'</td><td>'+daysChip(c.daysIn)+'</td><td>'+(am[c.status]||'—')+'</td></tr>';
+  }).join('');
+  el('recent-page-info').textContent='Showing '+(start+1)+'–'+Math.min(start+PAGE_SIZE,total)+' of '+total;
+  el('prev-btn').disabled=currentPage===1;el('next-btn').disabled=start+PAGE_SIZE>=total;
 }
-
-function uploadPhoto(p) {
-  try {
-    var folder=getFolderById(FOLDER_IDS.photo);
-    var ext=String(p.fileName||'').split('.').pop().toLowerCase();
-    var mime={jpg:'image/jpeg',jpeg:'image/jpeg',png:'image/png'}[ext]||'image/jpeg';
-    var blob=Utilities.newBlob(Utilities.base64Decode(p.base64Data),mime,p.fileName||('photo_'+p.appNo+'.'+ext));
-    var ex=folder.getFilesByName(blob.getName()); if(ex.hasNext()) ex.next().setTrashed(true);
-    var file=folder.createFile(blob);
-    file.setSharing(DriveApp.Access.ANYONE_WITH_LINK,DriveApp.Permission.VIEW);
-    var url='https://drive.google.com/file/d/'+file.getId()+'/view';
-    updateRow('Candidates',COL.Candidates.APP_NO,p.appNo,{[COL.Candidates.PHOTO_URL]:url,[COL.Candidates.UPDATED_AT]:new Date().toISOString()});
-    return {success:true,fileUrl:url};
-  }catch(e){return {success:false,error:e.message};}
+function filterRecent(q){currentPage=1;const lq=q.toLowerCase();filteredC=allCandidates.filter(c=>c.name.toLowerCase().includes(lq)||c.appNo.toLowerCase().includes(lq));renderRecent();}
+function changePage(d){currentPage+=d;renderRecent();}
+async function qAction(action,appNo){
+  const sm={shortlist:'Shortlisted',reactivate:'New'};
+  await API.updateCandidate(appNo,{status:sm[action]});
+  toast(action+' successful','success');loadRecent();
 }
-
-function uploadAadhar(p) {
-  try {
-    var folder=getFolderById(FOLDER_IDS.aadhar);
-    var ext=String(p.fileName||'').split('.').pop().toLowerCase();
-    var mime={pdf:'application/pdf',jpg:'image/jpeg',jpeg:'image/jpeg',png:'image/png'}[ext]||'application/pdf';
-    var blob=Utilities.newBlob(Utilities.base64Decode(p.base64Data),mime,p.fileName||('aadhar_'+p.appNo+'.'+ext));
-    var ex=folder.getFilesByName(blob.getName()); if(ex.hasNext()) ex.next().setTrashed(true);
-    var file=folder.createFile(blob);
-    file.setSharing(DriveApp.Access.ANYONE_WITH_LINK,DriveApp.Permission.VIEW);
-    var url='https://drive.google.com/file/d/'+file.getId()+'/view';
-    updateRow('Candidates',COL.Candidates.APP_NO,p.appNo,{[COL.Candidates.AADHAR_URL]:url,[COL.Candidates.UPDATED_AT]:new Date().toISOString()});
-    return {success:true,fileUrl:url};
-  }catch(e){return {success:false,error:e.message};}
-}
-
-/* ── Scheduling ────────────────────────────────────────────── */
-function saveCallStep(p) {
-  try {
-    var now=new Date().toISOString();
-    var existing=getRows('Interview_Schedule',COL.Interview_Schedule).find(function(r){return String(r.APP_NO)===String(p.appNo);});
-    var statusMap={1:'1st Call Done',2:'2nd Call Done',3:'Interview Scheduled'};
-    var newStatus=statusMap[p.step]||'Scheduled';
-    if(existing){
-      var upd={[COL.Interview_Schedule.STEP]:p.step,[COL.Interview_Schedule.STATUS]:newStatus};
-      if(p.step===1){upd[COL.Interview_Schedule.CALL1_DATE]=new Date(p.date);upd[COL.Interview_Schedule.CALL1_REMARKS]=p.remarks;}
-      if(p.step===2){upd[COL.Interview_Schedule.CALL2_DATE]=new Date(p.date);upd[COL.Interview_Schedule.CALL2_REMARKS]=p.remarks;}
-      if(p.step===3){upd[COL.Interview_Schedule.INTERVIEW_DATE]=new Date(p.date);upd[COL.Interview_Schedule.INTERVIEW_REMARKS]=p.remarks;}
-      updateRow('Interview_Schedule',COL.Interview_Schedule.APP_NO,p.appNo,upd);
-    }else{
-      var row=[p.appNo,p.candidate,p.desig,'','','','','','',p.step,newStatus,now];
-      if(p.step===1){row[3]=new Date(p.date);row[4]=p.remarks;}
-      if(p.step===2){row[5]=new Date(p.date);row[6]=p.remarks;}
-      if(p.step===3){row[7]=new Date(p.date);row[8]=p.remarks;}
-      appendRow('Interview_Schedule',row);
-    }
-    updateRow('Candidates',COL.Candidates.APP_NO,p.appNo,{[COL.Candidates.STATUS]:newStatus,[COL.Candidates.UPDATED_AT]:now});
-    var actionLabels={1:'1st Call Done',2:'2nd Call Done',3:'Interview Scheduled'};
-    logActivity(p.appNo, p.candidate||'', actionLabels[p.step]||newStatus, p.remarks||'', p.doneBy||'HR');
-    return {success:true,newStatus:newStatus};
-  }catch(e){return {success:false,error:e.message};}
-}
-
-function getCallStatus(p) {
-  try {
-    var rows=getRows('Interview_Schedule',COL.Interview_Schedule);
-    var r=rows.find(function(x){return String(x.APP_NO)===String(p.appNo);});
-    if(!r) return {step:0,status:'Not Started',call1Date:'',call1Remarks:'',call2Date:'',call2Remarks:'',interviewDate:'',interviewRemarks:''};
-    return {step:parseInt(r.STEP)||0,status:String(r.STATUS||''),
-      call1Date:formatDate(r.CALL1_DATE),call1Remarks:String(r.CALL1_REMARKS||''),
-      call2Date:formatDate(r.CALL2_DATE),call2Remarks:String(r.CALL2_REMARKS||''),
-      interviewDate:formatDate(r.INTERVIEW_DATE),interviewRemarks:String(r.INTERVIEW_REMARKS||'')};
-  }catch(e){return {step:0,status:'Not Started'};}
-}
-function scheduleInterview(p){return saveCallStep(Object.assign({},p,{step:3}));}
-
-/* ── KPIs ──────────────────────────────────────────────────── */
-function getKPIs() {
-  var total=0,shortlisted=0,selected=0,joined=0,offerAccepted=0,newCandidates=0,avgDays=0,rejected=0,hold=0;
-  try{
-    var rows=getRows('Candidates',COL.Candidates);
-    total=rows.length;
-    shortlisted=rows.filter(function(r){return ['Shortlisted','1st Call Done','2nd Call Done','Interview Scheduled','Interviewed'].includes(r.STATUS);}).length;
-    selected=rows.filter(function(r){return r.STATUS==='Selected'||r.STATUS==='Selected (Probation)';}).length;
-    joined=rows.filter(function(r){return r.STATUS==='Joined';}).length;
-    offerAccepted=rows.filter(function(r){return r.STATUS==='Offer Accepted';}).length;
-    newCandidates=rows.filter(function(r){return r.STATUS==='New';}).length;
-    rejected=rows.filter(function(r){return r.STATUS==='Rejected';}).length;
-    hold=rows.filter(function(r){return r.STATUS==='Hold';}).length;
-    var doneRows=rows.filter(function(r){return r.STATUS==='Joined'&&r.DATE;});
-    if(doneRows.length) avgDays=Math.round(doneRows.reduce(function(s,r){return s+calcDaysIn(r.DATE);},0)/doneRows.length);
-  }catch(e){}
-  var acceptanceRate=0,pendingOffers=0;
-  try{
-    var or=getRows('Selection_Offer',COL.Selection_Offer);
-    var acc=or.filter(function(r){return r.STATUS==='Accepted';}).length;
-    acceptanceRate=or.length?Math.round(acc/or.length*100):0;
-    pendingOffers=or.filter(function(r){return r.STATUS==='Pending Accept'||r.STATUS==='Probation';}).length;
-  }catch(e){}
-  var interviewsToday=0;
-  try{
-    var sc=getRows('Interview_Schedule',COL.Interview_Schedule);
-    var ts=new Date().toDateString();
-    interviewsToday=sc.filter(function(r){return r.INTERVIEW_DATE&&new Date(r.INTERVIEW_DATE).toDateString()===ts;}).length;
-  }catch(e){}
-  return {total:total,shortlisted:shortlisted,selected:selected,joined:joined,
-    offerAccepted:offerAccepted,rejected:rejected,hold:hold,
-    acceptanceRate:acceptanceRate,avgDays:avgDays,onboarding:offerAccepted,
-    interviewsToday:interviewsToday,newCandidates:newCandidates,pendingOffers:pendingOffers};
-}
-
-function getPendingActions() {
-  var items=[];
-  try{
-    var rows=getRows('Candidates',COL.Candidates);
-    var nc=rows.filter(function(r){return r.STATUS==='New';}).length;
-    if(nc>0) items.push({text:nc+' new candidate'+(nc>1?'s':'')+' awaiting review',priority:'info'});
-    rows.filter(function(r){return r.STATUS==='Hold'&&calcDaysIn(r.DATE)>7;}).slice(0,3).forEach(function(r){
-      items.push({text:String(r.NAME)+' on hold '+calcDaysIn(r.DATE)+' days',priority:'warn'});
-    });
-  }catch(e){}
-  try{
-    getRows('Selection_Offer',COL.Selection_Offer).filter(function(r){return r.STATUS==='Pending Accept'||r.STATUS==='Probation';}).slice(0,3).forEach(function(r){
-      items.push({text:String(r.NAME)+' — offer pending',priority:'urgent'});
-    });
-  }catch(e){}
-  return {items:items.slice(0,8)};
-}
-
-function getSourceBreakdown() {
-  try{
-    var rows=getRows('Candidates',COL.Candidates);
-    return {
-      walkin:rows.filter(function(r){return r.SOURCE==='Walk-in';}).length,
-      empref:rows.filter(function(r){return r.SOURCE==='Employee Reference';}).length,
-      online:rows.filter(function(r){return r.SOURCE==='Advertisement';}).length,
-      other:rows.filter(function(r){return r.SOURCE&&!['Walk-in','Employee Reference','Advertisement'].includes(r.SOURCE);}).length
-    };
-  }catch(e){return {walkin:0,empref:0,online:0,other:0};}
-}
-
-function getDesignations() {
-  try{
-    var rows=getRows('Roles_Config',COL.Roles_Config);
-    return {designations:rows.filter(function(r){return String(r.ACTIVE).toUpperCase()==='TRUE';}).map(function(r){return String(r.DESIG||'').trim();}).filter(Boolean)};
-  }catch(e){return {designations:['Sales Executive','Floor Manager','Cashier','Billing Executive','Store Keeper']};}
-}
-
-/* ── Interview ─────────────────────────────────────────────── */
-function getInterviews() {
-  var schedRows=[];
-  try{schedRows=getRows('Interview_Schedule',COL.Interview_Schedule);}catch(e){return{interviews:[]};}
-  var scoreMap={};
-  try{getRows('HR_Status',{APP_NO:1,HR:2,ASSIGNED:3}).forEach(function(r){scoreMap[String(r.APP_NO)]={hrScore:r.HR?safeJSON(r.HR):null,assignedScore:r.ASSIGNED?safeJSON(r.ASSIGNED):null};});}catch(e){}
-  var candMap={};
-  try{getRows('Candidates',COL.Candidates).forEach(function(r){candMap[String(r.APP_NO)]={name:String(r.NAME||''),desig:String(r.DESIG||'')};});}catch(e){}
-  var tokenMap={};
-  try{getRows('Interview_Tokens',COL.Interview_Tokens).forEach(function(r){tokenMap[String(r.APP_NO)]={assignedName:String(r.ASSIGNED_NAME||''),assignedDesig:String(r.ASSIGNED_DESIG||''),tokenStatus:String(r.STATUS||''),token:String(r.TOKEN||''),expiresAt:String(r.EXPIRES_AT||''),suggestedDesig:String(r.SUGGESTED_DESIG||''),suggestionReason:String(r.SUGGESTION_REASON||'')};});}catch(e){}
-  var excludeStatuses = ['Selected','Selected (Probation)','Rejected'];
-  return {interviews:schedRows.filter(function(r){
-    var st = String(r.STATUS||'');
-    if(excludeStatuses.includes(st)) return false;
-    return parseInt(r.STEP)>=3||st==='Interview Scheduled'||st==='Interviewed';
-  }).map(function(r){
-    var appNo=String(r.APP_NO||''),c=candMap[appNo]||{},sc=scoreMap[appNo]||{},tk=tokenMap[appNo]||{};
-    return {appNo:appNo,candidate:String(r.CANDIDATE||c.name||''),initials:getInitials(String(r.CANDIDATE||c.name||'')),color:getAvatarColor(String(r.CANDIDATE||c.name||'')),
-      desig:String(r.DESIG||c.desig||''),call1Date:formatDate(r.CALL1_DATE),call1Remarks:String(r.CALL1_REMARKS||''),
-      call2Date:formatDate(r.CALL2_DATE),call2Remarks:String(r.CALL2_REMARKS||''),
-      interviewDate:formatDate(r.INTERVIEW_DATE),interviewRemarks:String(r.INTERVIEW_REMARKS||''),
-      status:String(r.STATUS||''),hrScore:sc.hrScore,assignedScore:sc.assignedScore,
-      assignedName:tk.assignedName,assignedDesig:tk.assignedDesig,tokenStatus:tk.tokenStatus,
-      suggestedDesig:tk.suggestedDesig||'',suggestionReason:tk.suggestionReason||'',
-      isNewRole:!!(sc.hrScore && !sc.assignedScore)};
-  })};
-}
-
-function getInterviewQuestions(p) {
-  var round=p&&p.round?p.round:'HR', desig=p&&p.desig?p.desig:'';
-  var roundVariants=[round];
-  if(round==='Round 2') roundVariants=['Round 2','FM','ASSIGNED'];
-  try{
-    var rows=getRows('Interview_Questions',COL.Interview_Questions);
-    var filtered=rows.filter(function(r){
-      var rm=!r.ROUND||r.ROUND==='All'||roundVariants.indexOf(r.ROUND)>=0;
-      var dm=!r.DESIG||r.DESIG==='All'||!desig||r.DESIG===desig;
-      return rm&&dm;
-    });
-    var specific=filtered.filter(function(r){return r.DESIG===desig;});
-    if(specific.length) filtered=specific;
-    return {questions:filtered.map(function(r){return {id:String(r.Q_ID),text:String(r.QUESTION),type:String(r.TYPE||'score'),max:parseInt(r.MAX_SCORE)||10,options:r.OPTIONS?String(r.OPTIONS).split(',').map(function(o){return o.trim();}):[],round:String(r.ROUND||'HR')};})};
-  }catch(e){return {questions:[]};}
-}
-
-function saveScore(p) {
-  if(!p.scores||!p.scores.remarks) return {success:false,error:'Remarks are mandatory'};
-  try{
-    var now=new Date().toISOString(), scoreStr=JSON.stringify(p.scores), desig=p.desig||'';
-    var rows=getRows('HR_Status',COL.HR_Status);
-    // Find existing row for same appNo + same designation
-    var existing=rows.find(function(r){return String(r.APP_NO)===String(p.appNo)&&String(r.DESIG||'')=== desig;});
-    if(existing){
-      var updated=updateRow('HR_Status',COL.HR_Status.APP_NO,p.appNo,{[COL.HR_Status.HR]:scoreStr,[COL.HR_Status.UPDATED_AT]:now});
-    } else {
-      // New designation — append new row (keeps history)
-      appendRow('HR_Status',[p.appNo,scoreStr,'',now,desig]);
-    }
-    return {success:true};
-  }catch(e){return {success:false,error:e.message};}
-}
-
-function getScores(p) {
-  try{
-    var row=getRows('HR_Status',{APP_NO:1,HR:2,ASSIGNED:3}).find(function(r){return String(r.APP_NO)===String(p.appNo);});
-    if(!row) return {rounds:{HR:null,ASSIGNED:null}};
-    return {rounds:{HR:row.HR?safeJSON(row.HR):null,ASSIGNED:row.ASSIGNED?safeJSON(row.ASSIGNED):null}};
-  }catch(e){return {rounds:{HR:null,ASSIGNED:null}};}
-}
-
-function generateInterviewToken(p) {
-  try{
-    var token=generateToken(), now=new Date(), expiresAt=new Date(now.getTime()+24*60*60*1000);
-    var nowISO=now.toISOString(), expiresISO=expiresAt.toISOString();
-    // Mark any existing pending tokens for this candidate as replaced
-    try{
-      var sh=getSheet('Interview_Tokens'),data=sh.getDataRange().getValues();
-      for(var i=1;i<data.length;i++){
-        if(String(data[i][0])===String(p.appNo)&&String(data[i][8])==='pending'){
-          sh.getRange(i+1,COL.Interview_Tokens.STATUS).setValue('replaced');
-        }
-      }
-    }catch(e2){}
-    // A=AppNo, B=Candidate, C=Desig, D=Token, E=AssignedName, F=AssignedDesig, G=CreatedAt, H=ExpiresAt, I=Status, J=CompletedAt
-    appendRow('Interview_Tokens',[p.appNo,p.candidate,p.desig,token,p.assignedName,p.assignedDesig,nowISO,expiresISO,'pending','']);
-    var baseUrl='https://bsctextilescandb-ui.github.io/BSC-Candidate-Followup/interview-form.html';
-    return {success:true,token:token,link:baseUrl+'?token='+token,expiresAt:expiresISO};
-  }catch(e){return {success:false,error:e.message};}
-}
-
-function getInterviewByToken(p) {
-  try{
-    var rows=getRows('Interview_Tokens',COL.Interview_Tokens);
-    var r=rows.find(function(x){return String(x.TOKEN)===String(p.token);});
-    if(!r) return {success:false,error:'Invalid or expired link'};
-    if(String(r.STATUS)==='completed') return {success:false,error:'This interview has already been submitted'};
-    if(String(r.STATUS)==='replaced') return {success:false,error:'This link has been replaced with a new one'};
-    // Check 24hr expiry
-    if(r.EXPIRES_AT){
-      var expiry=new Date(r.EXPIRES_AT);
-      if(new Date()>expiry){
-        // Auto-mark as expired
-        try{
-          var sh=getSheet('Interview_Tokens'),data=sh.getDataRange().getValues();
-          for(var i=1;i<data.length;i++){if(String(data[i][3])===String(p.token)){sh.getRange(i+1,COL.Interview_Tokens.STATUS).setValue('expired');break;}}
-        }catch(e3){}
-        return {success:false,error:'This link has expired (valid for 24 hours only)'};
-      }
-    }
-    var qData=getInterviewQuestions({round:'Round 2',desig:String(r.DESIG||'')});
-    if(!qData.questions.length) qData=getInterviewQuestions({round:'FM',desig:String(r.DESIG||'')});
-    if(!qData.questions.length) qData=getInterviewQuestions({round:'Round 2'});
-    var hrScores=null;
-    try{var hrRow=getRows('HR_Status',{APP_NO:1,HR:2}).find(function(x){return String(x.APP_NO)===String(r.APP_NO);});if(hrRow&&hrRow.HR)hrScores=safeJSON(hrRow.HR);}catch(e2){}
-    var candidateQs=null;
-    try{
-      var cRow=getRows('Candidates',COL.Candidates).find(function(x){return String(x.APP_NO)===String(r.APP_NO);});
-      if(cRow) candidateQs={whyJoin:cRow.WHY_JOIN,whyHire:cRow.WHY_HIRE,weekendOk:cRow.WEEKEND_OK,value90Days:cRow.VALUE_90DAYS};
-    }catch(e2){}
-    var hrQData=getInterviewQuestions({round:'HR',desig:String(r.DESIG||'')});
-    return {success:true,token:r.TOKEN,appNo:r.APP_NO,candidate:String(r.CANDIDATE||''),desig:String(r.DESIG||''),
-      assignedName:String(r.ASSIGNED_NAME||''),assignedDesig:String(r.ASSIGNED_DESIG||''),
-      questions:qData.questions,hrQuestions:hrQData.questions,hrScores:hrScores,candidateInfo:candidateQs};
-  }catch(e){return {success:false,error:e.message};}
-}
-
-function submitInterviewScore(p) {
-  if(!p.remarks) return {success:false,error:'Remarks are mandatory'};
-  try{
-    var now=new Date().toISOString(),scoreStr=JSON.stringify({scores:p.scores,total:p.total,maxTotal:p.maxTotal||0,remarks:p.remarks});
-    var sh=getSheet('Interview_Tokens'),data=sh.getDataRange().getValues();
-    var tokenRow=-1;
-    for(var i=1;i<data.length;i++){if(String(data[i][3])===String(p.token)){tokenRow=i+1;break;}}
-    if(tokenRow<0) return {success:false,error:'Token not found'};
-    sh.getRange(tokenRow,COL.Interview_Tokens.STATUS).setValue('completed');
-    sh.getRange(tokenRow,COL.Interview_Tokens.COMPLETED_AT).setValue(now);
-    var appNo=String(data[tokenRow-1][0]);
-    var updated=updateRow('HR_Status',COL.HR_Status.APP_NO,appNo,{[COL.HR_Status.ASSIGNED]:scoreStr,[COL.HR_Status.UPDATED_AT]:now});
-    if(!updated) appendRow('HR_Status',[appNo,'',scoreStr,now]);
-    logActivity(appNo, p.candidate||'', 'Round 2 Score Submitted', 'By: '+(p.assignedName||'Assigned'), p.assignedName||'Assigned');
-    // Save suggestion if provided (only on FAIL)
-    if(p.suggestedDesig){
-      try{
-        var sh2=getSheet('Interview_Tokens'),data2=sh2.getDataRange().getValues();
-        for(var j=1;j<data2.length;j++){
-          if(String(data2[j][3])===String(p.token)){
-            sh2.getRange(j+1,COL.Interview_Tokens.SUGGESTED_DESIG).setValue(p.suggestedDesig||'');
-            sh2.getRange(j+1,COL.Interview_Tokens.SUGGESTION_REASON).setValue(p.suggestionReason||'');
-            break;
-          }
-        }
-        logActivity(appNo, p.candidate||'', 'Alternative Designation Suggested', p.suggestedDesig+': '+p.suggestionReason, p.assignedName||'Assigned');
-      }catch(e3){}
-    }
-    updateRow('Candidates',COL.Candidates.APP_NO,appNo,{[COL.Candidates.STATUS]:'Interviewed',[COL.Candidates.UPDATED_AT]:now});
-    // Also update Interview_Schedule status so panel shows correctly
-    try{updateRow('Interview_Schedule',COL.Interview_Schedule.APP_NO,appNo,{[COL.Interview_Schedule.STATUS]:'Interviewed'});}catch(e3){}
-    return {success:true};
-  }catch(e){return {success:false,error:e.message};}
-}
-
-/* ── Assign New Designation (Round 3) ───────────────────────── */
-function assignNewDesignation(p) {
-  try{
-    var now=new Date().toISOString();
-    // Update candidate designation + status back to Interview Scheduled
-    updateRow('Candidates',COL.Candidates.APP_NO,p.appNo,{
-      [COL.Candidates.DESIG]:p.newDesig,
-      [COL.Candidates.STATUS]:'Interview Scheduled',
-      [COL.Candidates.UPDATED_AT]:now
-    });
-    // Update Interview_Schedule - new desig, reset status, keep interview date
-    updateRow('Interview_Schedule',COL.Interview_Schedule.APP_NO,p.appNo,{
-      [COL.Interview_Schedule.DESIG]:p.newDesig,
-      [COL.Interview_Schedule.STATUS]:'Interview Scheduled'
-    });
-    // Clear Round 2 score from HR_Status (keep HR score)
-    try{
-      var hrSh=getSheet('HR_Status');
-      var hrData=hrSh.getDataRange().getValues();
-      for(var i=1;i<hrData.length;i++){
-        if(String(hrData[i][0])===String(p.appNo)){
-          hrSh.getRange(i+1,3).setValue(''); // col C = ASSIGNED
-          hrSh.getRange(i+1,4).setValue(now); // col D = UPDATED_AT
-          Logger.log('Cleared R2 score for '+p.appNo+' at row '+(i+1));
-          break;
-        }
-      }
-    }catch(e2){Logger.log('Clear R2 error: '+e2.message);}
-    // Mark old token as replaced
-    try{
-      var tokSh=getSheet('Interview_Tokens'),tokData=tokSh.getDataRange().getValues();
-      for(var j=1;j<tokData.length;j++){
-        if(String(tokData[j][0])===String(p.appNo)&&String(tokData[j][8])==='completed'){
-          tokSh.getRange(j+1,COL.Interview_Tokens.STATUS).setValue('replaced');
-          break;
-        }
-      }
-    }catch(e3){}
-    logActivity(p.appNo, p.candidate||'', 'New Role Assigned', 'New Designation: '+p.newDesig+'. Remarks: '+p.remarks, p.doneBy||'HR');
-    return {success:true};
-  }catch(e){return {success:false,error:e.message};}
-}
-
-/* ── Approve / Reject ──────────────────────────────────────── */
-function approveSelection(p) {
-  try{
-    var now=new Date().toISOString();
-    if(!p.remarks) return {success:false,error:'Remarks are mandatory'};
-    var status = p.probation ? 'Selected (Probation)' : 'Selected';
-    updateRow('Candidates',COL.Candidates.APP_NO,p.appNo,{[COL.Candidates.STATUS]:status,[COL.Candidates.UPDATED_AT]:now});
-    // Remove from Interview Panel
-    try{updateRow('Interview_Schedule',COL.Interview_Schedule.APP_NO,p.appNo,{[COL.Interview_Schedule.STATUS]:status});}catch(e2){}
-    logActivity(p.appNo, p.candidate||'', status, p.remarks+(p.probation?' [Probation Monitoring]':''), p.doneBy||'HR');
-    autoMoveSelected(p.appNo,p.remarks);
-    var offerStatus = p.probation ? 'Probation' : 'Pending Accept';
-    var ex=getRows('Selection_Offer',COL.Selection_Offer).find(function(r){return String(r.APP_NO)===String(p.appNo);});
-    if(!ex) appendRow('Selection_Offer',[p.appNo,p.candidate,p.desig,'','','','','','',offerStatus,now,now]);
-    return {success:true};
-  }catch(e){return {success:false,error:e.message};}
-}
-
-function rejectCandidate(p) {
-  if(!p.remarks) return {success:false,error:'Remarks are mandatory'};
-  try{
-    var now=new Date().toISOString();
-    var candName='';
-    try{ var rows=getRows('Candidates',COL.Candidates); var c=rows.find(function(r){return String(r.APP_NO)===String(p.appNo);}); if(c) candName=String(c.NAME||''); }catch(e2){}
-    updateRow('Candidates',COL.Candidates.APP_NO,p.appNo,{[COL.Candidates.STATUS]:'Rejected',[COL.Candidates.REMARKS]:p.remarks,[COL.Candidates.UPDATED_AT]:now});
-    // Remove from Interview Panel
-    try{updateRow('Interview_Schedule',COL.Interview_Schedule.APP_NO,p.appNo,{[COL.Interview_Schedule.STATUS]:'Rejected'});}catch(e2){}
-    logActivity(p.appNo, candName, 'Rejected', p.remarks, p.doneBy||'HR');
-    autoMoveRejected(p.appNo,p.remarks);
-    return {success:true};
-  }catch(e){return {success:false,error:e.message};}
-}
-
-function autoMoveSelected(appNo,remarks) {
-  try{
-    var rows=getRows('Candidates',COL.Candidates);
-    var c=rows.find(function(r){return String(r.APP_NO)===String(appNo);});
-    if(!c) return;
-    var hrRow=null;
-    try{hrRow=getRows('HR_Status',{APP_NO:1,HR:2,ASSIGNED:3}).find(function(r){return String(r.APP_NO)===String(appNo);});}catch(e2){}
-    var hrTotal=hrRow&&hrRow.HR?safeJSON(hrRow.HR):{};
-    var asTotal=hrRow&&hrRow.ASSIGNED?safeJSON(hrRow.ASSIGNED):{};
-    var hr=(hrTotal&&hrTotal.total)||0,as=(asTotal&&asTotal.total)||0;
-    try{var sh=getSheet('Selected_Candidates'),data=sh.getDataRange().getValues();for(var i=1;i<data.length;i++){if(String(data[i][0])===String(appNo)){sh.deleteRow(i+1);break;}}}catch(e2){}
-    appendRow('Selected_Candidates',[appNo,c.NAME,c.PHONE,c.DESIG,c.SOURCE,hr,as,hr+as,new Date(),'Manager',remarks]);
-  }catch(e){Logger.log('autoMoveSelected: '+e.message);}
-}
-
-function autoMoveRejected(appNo,remarks) {
-  try{
-    var rows=getRows('Candidates',COL.Candidates);
-    var c=rows.find(function(r){return String(r.APP_NO)===String(appNo);});
-    if(!c) return;
-    var stage='Pre Interview';
-    try{var ivRow=getRows('HR_Status',{APP_NO:1,HR:2}).find(function(r){return String(r.APP_NO)===String(appNo);});if(ivRow&&ivRow.HR)stage='Post Interview';}catch(e2){}
-    try{var sh=getSheet('Rejected_Candidates'),data=sh.getDataRange().getValues();for(var i=1;i<data.length;i++){if(String(data[i][0])===String(appNo)){sh.deleteRow(i+1);break;}}}catch(e2){}
-    appendRow('Rejected_Candidates',[appNo,c.NAME,c.PHONE,c.DESIG,c.SOURCE,stage,new Date(),'HR',remarks]);
-  }catch(e){Logger.log('autoMoveRejected: '+e.message);}
-}
-
-function getSelectedCandidates() {
-  try{
-    var rows=getRows('Selected_Candidates',COL.Selected_Candidates);
-    return {candidates:rows.map(function(r){return {appNo:String(r.APP_NO||''),name:String(r.NAME||''),phone:String(r.PHONE||''),desig:String(r.DESIG||''),source:String(r.SOURCE||''),hrScore:parseInt(r.HR_SCORE)||0,assignedScore:parseInt(r.ASSIGNED_SCORE)||0,totalScore:parseInt(r.TOTAL_SCORE)||0,decisionDate:formatDate(r.DECISION_DATE),remarks:String(r.REMARKS||'')};})};
-  }catch(e){return {candidates:[]};}
-}
-
-function getRejectedCandidates() {
-  try{
-    var rows=getRows('Rejected_Candidates',COL.Rejected_Candidates);
-    return {candidates:rows.map(function(r){return {appNo:String(r.APP_NO||''),name:String(r.NAME||''),phone:String(r.PHONE||''),desig:String(r.DESIG||''),source:String(r.SOURCE||''),stage:String(r.STAGE||''),rejectionDate:formatDate(r.REJECTION_DATE),remarks:String(r.REMARKS||'')};})};
-  }catch(e){return {candidates:[]};}
-}
-
-/* ── Offer Process ─────────────────────────────────────────── */
-function markJoined(p) {
-  if(!p.joiningDate) return {success:false,error:'Joining date is required'};
-  try{
-    var now=new Date().toISOString(),doj=new Date(p.joiningDate);
-    updateRow('Selection_Offer',COL.Selection_Offer.APP_NO,p.appNo,{[COL.Selection_Offer.STATUS]:'Joined',[COL.Selection_Offer.EST_DOJ]:doj,[COL.Selection_Offer.UPDATED_AT]:now});
-    updateRow('Candidates',COL.Candidates.APP_NO,p.appNo,{[COL.Candidates.STATUS]:'Joined',[COL.Candidates.UPDATED_AT]:now});
-    try{updateRow('Selected_Candidates',COL.Selected_Candidates.APP_NO,p.appNo,{[COL.Selected_Candidates.DECISION_DATE]:doj});}catch(e2){}
-    logActivity(p.appNo, p.candidate||'', 'Joined', 'DOJ: '+new Date(p.joiningDate).toLocaleDateString('en-IN'), p.doneBy||'HR');
-    return {success:true};
-  }catch(e){return {success:false,error:e.message};}
-}
-
-function getActivityFull(p) {
-  var appNo = String(p.appNo);
-  var activity = [];
-  try {
-    // Read from Activity_Log sheet
-    var logRows = getRows('Activity_Log', COL.Activity_Log);
-    var candLogs = logRows.filter(function(r){ return String(r.APP_NO)===appNo; });
-
-    var iconMap = {
-      'Applied':              {icon:'📋', color:'navy'},
-      'Shortlisted':          {icon:'✅', color:'green'},
-      'Hold':                 {icon:'⏸️', color:'gold'},
-      'Reactivated':          {icon:'🔄', color:'navy'},
-      'New':                  {icon:'🔄', color:'navy'},
-      'Rejected':             {icon:'❌', color:'red'},
-      'Re-engaged':           {icon:'🔄', color:'navy'},
-      '1st Call Done':        {icon:'📞', color:'gold'},
-      '2nd Call Done':        {icon:'📞', color:'gold'},
-      'Interview Scheduled':  {icon:'📅', color:'navy'},
-      'Selected':             {icon:'🏆', color:'green'},
-      'Offer Accepted':       {icon:'🤝', color:'teal'},
-      'Joined':               {icon:'🎉', color:'green'}
-    };
-
-    candLogs.forEach(function(r) {
-      var action = String(r.ACTION||'');
-      var ic = iconMap[action] || {icon:'📌', color:'navy'};
-      activity.push({
-        type:    action.toLowerCase().replace(/\s/g,'_'),
-        icon:    ic.icon,
-        label:   action,
-        date:    r.TIMESTAMP ? formatDate(r.TIMESTAMP) : '—',
-        remarks: String(r.REMARKS||''),
-        by:      String(r.DONE_BY||''),
-        color:   ic.color
-      });
-    });
-
-    // Also add interview scores from HR_Status (not in activity log)
-    var hrRows = getRows('HR_Status', COL.HR_Status);
-    var hr = hrRows.find(function(r){ return String(r.APP_NO)===appNo; });
-    if(hr&&hr.HR){
-      try{
-        var hd=JSON.parse(hr.HR);
-        activity.push({type:'hr_score',icon:'🎯',label:'HR Round 1 Assessment',
-          score:hd.total||0,maxScore:60,remarks:String(hd.remarks||''),
-          date:formatDate(hr.UPDATED_AT),color:'navy'});
-      }catch(e2){}
-    }
-    var tokRows = getRows('Interview_Tokens', COL.Interview_Tokens);
-    var tok = tokRows.find(function(r){ return String(r.APP_NO)===appNo; });
-    if(tok && hr && hr.ASSIGNED){
-      try{
-        var r2=JSON.parse(hr.ASSIGNED);
-        var assignedBy=String(tok.ASSIGNED_NAME||'')+(tok.ASSIGNED_DESIG?' ('+tok.ASSIGNED_DESIG+')':'');
-        activity.push({type:'r2_score',icon:'🤝',label:'Round 2 Assessment',
-          score:r2.total||0,maxScore:60,remarks:String(r2.remarks||''),
-          assignedBy:assignedBy,date:formatDate(tok.COMPLETED_AT),color:'teal'});
-      }catch(e3){}
-    }
-
-    // Sort by timestamp ascending
-    activity.sort(function(a,b){
-      var da = a.date&&a.date!=='—'?new Date(a.date).getTime():0;
-      var db = b.date&&b.date!=='—'?new Date(b.date).getTime():0;
-      return da-db;
-    });
-
-  } catch(e) { return {success:false, error:e.message}; }
-  return {success:true, activity:activity};
-}
-
-function getOffers() {
-  try{
-    var rows=getRows('Selection_Offer',COL.Selection_Offer);
-    Logger.log('Selection_Offer rows: '+rows.length);
-    if(rows.length>0) Logger.log('First row: '+JSON.stringify(rows[0]));
-    return {offers:rows.map(function(r){
-      try{
-        return {
-          appNo:String(r.APP_NO||''),
-          name:String(r.NAME||''),
-          initials:getInitials(String(r.NAME||'')),
-          color:getAvatarColor(String(r.NAME||'')),
-          desig:String(r.DESIG||''),
-          noticePd:String(r.NOTICE_PD||''),
-          estDoj:r.EST_DOJ?formatDate(r.EST_DOJ):'',
-          call1:formatDate(r.CALL1_DATE),
-          status:String(r.STATUS||''),
-          probation:String(r.STATUS||'')==='Probation'
-        };
-      }catch(e2){Logger.log('Row map error: '+e2.message+' row: '+JSON.stringify(r)); return null;}
-    }).filter(function(r){return r!==null;})};
-  }catch(e){Logger.log('getOffers error: '+e.message+' stack: '+e.stack); return {offers:[],total:0};}
-}
-
-function logOfferCall(p) {
-  try{
-    var upd={};
-    upd[COL.Selection_Offer.CALL1_DATE]=p.date?new Date(p.date):new Date();
-    if(p.remarks) upd[COL.Selection_Offer.CALL1_REMARKS]=p.remarks;
-    upd[COL.Selection_Offer.STATUS]='In Progress';
-    upd[COL.Selection_Offer.UPDATED_AT]=new Date().toISOString();
-    updateRow('Selection_Offer',COL.Selection_Offer.APP_NO,p.appNo,upd);
-    updateRow('Candidates',COL.Candidates.APP_NO,p.appNo,{[COL.Candidates.STATUS]:'Offer Sent',[COL.Candidates.UPDATED_AT]:new Date().toISOString()});
-    logActivity(p.appNo, p.candidate||'', 'Offer Call Done', p.remarks||'', p.doneBy||'HR');
-    return {success:true};
-  }catch(e){return {success:false,error:e.message};}
-}
-
-function updateOfferDetails(p) {
-  if(!p.noticePd&&!p.estDoj) return {success:false,error:'Enter at least one field'};
-  try{
-    var upd={};
-    if(p.noticePd) upd[COL.Selection_Offer.NOTICE_PD]=p.noticePd;
-    if(p.estDoj)   upd[COL.Selection_Offer.EST_DOJ]=new Date(p.estDoj);
-    upd[COL.Selection_Offer.UPDATED_AT]=new Date().toISOString();
-    updateRow('Selection_Offer',COL.Selection_Offer.APP_NO,p.appNo,upd);
-    return {success:true};
-  }catch(e){return {success:false,error:e.message};}
-}
-
-function rejectOffer(p) {
-  if(!p.remarks) return {success:false,error:'Remarks are mandatory'};
-  try{
-    var now=new Date().toISOString();
-    updateRow('Selection_Offer',COL.Selection_Offer.APP_NO,p.appNo,{[COL.Selection_Offer.STATUS]:'Offer Rejected',[COL.Selection_Offer.UPDATED_AT]:now});
-    updateRow('Candidates',COL.Candidates.APP_NO,p.appNo,{[COL.Candidates.STATUS]:'Offer Rejected',[COL.Candidates.UPDATED_AT]:now});
-    logActivity(p.appNo, p.candidate||'', 'Offer Declined by Candidate', p.remarks, p.doneBy||'HR');
-    return {success:true};
-  }catch(e){return {success:false,error:e.message};}
-}
-
-function acceptOffer(p) {
-  if(!p.remarks) return {success:false,error:'Remarks are mandatory'};
-  try{
-    var now=new Date().toISOString();
-    updateRow('Selection_Offer',COL.Selection_Offer.APP_NO,p.appNo,{[COL.Selection_Offer.STATUS]:'Accepted',[COL.Selection_Offer.UPDATED_AT]:now});
-    updateRow('Candidates',COL.Candidates.APP_NO,p.appNo,{[COL.Candidates.STATUS]:'Offer Accepted',[COL.Candidates.UPDATED_AT]:now});
-    return {success:true};
-  }catch(e){return {success:false,error:e.message};}
-}
-
-function updateOfferStatus(p) {
-  updateRow('Selection_Offer',COL.Selection_Offer.APP_NO,p.appNo,{[COL.Selection_Offer.STATUS]:p.status,[COL.Selection_Offer.UPDATED_AT]:new Date().toISOString()});
-  return {success:true};
-}
-
-/* ── Settings ──────────────────────────────────────────────── */
-function getUsers() {
-  try{var rows=getRows('Users',COL.Users);return {users:rows.map(function(r){return {username:String(r.USERNAME||''),role:String(r.ROLE||''),active:String(r.ACTIVE).toUpperCase()==='TRUE',fullName:String(r.FULLNAME||'')};})};} catch(e){return {users:[]};}
-}
-function addUser(p) {
-  try{appendRow('Users',[p.username,p.password,p.role,'TRUE',p.fullName||p.role,new Date().toISOString()]);return {success:true};}catch(e){return {success:false,error:e.message};}
-}
-function updateUser(p) {
-  try{var upd={[COL.Users.ACTIVE]:p.active?'TRUE':'FALSE'};if(p.role)upd[COL.Users.ROLE]=p.role;if(p.password)upd[COL.Users.PASSWORD]=p.password;updateRow('Users',COL.Users.USERNAME,p.username,upd);return {success:true};}catch(e){return {success:false,error:e.message};}
-}
-function getPageSettings() {
-  try{var val=PropertiesService.getScriptProperties().getProperty('PAGE_SETTINGS');return val?JSON.parse(val):{};}catch(e){return {};}
-}
-function savePageSettings(p) {
-  try{PropertiesService.getScriptProperties().setProperty('PAGE_SETTINGS',JSON.stringify(p.settings));return {success:true};}catch(e){return {success:false,error:e.message};}
-}
-
-/* ── Test Upload (run manually in Apps Script to verify) ── */
-function testUpload() {
-  // Creates a tiny test file in each folder to verify access
-  try {
-    var r = getFolderById(FOLDER_IDS.resume);
-    var p = getFolderById(FOLDER_IDS.photo);
-    var a = getFolderById(FOLDER_IDS.aadhar);
-    var blob = Utilities.newBlob('test', 'text/plain', 'test.txt');
-    r.createFile(blob); p.createFile(blob); a.createFile(blob);
-    Logger.log('All 3 folders accessible! Resume: ' + r.getName() + ', Photo: ' + p.getName() + ', Aadhar: ' + a.getName());
-    return 'OK';
-  } catch(e) {
-    Logger.log('ERROR: ' + e.message);
-    return e.message;
-  }
-}
+// Date filter buttons
+document.querySelectorAll('.df-btn').forEach(btn=>{
+  btn.addEventListener('click',()=>{
+    document.querySelectorAll('.df-btn').forEach(b=>b.classList.remove('active'));
+    btn.classList.add('active');
+    activeRange = btn.dataset.range;
+    // Clear custom date inputs
+    if(el('df-from')) el('df-from').value='';
+    if(el('df-to'))   el('df-to').value='';
+    // Update label
+    const labels={today:'Today',week:'This Week',month:'This Month',last_month:'Last Month'};
+    el('df-label').textContent='Showing: '+new Date().toLocaleDateString('en-IN',{day:'2-digit',month:'long',year:'numeric'});
+    applyDateFilter();
+  });
+});
+el('df-label').textContent='Showing: '+new Date().toLocaleDateString('en-IN',{day:'2-digit',month:'long',year:'numeric'});
+</script>
+</body>
+</html>
