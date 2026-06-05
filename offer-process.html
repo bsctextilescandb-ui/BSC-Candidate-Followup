@@ -396,8 +396,8 @@ async function confirmLogCall(){
   const date   = el('lc-date').value;
   const btn    = el('lc-confirm-btn'); btn.disabled=true; btn.textContent='Saving...';
   try{
-    const o = allOffers.find(x=>x.appNo===appNo);
-    await API.logOfferCall({appNo, callNo:1, date, remarks, candidate:o?o.name:'', doneBy:session?session.username:'HR'});
+    const offerRec = allOffers.find(x=>x.appNo===appNo);
+    await API.logOfferCall({appNo, callNo:1, date, remarks, candidate:offerRec?offerRec.name:'', doneBy:session?session.username:'HR'});
     closeLcModal();
     const d=await API.getOffers(); allOffers=d.offers||[]; buildKPIs(); applyFilter();
     // Re-open panel
@@ -456,8 +456,8 @@ async function confirmAccept(){
   const appNo=el('accept-modal').dataset.appno;
   const btn=el('accept-confirm-btn'); btn.disabled=true; btn.textContent='Saving...';
   try{
-    const cand = allOffers.find(x=>x.appNo===appNo);
-    await API.acceptOffer({appNo, remarks, candidate:cand?cand.name:'', doneBy:session?session.username:'HR'});
+    const candRec = allOffers.find(x=>x.appNo===appNo);
+    await API.acceptOffer({appNo, remarks, candidate:candRec?candRec.name:'', doneBy:session?session.username:'HR'});
     closeAcceptModal(); closePanel();
     const d=await API.getOffers(); allOffers=d.offers||[]; buildKPIs(); applyFilter();
     toast('Offer accepted \u2014 moved to Joining Tracker!','success');
@@ -563,8 +563,8 @@ async function confirmRejectOffer(){
   const appNo=el('rej-offer-modal').dataset.appno;
   const btn=el('rej-offer-confirm-btn'); btn.disabled=true; btn.textContent='Saving...';
   try{
-    const cand2 = allOffers.find(x=>x.appNo===appNo);
-    await API.call('rejectOffer',{appNo:appNo, remarks:remarks, candidate:cand2?cand2.name:'', doneBy:session?session.username:'HR'});
+    const candRej = allOffers.find(x=>x.appNo===appNo);
+    await API.call('rejectOffer',{appNo:appNo, remarks:remarks, candidate:candRej?candRej.name:'', doneBy:session?session.username:'HR'});
     closeRejOfferModal(); closePanel();
     const d=await API.getOffers(); allOffers=d.offers||[]; buildKPIs(); applyFilter();
     toast('Offer marked as rejected','warn');
