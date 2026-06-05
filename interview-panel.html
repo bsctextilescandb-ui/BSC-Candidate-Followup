@@ -379,19 +379,22 @@ function actionBtn(iv, idx) {
     var maxR22 = iv.assignedScore.maxTotal||65;
     var g = (iv.hrScore.total||0)+(iv.assignedScore.total||0);
     var pass = isPassing(g, maxHR2+maxR22);
-    // HR sees New Role button if suggestion exists
-    if(iv.suggestedDesig && (r==='HR'||r==='Admin')) {
+    if(pass) {
+      // PASS — Select or Reject
       return '<div style="display:flex;gap:4px;flex-wrap:wrap">'+
-        '<button class="ib-view" data-idx="'+idx+'" onclick="clickViewAll(this)">View Scores</button>'+
-        '<button class="ib-score" style="background:var(--gold);font-size:10px" data-idx="'+idx+'" onclick="clickAssignNewRole(this)">&#x1F504; New Role</button>'+
+        '<button class="ib-score" style="background:var(--green);font-size:10px" data-idx="'+idx+'" onclick="clickApprove(this)">&#x2713; Select</button>'+
+        '<button class="ib-view" data-idx="'+idx+'" onclick="clickViewAll(this)">Scores</button>'+
+        '<button class="ib-score" style="background:var(--red);font-size:10px;padding:5px 8px" data-idx="'+idx+'" onclick="clickRejectIV(this)">Reject</button>'+
+      '</div>';
+    } else {
+      // FAIL — Select(Probation), Reject, or New Role
+      return '<div style="display:flex;gap:4px;flex-wrap:wrap">'+
+        '<button class="ib-score" style="background:var(--gold);font-size:10px" data-idx="'+idx+'" onclick="clickApprove(this)">&#x2713; Probation</button>'+
+        '<button class="ib-view" data-idx="'+idx+'" onclick="clickViewAll(this)">Scores</button>'+
+        '<button class="ib-score" style="background:var(--red);font-size:10px;padding:5px 8px" data-idx="'+idx+'" onclick="clickRejectIV(this)">Reject</button>'+
+        '<button class="ib-score" style="background:#7c4dbd;font-size:10px;padding:5px 8px" data-idx="'+idx+'" onclick="clickAssignNewRole(this)">&#x1F504; New Role</button>'+
       '</div>';
     }
-    // HR, Manager, Admin can all approve/reject
-    return '<div style="display:flex;gap:4px;flex-wrap:wrap">'+
-      '<button class="ib-score" style="background:var(--green);font-size:10px" data-idx="'+idx+'" onclick="clickApprove(this)">&#x2713; Select</button>'+
-      '<button class="ib-view" data-idx="'+idx+'" onclick="clickViewAll(this)">Scores</button>'+
-      '<button class="ib-score" style="background:var(--red);font-size:10px;padding:5px 8px" data-idx="'+idx+'" onclick="clickRejectIV(this)">Reject</button>'+
-    '</div>';
   }
 
   // HR round
