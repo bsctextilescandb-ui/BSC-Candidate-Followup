@@ -19,9 +19,9 @@ const CONFIG = {
   },
   // All roles see dashboard. Manager = view only on candidates
   ROLE_NAV: {
-    'HR':      ['dashboard','candidates','interview','offer','form'],
+    'HR':      ['dashboard','candidates','interview','offer','onboarding','exit','form'],
     'Manager': ['dashboard','candidates','interview'],
-    'Admin':   ['dashboard','candidates','interview','offer','form','settings'],
+    'Admin':   ['dashboard','candidates','interview','offer','onboarding','exit','form','settings'],
   },
   ROLE_LABELS: {
     'HR':      'HR',
@@ -280,6 +280,34 @@ function startClock() {
   }
   tick(); setInterval(tick, 1000);
 }
+
+/* ═══ HR OPS API ═══ */
+const HROPS_API = {
+  async call(action, params={}) {
+    if(!CONFIG.HR_OPS_URL) return {success:false, error:'HR_OPS_URL not set'};
+    try {
+      const res = await fetch(CONFIG.HR_OPS_URL, {
+        method:'POST',
+        body: JSON.stringify({action, ...params})
+      });
+      return res.json();
+    } catch(e) {
+      console.error('HROPS_API error:', e);
+      return {success:false, error:e.message};
+    }
+  },
+  async getOnboardingList()           { return this.call('getOnboardingList'); },
+  async createOnboarding(p)           { return this.call('createOnboarding', p); },
+  async getOnboardingItems(p)         { return this.call('getOnboardingItems', p); },
+  async updateOnboardingItem(p)       { return this.call('updateOnboardingItem', p); },
+  async completeOnboarding(p)         { return this.call('completeOnboarding', p); },
+  async getExitList()                 { return this.call('getExitList'); },
+  async createExit(p)                 { return this.call('createExit', p); },
+  async getExitItems(p)               { return this.call('getExitItems', p); },
+  async updateExitItem(p)             { return this.call('updateExitItem', p); },
+  async completeExit(p)               { return this.call('completeExit', p); },
+  async getHROpsKPIs()                { return this.call('getHROpsKPIs'); }
+};
 
 /* ═══ NAV ═══ */
 function highlightNav(page) {
