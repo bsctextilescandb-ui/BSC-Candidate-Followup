@@ -77,7 +77,7 @@
             <div><label style="font-size:9px;font-weight:700;color:#888;display:block;margin-bottom:4px">PASSWORD</label>
               <input type="text" id="new-pwd" placeholder="Initial password"></div>
             <div><label style="font-size:9px;font-weight:700;color:#888;display:block;margin-bottom:4px">ROLE</label>
-              <select id="new-role"><option value="">Select role</option><option>HR</option><option>Manager</option><option>Admin</option><option>Owner</option></select></div>
+              <select id="new-role"><option value="">Select role</option><option>HR</option><option>Manager</option><option>Admin</option></select></div>
             <button class="btn btn-primary" onclick="addUser()" style="margin-top:0">Add User</button>
           </div>
         </div>
@@ -97,7 +97,7 @@
           <div class="card-sub">Toggle which pages each role can access. Changes save immediately.</div>
           <div style="overflow-x:auto;margin-top:14px">
             <table class="pg-grid">
-              <thead><tr><th>Page</th><th>HR</th><th>Store Manager</th><th>Admin</th><th>Owner</th></tr></thead>
+              <thead><tr><th>Page</th><th>HR</th><th>Store Manager</th><th>Admin</th></tr></thead>
               <tbody id="page-settings-grid"></tbody>
             </table>
           </div>
@@ -242,7 +242,7 @@ const ALL_PAGES=[
   {key:'offer',label:'Offer Process'},
   {key:'settings',label:'Settings'}
 ];
-const ALL_ROLES=['HR','Manager','Admin','Owner'];
+const ALL_ROLES=['HR','Manager','Admin'];
 let pageSettings={};
 
 async function loadPageSettings(){
