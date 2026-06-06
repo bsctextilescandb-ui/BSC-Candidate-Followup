@@ -2,7 +2,7 @@
 <html lang="en">
 <head>
 <meta charset="UTF-8"><meta name="viewport" content="width=device-width,initial-scale=1">
-<title>BSC Candidate CRM — Login</title>
+<title>BSC Candidate — Login</title>
 <link rel="icon" type="image/jpeg" href="https://bsctextilescandb-ui.github.io/retail-crm/logo.jpg">
 <style>
 *{box-sizing:border-box;margin:0;padding:0}
@@ -73,7 +73,7 @@ body{font-family:'Segoe UI',system-ui,sans-serif;background:#EDE8DE;min-height:1
 'use strict';
 const SK='bsc_crm_session';
 const SU='https://script.google.com/macros/s/AKfycbwolTclzyP2skiQi4ndcPs4y4z0s0gRglN0fUK3jmBq-w8RAxBUltcw47QqyjGGRF-3/exec';
-const RH={'HR':'dashboard.html','Floor Manager':'interview-panel.html','Manager':'interview-panel.html','Admin':'dashboard.html'};
+const RH={'HR':'dashboard.html','Manager':'dashboard.html','Admin':'dashboard.html'};
 sessionStorage.removeItem('_bsc_redir');
 try{const s=JSON.parse(localStorage.getItem(SK));if(s&&s.role)window.location.replace(RH[s.role]||'dashboard.html');}catch(e){localStorage.removeItem(SK);}
 function el(id){return document.getElementById(id);}
