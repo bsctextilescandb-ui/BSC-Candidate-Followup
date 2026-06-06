@@ -21,13 +21,12 @@ const CONFIG = {
   ROLE_NAV: {
     'HR':      ['dashboard','candidates','interview','offer','form'],
     'Manager': ['dashboard','candidates','interview'],
-    'Admin':   ['dashboard','candidates','interview','offer','form','settings']
+    'Admin':   ['dashboard','candidates','interview','offer','form','settings'],
   },
   ROLE_LABELS: {
     'HR':      'HR',
     'Manager': 'Store Manager',
-    'Admin':   'Admin',
-    'Owner':   'Owner'
+    'Admin':   'Admin'
   }
 };
 
