@@ -6,6 +6,7 @@
 
 const CONFIG = {
   SCRIPT_URL: 'https://script.google.com/macros/s/AKfycbwolTclzyP2skiQi4ndcPs4y4z0s0gRglN0fUK3jmBq-w8RAxBUltcw47QqyjGGRF-3/exec',
+  HR_OPS_URL:  'https://script.google.com/macros/s/AKfycbxr54Thsyn5j4aAqSiLGo4HyyMA4mBps5IXsx5bVEG8DEJLcNFh5ahG0ZswGefS8hMx/exec',
   SESSION_KEY:  'bsc_crm_session',
   SESSION_TTL:  24 * 60 * 60 * 1000, // 1 day in ms
   SALARY_MIN:   8000,
