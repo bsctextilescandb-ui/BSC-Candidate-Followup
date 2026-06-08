@@ -234,7 +234,7 @@ const userRole = session ? session.role : 'HR';
 
 let allRecords=[], filtered=[], activeFilter='all';
 let currentRecord=null, currentItems=[], pendingChanges={};
-const AV_COLORS=['navy','gold','green','red','purple','teal'];
+// AV_COLORS loaded from shared.js
 
 // ── HROPS API ─────────────────────────────────────────────────
 async function hrCall(action, params={}) {
