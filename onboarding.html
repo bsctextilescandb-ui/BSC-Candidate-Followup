@@ -13,7 +13,7 @@
 .ob-tab.active{background:var(--navy);color:#fff;border-color:var(--navy)}
 
 /* Checklist drawer */
-.ob-drawer{position:fixed;top:0;right:-540px;width:540px;height:100vh;background:#fff;z-index:201;box-shadow:-4px 0 24px rgba(0,0,0,.12);transition:right .25s;display:flex;flex-direction:column}
+.ob-drawer{position:fixed;top:0;right:-540px;width:540px;height:100vh;background:#fff;z-index:600;box-shadow:-4px 0 24px rgba(0,0,0,.12);transition:right .25s;display:flex;flex-direction:column}
 .ob-drawer.open{right:0}
 .ob-drawer-head{background:var(--navy);padding:14px 18px;display:flex;align-items:center;gap:12px;flex-shrink:0}
 .ob-drawer-av{width:40px;height:40px;border-radius:50%;background:var(--gold);display:flex;align-items:center;justify-content:center;font-size:15px;font-weight:800;color:#fff;flex-shrink:0}
@@ -157,7 +157,7 @@
 </div>
 
 <!-- Drawer overlay -->
-<div class="drawer-overlay" id="drawer-overlay" onclick="closeDrawer()"></div>
+<div class="ob-overlay" id="ob-overlay" onclick="closeDrawer()" style="position:fixed;inset:0;background:rgba(0,0,0,.35);z-index:599;display:none"></div>
 
 <!-- Checklist Drawer -->
 <div class="ob-drawer" id="ob-drawer">
@@ -334,7 +334,7 @@ async function openDrawer(recordId){
   el('dr-meta').textContent = (r.desig||'') + ' · Joined ' + (r.joiningDate||'') + (r.status!=='Completed'?' · Day '+r.days:'');
   updateProgBar(r.progress, r.done, r.total);
   el('dr-body').innerHTML   = '<div style="text-align:center;padding:32px;color:#bbb">Loading checklist...</div>';
-  el('drawer-overlay').classList.add('show');
+  el('ob-overlay').style.display='block';
   el('ob-drawer').classList.add('open');
   try {
     const d = await hrCall('getOnboardingItems',{recordId});
@@ -449,7 +449,7 @@ async function markComplete(){
 }
 
 function closeDrawer(){
-  el('drawer-overlay').classList.remove('show');
+  el('ob-overlay').style.display='none';
   el('ob-drawer').classList.remove('open');
   currentRecord=null; currentItems=[]; pendingChanges={};
 }
