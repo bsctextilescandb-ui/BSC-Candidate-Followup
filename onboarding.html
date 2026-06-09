@@ -437,12 +437,17 @@ async function markComplete(){
     confirmText:'Yes, Mark Complete',
     onConfirm:async function(){
       try{
-        await saveAll();
-        await hrCall('completeOnboarding',{recordId:currentRecord.recordId});
+        // Save any pending changes first
+        const keys=Object.keys(pendingChanges);
+        if(keys.length) await saveAll();
+        // Now mark complete directly
+        const r2=await hrCall('completeOnboarding',{recordId:currentRecord.recordId});
+        if(!r2.success){ toast('Error: '+(r2.error||'Failed'),'error'); return; }
         const r=allRecords.find(x=>x.recordId===currentRecord.recordId);
         if(r) r.status='Completed';
-        closeDrawer(); buildKPIs(); applyFilter();
-        toast(currentRecord.empName+' onboarding completed!','success');
+        closeDrawer();
+        const d=await hrCall('getOnboardingList'); allRecords=d.records||[]; buildKPIs(); applyFilter();
+        toast(currentRecord.empName+' onboarding completed! ✅','success');
       }catch(e){ toast('Error: '+e.message,'error'); }
     }
   });
