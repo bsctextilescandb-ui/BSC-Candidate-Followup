@@ -151,20 +151,33 @@ async function loadFunnel(){
   if(total===0){container.innerHTML='<div style="text-align:center;padding:28px;color:#bbb;font-size:12px">📋 No candidates yet — add via Entry Form (QR)</div>';}
   else{
     const stages=[
-      {label:'Applied',    val:total,                             color:'#1E2D4E'},
-      {label:'Shortlisted',val:k.shortlisted||0,                 color:'#2a3f6e'},
-      {label:'Interviewed',val:Math.round((k.shortlisted||0)*.74),color:'#C9952A'},
-      {label:'Selected',   val:k.selected||0,                    color:'#2d8a4e'},
-      {label:'Offer Sent', val:Math.round((k.selected||0)*.64),  color:'#3da060'},
-      {label:'Joined',     val:k.joined||0,                      color:'#1a8a84'}
+      {label:'Applied',              val:total,                      color:'#1E2D4E'},
+      {label:'Shortlisted',          val:k.shortlisted||0,           color:'#2a3f6e'},
+      {label:'Interview Scheduled',  val:k.interviewScheduled||0,    color:'#C9952A'},
+      {label:'Both Rounds Done',     val:k.bothRoundsDone||0,        color:'#7c4dbd'},
+      {label:'Selected',             val:k.selected||0,              color:'#2d8a4e'},
+      {label:'Offer Sent',           val:k.offerAccepted||0,         color:'#3da060'},
+      {label:'Joined',               val:k.joined||0,                color:'#1a8a84'}
     ];
-    container.innerHTML=stages.map((s,i)=>{
+    const funnelRows = stages.map((s,i)=>{
       const pct=total>0?Math.round(s.val/total*100):0;
       const prev=(stages[i-1]||{}).val||0;
       const dropPct=(i===0||prev===0)?'':'−'+Math.round((1-s.val/prev)*100)+'%';
       const drop=dropPct?'<span class="f-drop">'+dropPct+'</span>':'<span class="f-drop"></span>';
       return '<div class="funnel-row"><div class="f-lbl">'+s.label+'</div><div class="f-bg"><div class="f-bar" style="width:'+Math.max(pct,1)+'%;background:'+s.color+'">'+s.val+'</div></div><div class="f-num">'+s.val+'</div>'+drop+'</div>';
     }).join('');
+    // Pipeline Loss section
+    const lossRows =
+      '<div style="margin-top:14px;padding-top:12px;border-top:1px dashed #e0ddd8;display:flex;gap:16px;align-items:center">'+
+      '<span style="font-size:10px;font-weight:700;color:#aaa;text-transform:uppercase;letter-spacing:.06em">Pipeline Loss</span>'+
+      '<span style="display:inline-flex;align-items:center;gap:5px;padding:3px 10px;border-radius:5px;background:#FCEBEB;font-size:11px;font-weight:700;color:#A32D2D">'+
+        '🔴 Rejected: '+(k.rejected||0)+
+      '</span>'+
+      '<span style="display:inline-flex;align-items:center;gap:5px;padding:3px 10px;border-radius:5px;background:#FFF7E6;font-size:11px;font-weight:700;color:#B8860B">'+
+        '🟡 On Hold: '+(k.hold||0)+
+      '</span>'+
+      '</div>';
+    container.innerHTML = funnelRows + lossRows;
   }
   // Source donut
   const src=await API.call('getSourceBreakdown').catch(()=>({walkin:0,empref:0,online:0,other:0}));
