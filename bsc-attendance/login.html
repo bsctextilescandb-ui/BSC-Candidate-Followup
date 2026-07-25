@@ -1,0 +1,67 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>BSC Textiles — Sign In</title>
+<link rel="stylesheet" href="style.css">
+</head>
+<body>
+
+<header class="topbar">
+  <div>
+    <h1>BSC Textiles — Daily Attendance</h1>
+    <div class="sub">Sign in with your PIN</div>
+  </div>
+</header>
+
+<main>
+  <div class="card" style="max-width:420px;margin:30px auto;">
+    <h2>Sign In</h2>
+    <label>PIN</label>
+    <input type="password" id="pin" placeholder="Enter your PIN" onkeydown="if(event.key==='Enter')doLogin()">
+    <button class="btn btn-primary btn-block" onclick="doLogin()">Continue</button>
+    <div id="msg"></div>
+  </div>
+</main>
+
+<script src="shared.js"></script>
+<script>
+// If already logged in, skip straight to the right page.
+(function () {
+  const s = getSession();
+  if (s) routeAfterLogin(s);
+})();
+
+async function doLogin() {
+  const pin = document.getElementById('pin').value.trim();
+  const msgEl = document.getElementById('msg');
+  msgEl.innerHTML = '';
+  if (!pin) { msgEl.innerHTML = '<div class="msg msg-err">Enter your PIN.</div>'; return; }
+
+  msgEl.innerHTML = '<div class="hint">Checking...</div>';
+  let res;
+  try {
+    res = await jsonpCall({ action: 'identify', pin });
+  } catch (err) {
+    msgEl.innerHTML = '<div class="msg msg-err">' + err.message + '</div>';
+    return;
+  }
+  if (res.error) { msgEl.innerHTML = '<div class="msg msg-err">' + res.error + '</div>'; return; }
+
+  saveSession(res);
+  clearSelectedUnit(); // fresh visit — FloorManager will need to re-pick a section
+  routeAfterLogin(res);
+}
+
+function routeAfterLogin(session) {
+  if (session.role === 'Admin') {
+    window.location.href = 'dashboard.html';
+  } else {
+    window.location.href = 'marking.html';
+  }
+}
+</script>
+
+</body>
+</html>
