@@ -39,6 +39,12 @@
   </div>
 
   <div class="card">
+    <h2>Managers (Floor / Section / Dept Incharges)</h2>
+    <div class="hint">Marked only by HR — never counted inside a section or department's own numbers.</div>
+    <div id="managerRow"></div>
+  </div>
+
+  <div class="card">
     <h2>Sales — By Section</h2>
     <div id="sectionList"></div>
   </div>
@@ -82,6 +88,7 @@ async function loadDashboard() {
   document.getElementById('groomLine').innerText =
     `Grooming/Uniform/ID checked: ${data.cumulative.groomingChecked} · Non-compliant: ${data.cumulative.groomingNonCompliant}`;
 
+  document.getElementById('managerRow').innerHTML = renderUnitRow(data.managerUnit);
   document.getElementById('sectionList').innerHTML = data.sectionUnits.map(renderUnitRow).join('') || '<div class="hint">No sections found.</div>';
   document.getElementById('deptList').innerHTML = data.deptUnits.map(renderUnitRow).join('') || '<div class="hint">No departments found.</div>';
 }
