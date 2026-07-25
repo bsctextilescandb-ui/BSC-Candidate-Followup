@@ -47,7 +47,7 @@
       <div class="picked-list" id="groomPickedList" style="margin-top:10px;"></div>
     </div>
 
-    <button class="btn btn-gold btn-block" id="reviewBtn" onclick="openReview()">Review &amp; Submit</button>
+    <button class="btn btn-gold btn-block" id="reviewBtn" onclick="withBtn(this, openReview)">Review &amp; Submit</button>
   </div>
 
   <!-- READ-ONLY LOCKED VIEW -->
@@ -69,7 +69,7 @@
     <div class="picked-list" id="reviewGroomList"></div>
     <div class="row-2" style="margin-top:16px;">
       <button class="btn btn-outline btn-block" onclick="closeReview()">Back &amp; Edit</button>
-      <button class="btn btn-gold btn-block" onclick="finalSubmit()">Confirm &amp; Submit</button>
+      <button class="btn btn-gold btn-block" onclick="withBtn(this, finalSubmit)">Confirm &amp; Submit</button>
     </div>
     <div id="reviewMsg"></div>
   </div>
@@ -120,28 +120,31 @@ function changeUnit() {
 // ===================== UNIT PICKERS =====================
 async function showFloorManagerPicker() {
   const sections = await jsonpCall({ action: 'getSectionsByFloor', floorId: session.floorId });
+  window._fmSections = sections;
   document.getElementById('unitPickerCard').style.display = 'block';
   document.getElementById('unitPickerBody').innerHTML = `
     <label>Section on ${session.floorName}</label>
     <select id="fmSectionSelect">
       ${sections.map(s => `<option value="${s.SectionID}">${s.SectionName}</option>`).join('')}
     </select>
-    <button class="btn btn-primary btn-block" onclick="confirmFmSection(${JSON.stringify(sections).replace(/"/g, '&quot;')})">Continue</button>
+    <button class="btn btn-primary btn-block" onclick="withBtn(this, () => confirmFmSection(window._fmSections))">Continue</button>
   `;
 }
 
-function confirmFmSection(sections) {
+async function confirmFmSection(sections) {
   const id = document.getElementById('fmSectionSelect').value;
   const sec = sections.find(s => s.SectionID === id);
   currentUnit = { unitType: 'Section', unitId: id, unitLabel: sec.SectionName + ' (' + session.floorName + ')' };
   saveSelectedUnit(currentUnit.unitType, currentUnit.unitId, currentUnit.unitLabel);
   document.getElementById('unitPickerCard').style.display = 'none';
-  loadUnitScreen();
+  await loadUnitScreen();
 }
 
 async function showAdminPicker() {
-  const floors = await jsonpCall({ action: 'getFloors' });
-  const departments = await jsonpCall({ action: 'getDepartments' });
+  const [floors, departments] = await Promise.all([
+    jsonpCall({ action: 'getFloors' }),
+    jsonpCall({ action: 'getDepartments' })
+  ]);
   document.getElementById('unitPickerCard').style.display = 'block';
   document.getElementById('unitPickerBody').innerHTML = `
     <label>Type</label>
@@ -163,7 +166,7 @@ async function showAdminPicker() {
         ${departments.map(d => `<option value="${d.DepartmentID}">${d.DepartmentName}</option>`).join('')}
       </select>
     </div>
-    <button class="btn btn-primary btn-block" onclick="confirmAdminUnit()">Continue</button>
+    <button class="btn btn-primary btn-block" onclick="withBtn(this, confirmAdminUnit)">Continue</button>
   `;
   onAdminFloorChange();
 }
@@ -181,7 +184,7 @@ function onAdminUnitTypeChange() {
   document.getElementById('adminDeptPicker').style.display = t === 'Department' ? 'block' : 'none';
 }
 
-function confirmAdminUnit() {
+async function confirmAdminUnit() {
   const t = document.getElementById('adminUnitType').value;
   if (t === 'Section') {
     const id = document.getElementById('adminSectionSelect').value;
@@ -195,23 +198,27 @@ function confirmAdminUnit() {
   }
   saveSelectedUnit(currentUnit.unitType, currentUnit.unitId, currentUnit.unitLabel);
   document.getElementById('unitPickerCard').style.display = 'none';
-  loadUnitScreen();
+  await loadUnitScreen();
 }
 
 // ===================== LOAD UNIT (check lock, then render) =====================
 async function loadUnitScreen() {
   document.getElementById('changeUnitBtn').style.display = (session.role === 'FloorManager' || session.role === 'Admin') ? 'inline-block' : 'none';
   document.getElementById('unitLabel').textContent = currentUnit.unitLabel + ' — ' + todayStr();
+  document.getElementById('markingArea').style.display = 'none';
+  document.getElementById('lockedView').style.display = 'none';
+  document.getElementById('countTable').innerHTML = '<div class="hint">Loading...</div>';
 
-  const status = await jsonpCall({ action: 'getUnitStatus', unitType: currentUnit.unitType, unitId: currentUnit.unitId, date: todayStr() });
+  const boot = await jsonpCall({ action: 'getMarkingBootstrap', unitType: currentUnit.unitType, unitId: currentUnit.unitId, date: todayStr() });
+  const status = boot.unitStatus;
 
   if (status.submitted && session.role !== 'Admin') {
     renderLockedView(status);
     return;
   }
 
-  statusTypes = await jsonpCall({ action: 'getStatusTypes' });
-  unitEmployees = await jsonpCall({ action: 'getEmployeesByUnit', unitType: currentUnit.unitType, unitId: currentUnit.unitId });
+  statusTypes = boot.statusTypes;
+  unitEmployees = boot.employees;
 
   statusPicks = {};
   groomPicks = {};
@@ -377,7 +384,7 @@ function openGroomPicker(empId) {
         <option value="Yes" ${existing.idCardOK==='Yes'?'selected':''}>Yes</option>
         <option value="No" ${existing.idCardOK==='No'?'selected':''}>No</option>
       </select>
-      <button class="btn btn-primary btn-sm" style="margin-top:10px;" onclick="saveGroomPick('${empId}')">Save</button>
+      <button class="btn btn-primary btn-sm" style="margin-top:10px;" onclick="withBtn(this, () => saveGroomPick('${empId}'))">Save</button>
       <button class="btn btn-outline btn-sm" style="margin-top:10px;" onclick="renderGroomSearch()">Cancel</button>
     </div>
   `;
@@ -463,7 +470,7 @@ async function finalSubmit() {
   const msgEl = document.getElementById('reviewMsg');
   if (res.success) {
     msgEl.innerHTML = '<div class="msg msg-ok">Submitted to HR successfully.</div>';
-    setTimeout(() => { closeReview(); loadUnitScreen(); }, 1200);
+    setTimeout(() => { closeReview(); loadUnitScreen(); }, 500);
   } else {
     msgEl.innerHTML = '<div class="msg msg-err">' + (res.error || 'Submission failed.') + '</div>';
   }
