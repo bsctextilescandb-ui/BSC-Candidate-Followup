@@ -8,9 +8,23 @@
 </head>
 <body>
 
-<header class="topbar" id="topbar"></header>
+<button class="sb-toggle" id="sbToggle" onclick="toggleSidebar()"><span></span><span></span><span></span></button>
+<div class="sb-mob-overlay" id="sbOverlay" onclick="closeSidebar()"></div>
 
-<main>
+<div class="app-shell">
+  <aside class="sidebar" id="sidebar"></aside>
+  <div class="main">
+    <header class="topbar">
+      <div class="topbar-left">
+        <div class="topbar-title" id="topbarTitle">HR Dashboard</div>
+        <div class="breadcrumb" id="topbarBreadcrumb"></div>
+      </div>
+      <div class="topbar-right">
+        <span class="topbar-time" id="topbarClock"></span>
+      </div>
+    </header>
+
+<div class="content">
 
   <div class="card">
     <h2>Cumulative — Whole Store</h2>
@@ -34,7 +48,9 @@
     <div id="deptList"></div>
   </div>
 
-</main>
+</div>
+  </div>
+</div>
 
 <script src="shared.js"></script>
 <script>
@@ -42,7 +58,7 @@ let session = requireLogin(['Admin']);
 let lastDashboard = null;
 
 if (session) {
-  renderTopbar('dashboard');
+  renderShell('dashboard');
   document.getElementById('dashDate').value = todayStr();
   loadDashboard();
 }
