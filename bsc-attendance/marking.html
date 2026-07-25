@@ -8,9 +8,23 @@
 </head>
 <body>
 
-<header class="topbar" id="topbar"></header>
+<button class="sb-toggle" id="sbToggle" onclick="toggleSidebar()"><span></span><span></span><span></span></button>
+<div class="sb-mob-overlay" id="sbOverlay" onclick="closeSidebar()"></div>
 
-<main>
+<div class="app-shell">
+  <aside class="sidebar" id="sidebar"></aside>
+  <div class="main">
+    <header class="topbar">
+      <div class="topbar-left">
+        <div class="topbar-title" id="topbarTitle">Daily Marking</div>
+        <div class="breadcrumb" id="topbarBreadcrumb"></div>
+      </div>
+      <div class="topbar-right">
+        <span class="topbar-time" id="topbarClock"></span>
+      </div>
+    </header>
+
+<div class="content">
 
   <!-- UNIT PICKER (Floor Manager section dropdown / Admin full picker) -->
   <div class="card" id="unitPickerCard" style="display:none;">
@@ -56,7 +70,9 @@
     <div id="lockedDetail"></div>
   </div>
 
-</main>
+</div>
+  </div>
+</div>
 
 <!-- REVIEW MODAL -->
 <div class="overlay" id="reviewOverlay" style="display:none;">
@@ -86,7 +102,7 @@ let groomPicks = {};         // employeeId -> {employeeName, groomingScore, unif
 let isAdminEditing = false;  // true when Admin is overriding an already-submitted unit
 
 if (session) {
-  renderTopbar('marking');
+  renderShell('marking');
   init();
 }
 
