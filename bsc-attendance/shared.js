@@ -3,6 +3,23 @@
 // ============================================================
 
 const API_URL = 'https://script.google.com/macros/s/AKfycbzcaGs8hGfvhsydKcdcjdObMqa4VE52LenPxCEMwOH-Lpl6ijLjxxtYh4EiJIc-pkSc/exec';
+const LOGO_BSC = 'https://bsctextilescandb-ui.github.io/retail-crm/logo.jpg';
+const LOGO_CNB = 'https://bsctextilescandb-ui.github.io/retail-crm/cnb-logo.png';
+
+// ---- Universal button loading/disable helper ----
+// Usage: onclick="withBtn(this, doLogin)"  or  onclick="withBtn(this, () => toggleFloor('FL1', true))"
+async function withBtn(btn, fn) {
+  if (btn.disabled) return; // already running — ignore extra clicks
+  const originalHTML = btn.innerHTML;
+  btn.disabled = true;
+  btn.innerHTML = '<span class="spinner"></span>Working...';
+  try {
+    await fn();
+  } finally {
+    btn.disabled = false;
+    btn.innerHTML = originalHTML;
+  }
+}
 
 // ---- JSONP helper (GET-only, avoids CORS from GitHub Pages) ----
 let jsonpCounter = 0;
@@ -71,9 +88,13 @@ function renderTopbar(page) {
   else if (s.role === 'Admin') scopeLabel = 'Admin (HR)';
 
   el.innerHTML = `
-    <div>
-      <h1>BSC Textiles — Daily Attendance</h1>
-      <div class="sub">${s.name} · ${scopeLabel}</div>
+    <div class="brand">
+      <img src="${LOGO_BSC}" alt="BSC">
+      <img src="${LOGO_CNB}" alt="C&B">
+      <div>
+        <h1>BSC Textiles — Daily Attendance</h1>
+        <div class="sub">${s.name} · ${scopeLabel}</div>
+      </div>
     </div>
     <nav>${navLinks}<span class="logout" onclick="logout()">Logout</span></nav>
   `;
