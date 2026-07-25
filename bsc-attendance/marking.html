@@ -210,6 +210,10 @@ async function loadUnitScreen() {
   document.getElementById('countTable').innerHTML = '<div class="hint">Loading...</div>';
 
   const boot = await jsonpCall({ action: 'getMarkingBootstrap', unitType: currentUnit.unitType, unitId: currentUnit.unitId, date: todayStr() });
+  if (!boot || boot.error) {
+    document.getElementById('countTable').innerHTML = `<div class="msg msg-err">Backend error: ${boot ? boot.error : 'no response'}. Make sure Code_v3.gs is deployed as the latest version (Deploy → Manage deployments → New version).</div>`;
+    return;
+  }
   const status = boot.unitStatus;
 
   if (status.submitted && session.role !== 'Admin') {
