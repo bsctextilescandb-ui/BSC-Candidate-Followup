@@ -160,3 +160,159 @@ function closeSidebar() {
   document.getElementById('sidebar').classList.remove('mob-open');
   document.getElementById('sbOverlay').classList.remove('show');
 }
+
+// ============================================================
+// PNG REPORT BUILDER — shared by dashboard.html (full store) and
+// marking.html (single section/department). Renders a hidden,
+// inline-styled block and rasterizes it with html2canvas so both
+// downloads look identical regardless of the page's own CSS.
+// ============================================================
+
+const STATUS_ICON_FALLBACK = '\u25CF'; // solid dot, used if a status has no icon set
+const PRESENT_ICON = '\u2705';
+
+function statusIcon(st) { return (st && st.Icon) ? st.Icon : STATUS_ICON_FALLBACK; }
+
+function reportCountBoxHTML(icon, n, label, color) {
+  return `
+    <div style="flex:1;min-width:90px;background:#F9F7F4;border-left:4px solid ${color};border-radius:10px;text-align:center;padding:14px 6px;">
+      <div style="font-size:18px;">${icon}</div>
+      <div style="font-size:24px;font-weight:800;color:#1E2D4E;margin-top:2px;">${n}</div>
+      <div style="font-size:9px;color:#999;text-transform:uppercase;letter-spacing:.05em;font-weight:600;margin-top:2px;">${label}</div>
+    </div>
+  `;
+}
+
+function reportHeaderHTML(title, scopeLabel, dateStr) {
+  return `
+    <div style="display:flex;align-items:center;gap:14px;border-bottom:2px solid #EDE8DE;padding-bottom:14px;margin-bottom:16px;">
+      <img src="${LOGO_BSC}" style="height:44px;border-radius:4px;">
+      <div style="flex:1;">
+        <div style="font-size:18px;font-weight:800;color:#1E2D4E;">${title}</div>
+        <div style="font-size:11px;color:#888;margin-top:2px;">${scopeLabel} · ${dateStr}</div>
+      </div>
+      <img src="${LOGO_CNB}" style="height:28px;">
+    </div>
+  `;
+}
+
+function reportFooterHTML() {
+  return `
+    <div style="margin-top:18px;padding-top:10px;border-top:1px solid #EDE8DE;font-size:9.5px;color:#aaa;text-align:center;">
+      Generated ${new Date().toLocaleString('en-IN')} · BSC Textiles Daily Attendance
+    </div>
+  `;
+}
+
+function reportGroupRowHTML(icon, label, present, total, statusTypes, statusCounts, submittedLine) {
+  const chips = statusTypes.map(st => `
+    <span style="font-size:10px;background:#F9F7F4;border-radius:12px;padding:3px 9px;margin-right:5px;color:#555;">
+      ${statusIcon(st)} ${statusCounts[st.StatusName] || 0} ${st.StatusName}
+    </span>
+  `).join('');
+  return `
+    <div style="padding:10px 0;border-bottom:1px solid #f0ede8;">
+      <div style="display:flex;justify-content:space-between;align-items:center;font-size:12.5px;">
+        <span>${icon} <strong style="color:#1E2D4E;">${label}</strong></span>
+        <span style="color:#2d8a4e;font-weight:700;">${present} / ${total} Present</span>
+      </div>
+      <div style="margin-top:5px;">${chips}</div>
+      ${submittedLine ? `<div style="font-size:9.5px;color:#aaa;margin-top:4px;">${submittedLine}</div>` : ''}
+    </div>
+  `;
+}
+
+// Builds the full whole-store report (Dashboard / Admin use)
+function buildFullStoreReportHTML(data) {
+  const cum = data.cumulative;
+  let boxes = reportCountBoxHTML(PRESENT_ICON, cum.totalPresent, 'Present', '#2d8a4e');
+  data.statusTypes.forEach(st => {
+    boxes += reportCountBoxHTML(statusIcon(st), cum.statusCounts[st.StatusName] || 0, st.StatusName, '#C9952A');
+  });
+
+  const mgr = data.managerUnit;
+  const mgrHtml = reportGroupRowHTML('\u{1F3E2}', mgr.label, mgr.totalPresent ?? 0, mgr.totalAssigned ?? 0, data.statusTypes, mgr.statusCounts,
+    mgr.submitted ? `Submitted by ${mgr.submittedByName} at ${mgr.submittedAt}` : 'Not yet submitted');
+
+  const sectionRows = data.sectionUnits.map(u => reportGroupRowHTML('\u{1F3EC}', u.label, u.totalPresent ?? 0, u.totalAssigned ?? 0, data.statusTypes, u.statusCounts,
+    u.submitted ? `Submitted by ${u.submittedByName} at ${u.submittedAt}` : 'Not yet submitted')).join('');
+
+  const deptRows = data.deptUnits.map(u => reportGroupRowHTML('\u{1F5C2}\uFE0F', u.label, u.totalPresent ?? 0, u.totalAssigned ?? 0, data.statusTypes, u.statusCounts,
+    u.submitted ? `Submitted by ${u.submittedByName} at ${u.submittedAt}` : 'Not yet submitted')).join('');
+
+  return `
+    <div style="width:820px;background:#fff;padding:24px;font-family:'Segoe UI',system-ui,sans-serif;">
+      ${reportHeaderHTML('BSC Textiles — Daily Attendance Report', 'Whole Store', data.date)}
+      <div style="font-size:10px;color:#aaa;margin-bottom:8px;">${cum.unitsSubmitted} of ${cum.unitsTotal} groups submitted · ${cum.totalAssigned} total assigned · Grooming checked ${cum.groomingChecked} (non-compliant ${cum.groomingNonCompliant})</div>
+      <div style="display:flex;gap:8px;flex-wrap:wrap;margin-bottom:18px;">${boxes}</div>
+      <div style="font-size:9px;font-weight:800;color:#1E2D4E;text-transform:uppercase;letter-spacing:.1em;margin-bottom:8px;">Managers</div>
+      ${mgrHtml}
+      <div style="font-size:9px;font-weight:800;color:#1E2D4E;text-transform:uppercase;letter-spacing:.1em;margin:16px 0 8px;">Sales — By Section</div>
+      ${sectionRows}
+      <div style="font-size:9px;font-weight:800;color:#1E2D4E;text-transform:uppercase;letter-spacing:.1em;margin:16px 0 8px;">Non-Sales — By Department</div>
+      ${deptRows}
+      ${reportFooterHTML()}
+    </div>
+  `;
+}
+
+// Builds a single section/department's own report (marker's submitted view)
+function buildSingleGroupReportHTML(scopeLabel, dateStr, status, statusTypes) {
+  const statusCounts = {};
+  statusTypes.forEach(st => { statusCounts[st.StatusName] = 0; });
+  (status.exceptions || []).forEach(x => { statusCounts[x.StatusName] = (statusCounts[x.StatusName] || 0) + 1; });
+
+  let boxes = reportCountBoxHTML(PRESENT_ICON, status.totalPresent, 'Present', '#2d8a4e');
+  statusTypes.forEach(st => {
+    boxes += reportCountBoxHTML(statusIcon(st), statusCounts[st.StatusName] || 0, st.StatusName, '#C9952A');
+  });
+
+  const excRows = (status.exceptions || []).map(x => `
+    <div style="display:flex;justify-content:space-between;font-size:12px;padding:6px 0;border-bottom:1px solid #f0ede8;">
+      <span>${x.EmployeeName}</span>
+      <span>${statusIcon(statusTypes.find(st => st.StatusName === x.StatusName))} ${x.StatusName} · ${x.Permission}</span>
+    </div>
+  `).join('') || '<div style="font-size:11px;color:#aaa;">None — everyone Present.</div>';
+
+  const groomRows = (status.grooming || []).map(g => `
+    <div style="display:flex;justify-content:space-between;font-size:12px;padding:6px 0;border-bottom:1px solid #f0ede8;">
+      <span>${g.EmployeeName}</span>
+      <span>Grooming ${g.GroomingScore} · Uniform ${g.UniformOK} · ID ${g.IDCardOK}</span>
+    </div>
+  `).join('') || '<div style="font-size:11px;color:#aaa;">None — everyone default.</div>';
+
+  return `
+    <div style="width:560px;background:#fff;padding:24px;font-family:'Segoe UI',system-ui,sans-serif;">
+      ${reportHeaderHTML('BSC Textiles — Daily Attendance Report', scopeLabel, dateStr)}
+      <div style="display:flex;gap:8px;flex-wrap:wrap;margin-bottom:18px;">${boxes}</div>
+      <div style="font-size:9px;font-weight:800;color:#1E2D4E;text-transform:uppercase;letter-spacing:.1em;margin-bottom:8px;">Attendance Exceptions</div>
+      ${excRows}
+      <div style="font-size:9px;font-weight:800;color:#1E2D4E;text-transform:uppercase;letter-spacing:.1em;margin:16px 0 8px;">Grooming / Uniform / ID Overrides</div>
+      ${groomRows}
+      <div style="font-size:10px;color:#aaa;margin-top:12px;">Submitted by ${status.submittedByName} at ${status.submittedAt}</div>
+      ${reportFooterHTML()}
+    </div>
+  `;
+}
+
+// Renders reportHTML off-screen, rasterizes with html2canvas, triggers a PNG download.
+// Requires html2canvas to be loaded on the page (CDN script tag).
+function downloadReportPNG(reportHTML, filename) {
+  const holder = document.createElement('div');
+  holder.style.position = 'fixed';
+  holder.style.left = '-9999px';
+  holder.style.top = '0';
+  holder.innerHTML = reportHTML;
+  document.body.appendChild(holder);
+
+  return html2canvas(holder.firstElementChild, { scale: 2, backgroundColor: '#ffffff' }).then(canvas => {
+    const link = document.createElement('a');
+    link.download = filename;
+    link.href = canvas.toDataURL('image/png');
+    link.click();
+    document.body.removeChild(holder);
+  }).catch(err => {
+    document.body.removeChild(holder);
+    throw err;
+  });
+}
