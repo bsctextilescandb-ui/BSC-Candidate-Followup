@@ -5,6 +5,7 @@
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 <title>BSC Textiles — HR Dashboard</title>
 <link rel="stylesheet" href="style.css">
+<script src="https://cdnjs.cloudflare.com/ajax/libs/html2canvas/1.4.1/html2canvas.min.js"></script>
 </head>
 <body>
 
@@ -36,6 +37,7 @@
     <div class="hint" id="submitStatusLine"></div>
     <div class="hint" id="groomLine"></div>
     <button class="btn btn-outline btn-sm" onclick="withBtn(this, copySummary)">Copy summary for management</button>
+    <button class="btn btn-gold btn-sm" onclick="withBtn(this, downloadFullReport)">Download PNG</button>
   </div>
 
   <div class="card">
@@ -103,6 +105,11 @@ function renderUnitRow(u) {
       ${u.submitted ? `<div class="hint">Present ${u.totalPresent} / ${u.totalAssigned} · by ${u.submittedByName} at ${u.submittedAt} · Grooming checked ${u.groomingChecked} (non-compliant ${u.groomingNonCompliant})</div>` : ''}
     </div>
   `;
+}
+
+async function downloadFullReport() {
+  if (!lastDashboard) return;
+  await downloadReportPNG(buildFullStoreReportHTML(lastDashboard), `BSC_Attendance_${lastDashboard.date}.png`);
 }
 
 function copySummary() {
