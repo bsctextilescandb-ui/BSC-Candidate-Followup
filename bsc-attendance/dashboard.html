@@ -16,12 +16,12 @@
     <h2>Cumulative — Whole Store</h2>
     <div class="row-2">
       <div><label>Date</label><input type="text" id="dashDate"></div>
-      <div style="display:flex;align-items:flex-end;"><button class="btn btn-outline btn-sm" onclick="loadDashboard()">Refresh</button></div>
+      <div style="display:flex;align-items:flex-end;"><button class="btn btn-outline btn-sm" onclick="withBtn(this, loadDashboard)">Refresh</button></div>
     </div>
     <div class="count-table" id="cumCountTable"></div>
     <div class="hint" id="submitStatusLine"></div>
     <div class="hint" id="groomLine"></div>
-    <button class="btn btn-outline btn-sm" onclick="copySummary()">Copy summary for management</button>
+    <button class="btn btn-outline btn-sm" onclick="withBtn(this, copySummary)">Copy summary for management</button>
   </div>
 
   <div class="card">
