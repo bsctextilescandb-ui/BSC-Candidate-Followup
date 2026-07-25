@@ -5,6 +5,7 @@
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 <title>BSC Textiles — Daily Marking</title>
 <link rel="stylesheet" href="style.css">
+<script src="https://cdnjs.cloudflare.com/ajax/libs/html2canvas/1.4.1/html2canvas.min.js"></script>
 </head>
 <body>
 
@@ -238,13 +239,13 @@ async function loadUnitScreen() {
     return;
   }
   const status = boot.unitStatus;
+  statusTypes = boot.statusTypes; // needed even in the locked view, for the report's icons
 
   if (status.submitted && session.role !== 'Admin') {
     renderLockedView(status);
     return;
   }
 
-  statusTypes = boot.statusTypes;
   unitEmployees = boot.employees;
 
   statusPicks = {};
@@ -278,13 +279,17 @@ async function loadUnitScreen() {
 function renderLockedView(status) {
   document.getElementById('markingArea').style.display = 'none';
   document.getElementById('lockedView').style.display = 'block';
+  window._lockedStatus = status; // for the report download
   const exc = status.exceptions || [];
   const groom = status.grooming || [];
   const showChange = (session.role === 'FloorManager' || session.role === 'Admin');
   document.getElementById('lockedDetail').innerHTML = `
-    <div style="display:flex;justify-content:space-between;align-items:center;">
+    <div style="display:flex;justify-content:space-between;align-items:center;flex-wrap:wrap;gap:8px;">
       <div class="hint">Submitted by <strong>${status.submittedByName}</strong> at ${status.submittedAt}</div>
-      ${showChange ? `<button class="btn btn-outline btn-sm" onclick="changeUnit()">Change</button>` : ''}
+      <div>
+        <button class="btn btn-gold btn-sm" onclick="withBtn(this, downloadSingleReport)">Download PNG</button>
+        ${showChange ? `<button class="btn btn-outline btn-sm" onclick="changeUnit()">Change</button>` : ''}
+      </div>
     </div>
     <div class="count-table" style="margin-top:8px;">
       <div class="count-box present"><div class="n">${status.totalPresent}</div><div class="lbl">Present</div></div>
@@ -300,6 +305,14 @@ function renderLockedView(status) {
     </div>
     <div class="hint" style="margin-top:12px;">Only Admin can edit an already-submitted entry.</div>
   `;
+}
+
+async function downloadSingleReport() {
+  if (!window._lockedStatus) return;
+  await downloadReportPNG(
+    buildSingleGroupReportHTML(currentUnit.unitLabel, todayStr(), window._lockedStatus, statusTypes),
+    `BSC_Attendance_${currentUnit.unitLabel.replace(/[^a-zA-Z0-9]/g, '_')}_${todayStr()}.png`
+  );
 }
 
 // ===================== COUNT TABLE =====================
