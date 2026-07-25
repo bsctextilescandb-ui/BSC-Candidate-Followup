@@ -135,12 +135,14 @@
   <div id="panel-status" style="display:none;">
     <div class="card">
       <h2>Status Types (Table 2 dropdown)</h2>
+      <div class="hint">⚠️ One-time sheet update needed: add a 6th column header "Icon" to the StatusTypes tab.</div>
       <div class="row-2">
         <div><input type="text" id="newStatusName" placeholder="e.g. Sick Leave"></div>
-        <div><label style="display:flex;align-items:center;gap:6px;margin-top:8px;"><input type="checkbox" id="newStatusPerm" checked style="width:auto;"> Ask With/Without Permission</label></div>
+        <div><input type="text" id="newStatusIcon" placeholder="Icon (e.g. 🩹)" maxlength="4"></div>
       </div>
+      <label style="display:flex;align-items:center;gap:6px;margin-top:8px;"><input type="checkbox" id="newStatusPerm" checked style="width:auto;"> Ask With/Without Permission</label>
       <button class="btn btn-primary" onclick="withBtn(this, addStatusType)">Add</button>
-      <table id="statusTable"><thead><tr><th>Status</th><th>Permission?</th><th>Active</th><th></th></tr></thead><tbody></tbody></table>
+      <table id="statusTable"><thead><tr><th>Icon</th><th>Status</th><th>Permission?</th><th>Active</th><th></th></tr></thead><tbody></tbody></table>
     </div>
   </div>
 
@@ -335,16 +337,27 @@ async function toggleUser(id, active) { await jsonpCall({ action: 'toggleUser', 
 async function loadStatusTypes() {
   const rows = await jsonpCall({ action: 'getStatusTypes', includeInactive: 'true' });
   document.getElementById('statusTable').querySelector('tbody').innerHTML = rows.map(s => `
-    <tr><td>${s.StatusName}</td><td>${(s.RequiresPermission===true||s.RequiresPermission==='TRUE')?'Yes':'No'}</td><td>${(s.Active===true||s.Active==='TRUE')?'Active':'Inactive'}</td>
-    <td><button class="btn btn-outline btn-sm" onclick="withBtn(this, () => toggleStatusType('${s.StatusID}', ${!(s.Active===true||s.Active==='TRUE')}))">Toggle</button></td></tr>
+    <tr>
+      <td><input type="text" id="icon_${s.StatusID}" value="${s.Icon || ''}" maxlength="4" style="width:44px;padding:4px;text-align:center;" onchange="withBtn(this, () => saveStatusIcon('${s.StatusID}'))"></td>
+      <td>${s.StatusName}</td>
+      <td>${(s.RequiresPermission===true||s.RequiresPermission==='TRUE')?'Yes':'No'}</td>
+      <td>${(s.Active===true||s.Active==='TRUE')?'Active':'Inactive'}</td>
+      <td><button class="btn btn-outline btn-sm" onclick="withBtn(this, () => toggleStatusType('${s.StatusID}', ${!(s.Active===true||s.Active==='TRUE')}))">Toggle</button></td>
+    </tr>
   `).join('');
+}
+async function saveStatusIcon(statusId) {
+  const icon = document.getElementById('icon_' + statusId).value.trim();
+  await jsonpCall({ action: 'editStatusIcon', statusId, icon });
 }
 async function addStatusType() {
   const name = document.getElementById('newStatusName').value.trim();
+  const icon = document.getElementById('newStatusIcon').value.trim();
   const perm = document.getElementById('newStatusPerm').checked;
   if (!name) return;
-  await jsonpCall({ action: 'addStatusType', statusName: name, requiresPermission: perm });
+  await jsonpCall({ action: 'addStatusType', statusName: name, requiresPermission: perm, icon });
   document.getElementById('newStatusName').value = '';
+  document.getElementById('newStatusIcon').value = '';
   loadStatusTypes();
 }
 async function toggleStatusType(id, active) { await jsonpCall({ action: 'toggleStatusType', statusId: id, active }); loadStatusTypes(); }
