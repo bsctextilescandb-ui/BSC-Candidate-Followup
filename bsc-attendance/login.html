@@ -5,33 +5,32 @@
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 <title>BSC Textiles — Sign In</title>
 <link rel="stylesheet" href="style.css">
+<style>
+  body { display: flex; align-items: center; justify-content: center; min-height: 100vh; }
+  .login-card { width: 100%; max-width: 380px; box-shadow: var(--shadow-lg); }
+  .login-logo { text-align: center; margin-bottom: 4px; }
+  .login-logo img { height: 46px; }
+  .login-title { text-align: center; font-size: 15px; font-weight: 800; color: var(--navy); margin: 10px 0 2px; }
+  .login-sub { text-align: center; font-size: 11px; color: var(--muted); margin-bottom: 16px; }
+</style>
 </head>
 <body>
 
-<header class="topbar">
-  <div class="brand">
-    <img src="https://bsctextilescandb-ui.github.io/retail-crm/logo.jpg" alt="BSC">
-    <img src="https://bsctextilescandb-ui.github.io/retail-crm/cnb-logo.png" alt="C&B">
-    <div>
-      <h1>BSC Textiles — Daily Attendance</h1>
-      <div class="sub">Sign in with your PIN</div>
-    </div>
-  </div>
-</header>
+<div class="card login-card">
+  <div class="login-logo"><img src="https://bsctextilescandb-ui.github.io/retail-crm/logo.jpg" alt="BSC"></div>
+  <div class="login-title">BSC Textiles — Daily Attendance</div>
+  <div class="login-sub">Sign in with your PIN</div>
 
-<main>
-  <div class="card" style="max-width:420px;margin:30px auto;">
-    <h2>Sign In</h2>
+  <div class="fg">
     <label>PIN</label>
-    <input type="password" id="pin" placeholder="Enter your PIN" onkeydown="if(event.key==='Enter')doLogin()">
-    <button class="btn btn-primary btn-block" onclick="withBtn(this, doLogin)">Continue</button>
-    <div id="msg"></div>
+    <input type="password" id="pin" placeholder="Enter your PIN" onkeydown="if(event.key==='Enter')withBtn(document.getElementById('continueBtn'), doLogin)">
   </div>
-</main>
+  <button class="btn btn-primary btn-full" id="continueBtn" style="margin-top:14px;" onclick="withBtn(this, doLogin)">Continue</button>
+  <div id="msg"></div>
+</div>
 
 <script src="shared.js"></script>
 <script>
-// If already logged in, skip straight to the right page.
 (function () {
   const s = getSession();
   if (s) routeAfterLogin(s);
@@ -43,7 +42,6 @@ async function doLogin() {
   msgEl.innerHTML = '';
   if (!pin) { msgEl.innerHTML = '<div class="msg msg-err">Enter your PIN.</div>'; return; }
 
-  msgEl.innerHTML = '<div class="hint">Checking...</div>';
   let res;
   try {
     res = await jsonpCall({ action: 'identify', pin });
@@ -54,16 +52,12 @@ async function doLogin() {
   if (res.error) { msgEl.innerHTML = '<div class="msg msg-err">' + res.error + '</div>'; return; }
 
   saveSession(res);
-  clearSelectedUnit(); // fresh visit — FloorManager will need to re-pick a section
+  clearSelectedUnit();
   routeAfterLogin(res);
 }
 
 function routeAfterLogin(session) {
-  if (session.role === 'Admin') {
-    window.location.href = 'dashboard.html';
-  } else {
-    window.location.href = 'marking.html';
-  }
+  window.location.href = session.role === 'Admin' ? 'dashboard.html' : 'marking.html';
 }
 </script>
 
