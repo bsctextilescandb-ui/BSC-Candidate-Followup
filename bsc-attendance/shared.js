@@ -65,37 +65,98 @@ function requireLogin(allowedRoles) {
   return s;
 }
 
-// Renders the shared top bar + nav. `page` is one of 'marking' | 'dashboard' | 'admin'.
-function renderTopbar(page) {
+function initials(name) {
+  return (name || '').split(' ').filter(Boolean).slice(0, 2).map(w => w[0].toUpperCase()).join('');
+}
+
+function roleLabel(s) {
+  if (s.role === 'FloorManager') return 'Floor Manager';
+  if (s.role === 'SectionIncharge') return 'Section Incharge';
+  if (s.role === 'DeptIncharge') return 'Dept Incharge';
+  if (s.role === 'Admin') return 'Admin (HR)';
+  return s.role;
+}
+
+function scopeLine(s) {
+  if (s.role === 'FloorManager') return s.floorName;
+  if (s.role === 'SectionIncharge') return s.sectionName + ' · ' + s.floorName;
+  if (s.role === 'DeptIncharge') return s.departmentName;
+  return '';
+}
+
+function navItemsForRole(role) {
+  const items = [];
+  if (role === 'Admin') {
+    items.push({ group: 'MAIN', key: 'dashboard', icon: '\u25a4', label: 'Dashboard', href: 'dashboard.html' });
+    items.push({ group: 'MAIN', key: 'marking', icon: '\u2611', label: 'Daily Marking', href: 'marking.html' });
+    items.push({ group: 'ADMIN', key: 'admin', icon: '\u2699', label: 'Admin Control', href: 'admin.html' });
+  } else {
+    items.push({ group: 'MAIN', key: 'marking', icon: '\u2611', label: 'Daily Marking', href: 'marking.html' });
+  }
+  return items;
+}
+
+function pageTitleForKey(key) {
+  if (key === 'marking') return 'Daily Marking';
+  if (key === 'dashboard') return 'HR Dashboard';
+  if (key === 'admin') return 'Admin Control';
+  return 'BSC Attendance';
+}
+
+// Renders the full sidebar + topbar shell. Call once per page with the active nav key
+// ('marking' | 'dashboard' | 'admin'). Expects #sidebar, #topbarTitle, #topbarBreadcrumb,
+// #topbarClock elements already in the page HTML.
+function renderShell(activeKey) {
   const s = getSession();
   if (!s) return;
-  const el = document.getElementById('topbar');
-  if (!el) return;
 
-  let navLinks = '';
-  if (s.role === 'Admin') {
-    navLinks = `
-      <a href="dashboard.html" class="${page === 'dashboard' ? 'active' : ''}">Dashboard</a>
-      <a href="marking.html" class="${page === 'marking' ? 'active' : ''}">Marking</a>
-      <a href="admin.html" class="${page === 'admin' ? 'active' : ''}">Admin Control</a>
+  const items = navItemsForRole(s.role);
+  const groups = [...new Set(items.map(i => i.group))];
+  const navHtml = groups.map(g => `
+    <div class="sb-section">${g}</div>
+    ${items.filter(i => i.group === g).map(i => `
+      <a class="nav-item ${i.key === activeKey ? 'active' : ''}" href="${i.href}">
+        <span class="nav-icon">${i.icon}</span>${i.label}
+      </a>
+    `).join('')}
+  `).join('');
+
+  const sidebarEl = document.getElementById('sidebar');
+  if (sidebarEl) {
+    sidebarEl.innerHTML = `
+      <div class="sb-logo-box"><img src="${LOGO_BSC}" alt="BSC"></div>
+      <div class="sb-user">
+        <div class="sb-avatar">${initials(s.name)}</div>
+        <div>
+          <div class="sb-user-name">${s.name}</div>
+          <div class="sb-user-role">${roleLabel(s)}</div>
+        </div>
+      </div>
+      ${navHtml}
+      <div class="sb-bottom">
+        <button class="logout-btn" onclick="logout()">&#8618; Logout</button>
+        <div class="sb-cnb-box"><img src="${LOGO_CNB}" alt="C&amp;B"></div>
+      </div>
     `;
   }
 
-  let scopeLabel = '';
-  if (s.role === 'FloorManager') scopeLabel = 'Floor Manager — ' + s.floorName;
-  else if (s.role === 'SectionIncharge') scopeLabel = 'Section Incharge — ' + s.sectionName + ' (' + s.floorName + ')';
-  else if (s.role === 'DeptIncharge') scopeLabel = 'Dept Incharge — ' + s.departmentName;
-  else if (s.role === 'Admin') scopeLabel = 'Admin (HR)';
+  const titleEl = document.getElementById('topbarTitle');
+  if (titleEl) titleEl.textContent = pageTitleForKey(activeKey);
+  const bcEl = document.getElementById('topbarBreadcrumb');
+  if (bcEl) bcEl.textContent = roleLabel(s) + (scopeLine(s) ? ' · ' + scopeLine(s) : '');
+  const clockEl = document.getElementById('topbarClock');
+  if (clockEl) {
+    const tick = () => { clockEl.textContent = new Date().toLocaleTimeString('en-IN', { hour: '2-digit', minute: '2-digit' }); };
+    tick();
+    setInterval(tick, 30000);
+  }
+}
 
-  el.innerHTML = `
-    <div class="brand">
-      <img src="${LOGO_BSC}" alt="BSC">
-      <img src="${LOGO_CNB}" alt="C&B">
-      <div>
-        <h1>BSC Textiles — Daily Attendance</h1>
-        <div class="sub">${s.name} · ${scopeLabel}</div>
-      </div>
-    </div>
-    <nav>${navLinks}<span class="logout" onclick="logout()">Logout</span></nav>
-  `;
+function toggleSidebar() {
+  document.getElementById('sidebar').classList.toggle('mob-open');
+  document.getElementById('sbOverlay').classList.toggle('show');
+}
+function closeSidebar() {
+  document.getElementById('sidebar').classList.remove('mob-open');
+  document.getElementById('sbOverlay').classList.remove('show');
 }
