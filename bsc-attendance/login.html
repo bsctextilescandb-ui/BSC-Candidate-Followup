@@ -1,593 +1,71 @@
-/**
- * BSC TEXTILES — DAILY ATTENDANCE APP (v3)
- * BOUND script — open via the Sheet's Extensions → Apps Script.
- * Deploy as Web App (Execute as: Me, Access: Anyone).
- * JSONP (GET + callback) throughout — reads AND writes — to avoid CORS issues
- * calling from GitHub Pages. Do not switch to doPost/fetch POST.
- *
- * Requires the 10 sheet tabs already created by 01_SheetSetup.gs:
- * Floors, Sections, Departments, Designations, EmployeeMaster, Users,
- * StatusTypes, DailyAttendance, Exceptions, GroomingLog.
- *
- * HIERARCHY LOGIC:
- * - RoleType comes from the Designations sheet, looked up via the employee's
- *   Designation text in EmployeeMaster. RoleType is one of:
- *   FloorManager | SectionIncharge | DeptIncharge | Staff | Admin
- * - FloorManager picks a Section from their floor first (getSectionsByFloor),
- *   then marks exactly like a SectionIncharge would for that section.
- * - Whoever submits first for a Section/Department+Date locks it — the other
- *   role sees full read-only detail (getUnitStatus). Only Admin can override
- *   (pass adminOverride=true to submitAttendance).
- * - Table 3 (Grooming/Uniform/ID) defaults every Present employee to
- *   Grooming=5, Uniform=Yes, ID=Yes — GroomingLog only stores rows where the
- *   marker explicitly changed something (same "store deviations only" pattern
- *   as Exceptions).
- * - EmployeeID is manual (payroll number), reused after ~3 months once the
- *   old holder is Inactive. Exceptions/GroomingLog snapshot EmployeeName at
- *   submission time so historical reports stay correctly attributed even
- *   after an ID gets reassigned.
- */
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>BSC Textiles — Sign In</title>
+<link rel="stylesheet" href="style.css">
+</head>
+<body>
 
-function doGet(e) {
-  var callback = e.parameter.callback || 'callback';
-  var action = e.parameter.action;
-  var result;
+<header class="topbar">
+  <div class="brand">
+    <img src="https://bsctextilescandb-ui.github.io/retail-crm/logo.jpg" alt="BSC">
+    <img src="https://bsctextilescandb-ui.github.io/retail-crm/cnb-logo.png" alt="C&B">
+    <div>
+      <h1>BSC Textiles — Daily Attendance</h1>
+      <div class="sub">Sign in with your PIN</div>
+    </div>
+  </div>
+</header>
 
+<main>
+  <div class="card" style="max-width:420px;margin:30px auto;">
+    <h2>Sign In</h2>
+    <label>PIN</label>
+    <input type="password" id="pin" placeholder="Enter your PIN" onkeydown="if(event.key==='Enter')doLogin()">
+    <button class="btn btn-primary btn-block" onclick="withBtn(this, doLogin)">Continue</button>
+    <div id="msg"></div>
+  </div>
+</main>
+
+<script src="shared.js"></script>
+<script>
+// If already logged in, skip straight to the right page.
+(function () {
+  const s = getSession();
+  if (s) routeAfterLogin(s);
+})();
+
+async function doLogin() {
+  const pin = document.getElementById('pin').value.trim();
+  const msgEl = document.getElementById('msg');
+  msgEl.innerHTML = '';
+  if (!pin) { msgEl.innerHTML = '<div class="msg msg-err">Enter your PIN.</div>'; return; }
+
+  msgEl.innerHTML = '<div class="hint">Checking...</div>';
+  let res;
   try {
-    switch (action) {
-      // ---- Login ----
-      case 'identify': result = identify(e.parameter.pin); break;
-
-      // ---- Marking screen reads ----
-      case 'getSectionsByFloor': result = getSectionsByFloor(e.parameter.floorId); break;
-      case 'getEmployeesByUnit': result = getEmployeesByUnit(e.parameter.unitType, e.parameter.unitId); break;
-      case 'getUnitStatus': result = getUnitStatus(e.parameter.unitType, e.parameter.unitId, e.parameter.date); break;
-      case 'getStatusTypes': result = getStatusTypes(e.parameter.includeInactive === 'true'); break;
-      case 'getMarkingBootstrap':
-        result = getMarkingBootstrap(e.parameter.unitType, e.parameter.unitId, e.parameter.date);
-        break;
-
-      // ---- Submission ----
-      case 'submitAttendance':
-        result = submitAttendance(
-          e.parameter.date, e.parameter.unitType, e.parameter.unitId,
-          e.parameter.userId, e.parameter.userName,
-          e.parameter.totalAssigned, e.parameter.totalPresent,
-          e.parameter.exceptions, e.parameter.grooming,
-          e.parameter.adminOverride
-        );
-        break;
-
-      // ---- Dashboard ----
-      case 'getDashboard': result = getDashboard(e.parameter.date); break;
-
-      // ---- Admin Control: Units ----
-      case 'getFloors': result = getFloors(e.parameter.includeInactive === 'true'); break;
-      case 'addFloor': result = addFloor(e.parameter.floorName); break;
-      case 'toggleFloor': result = toggleFloor(e.parameter.floorId, e.parameter.active); break;
-      case 'getSections': result = getSections(e.parameter.includeInactive === 'true'); break;
-      case 'addSection': result = addSection(e.parameter.sectionName, e.parameter.floorId); break;
-      case 'toggleSection': result = toggleSection(e.parameter.sectionId, e.parameter.active); break;
-      case 'getDepartments': result = getDepartments(e.parameter.includeInactive === 'true'); break;
-      case 'addDepartment': result = addDepartment(e.parameter.departmentName); break;
-      case 'toggleDepartment': result = toggleDepartment(e.parameter.departmentId, e.parameter.active); break;
-
-      // ---- Admin Control: Designations ----
-      case 'getDesignations': result = getDesignations(e.parameter.includeInactive === 'true'); break;
-      case 'addDesignation': result = addDesignation(e.parameter.designationName, e.parameter.roleType); break;
-      case 'toggleDesignation': result = toggleDesignation(e.parameter.designationId, e.parameter.active); break;
-      case 'editDesignationRoleType': result = editDesignationRoleType(e.parameter.designationId, e.parameter.roleType); break;
-
-      // ---- Admin Control: Users ----
-      case 'getUsers': result = getUsers(); break;
-      case 'addUser': result = addUser(e.parameter.employeeId, e.parameter.pin); break;
-      case 'toggleUser': result = toggleUser(e.parameter.userId, e.parameter.active); break;
-      case 'editUserPin': result = editUserPin(e.parameter.userId, e.parameter.pin); break;
-
-      // ---- Admin Control: Status Types ----
-      case 'addStatusType': result = addStatusType(e.parameter.statusName, e.parameter.requiresPermission); break;
-      case 'toggleStatusType': result = toggleStatusType(e.parameter.statusId, e.parameter.active); break;
-
-      // ---- Admin Control: Employees ----
-      case 'searchEmployees': result = searchEmployees(e.parameter.query); break;
-      case 'addEmployee':
-        result = addEmployee(
-          e.parameter.employeeId, e.parameter.name, e.parameter.gender,
-          e.parameter.department, e.parameter.section, e.parameter.designation, e.parameter.floor
-        );
-        break;
-      case 'editEmployee':
-        result = editEmployee(
-          e.parameter.rowNum, e.parameter.name, e.parameter.gender,
-          e.parameter.department, e.parameter.section, e.parameter.designation, e.parameter.floor
-        );
-        break;
-      case 'toggleEmployeeActive': result = toggleEmployeeActive(e.parameter.rowNum, e.parameter.active); break;
-
-      default:
-        result = { error: 'Unknown action: ' + action };
-    }
+    res = await jsonpCall({ action: 'identify', pin });
   } catch (err) {
-    result = { error: err.message };
+    msgEl.innerHTML = '<div class="msg msg-err">' + err.message + '</div>';
+    return;
   }
+  if (res.error) { msgEl.innerHTML = '<div class="msg msg-err">' + res.error + '</div>'; return; }
 
-  var output = callback + '(' + JSON.stringify(result) + ')';
-  return ContentService.createTextOutput(output).setMimeType(ContentService.MimeType.JAVASCRIPT);
+  saveSession(res);
+  clearSelectedUnit(); // fresh visit — FloorManager will need to re-pick a section
+  routeAfterLogin(res);
 }
 
-// ---------------------------------------------------------------------------
-// Sheet helpers
-// ---------------------------------------------------------------------------
-
-function ss_() { return SpreadsheetApp.getActiveSpreadsheet(); }
-
-function sheet_(name) {
-  var sh = ss_().getSheetByName(name);
-  if (!sh) throw new Error('Sheet not found: ' + name);
-  return sh;
-}
-
-function sheetToObjects_(sheetName) {
-  var sh = sheet_(sheetName);
-  var data = sh.getDataRange().getValues();
-  if (data.length < 2) return [];
-  var headers = data[0];
-  var rows = [];
-  for (var i = 1; i < data.length; i++) {
-    var row = data[i];
-    if (row.join('') === '') continue;
-    var obj = {};
-    for (var j = 0; j < headers.length; j++) {
-      var val = row[j];
-      if (val instanceof Date) val = Utilities.formatDate(val, Session.getScriptTimeZone(), 'yyyy-MM-dd');
-      obj[headers[j]] = val;
-    }
-    rows.push(obj);
-  }
-  return rows;
-}
-
-// Same as sheetToObjects_ but keeps the real sheet row number (_row) so Admin
-// Control edits can target the exact row — needed because EmployeeID can
-// repeat across an old inactive row + a new active row (3-month ID reuse).
-function sheetToObjectsWithRow_(sheetName) {
-  var sh = sheet_(sheetName);
-  var data = sh.getDataRange().getValues();
-  if (data.length < 2) return [];
-  var headers = data[0];
-  var rows = [];
-  for (var i = 1; i < data.length; i++) {
-    var row = data[i];
-    if (row.join('') === '') continue;
-    var obj = { _row: i + 1 };
-    for (var j = 0; j < headers.length; j++) {
-      var val = row[j];
-      if (val instanceof Date) val = Utilities.formatDate(val, Session.getScriptTimeZone(), 'yyyy-MM-dd');
-      obj[headers[j]] = val;
-    }
-    rows.push(obj);
-  }
-  return rows;
-}
-
-function isTrue_(v) { return v === true || v === 'TRUE' || v === 'true'; }
-
-function nextId_(sheetName, idField, prefix) {
-  var rows = sheetToObjects_(sheetName);
-  var max = 0;
-  rows.forEach(function (r) {
-    var n = parseInt(String(r[idField]).replace(prefix, ''), 10);
-    if (!isNaN(n) && n > max) max = n;
-  });
-  return prefix + (max + 1);
-}
-
-function todayStr_() {
-  return Utilities.formatDate(new Date(), Session.getScriptTimeZone(), 'yyyy-MM-dd');
-}
-
-function toggleById_(sheetName, idField, idVal, activeCol, active) {
-  var sh = sheet_(sheetName);
-  var data = sh.getDataRange().getValues();
-  var idColIdx = data[0].indexOf(idField);
-  for (var i = 1; i < data.length; i++) {
-    if (String(data[i][idColIdx]) === String(idVal)) {
-      sh.getRange(i + 1, activeCol).setValue(active === 'true' || active === true);
-      return { success: true };
-    }
-  }
-  return { error: idField + ' not found' };
-}
-
-// Deletes every row (bottom-up, so indices stay valid) matching a predicate
-// evaluated against the row-as-object.
-function deleteMatchingRows_(sheetName, predicate) {
-  var sh = sheet_(sheetName);
-  var data = sh.getDataRange().getValues();
-  if (data.length < 2) return;
-  var headers = data[0];
-  for (var i = data.length - 1; i >= 1; i--) {
-    var row = data[i];
-    if (row.join('') === '') continue;
-    var obj = {};
-    headers.forEach(function (h, j) { obj[h] = row[j]; });
-    if (predicate(obj)) sh.deleteRow(i + 1);
+function routeAfterLogin(session) {
+  if (session.role === 'Admin') {
+    window.location.href = 'dashboard.html';
+  } else {
+    window.location.href = 'marking.html';
   }
 }
+</script>
 
-// ---------------------------------------------------------------------------
-// Identity / role resolution
-// ---------------------------------------------------------------------------
-
-function getDesignationRoleType_(designationName) {
-  var d = sheetToObjects_('Designations').find(function (x) {
-    return x.DesignationName === designationName && isTrue_(x.Active);
-  });
-  return d ? d.RoleType : 'Staff';
-}
-
-function identify(pin) {
-  var user = sheetToObjects_('Users').find(function (u) {
-    return String(u.PIN) === String(pin) && isTrue_(u.Active);
-  });
-  if (!user) return { error: 'PIN not recognized. Check with HR.' };
-
-  var emp = sheetToObjects_('EmployeeMaster').find(function (e) {
-    return e.EmployeeID === user.EmployeeID && isTrue_(e.Active);
-  });
-  if (!emp) return { error: 'Linked employee record not found or inactive. Check with HR.' };
-
-  var roleType = getDesignationRoleType_(emp.Designation);
-  var base = { userId: user.UserID, employeeId: emp.EmployeeID, name: emp.Name, roleType: roleType };
-
-  if (roleType === 'Admin') {
-    return Object.assign(base, { role: 'Admin' });
-  }
-  if (roleType === 'FloorManager') {
-    var floor = sheetToObjects_('Floors').find(function (f) { return f.FloorName === emp.Floor; });
-    return Object.assign(base, { role: 'FloorManager', floorId: floor ? floor.FloorID : null, floorName: emp.Floor });
-  }
-  if (roleType === 'SectionIncharge') {
-    var floor2 = sheetToObjects_('Floors').find(function (f) { return f.FloorName === emp.Floor; });
-    var section = sheetToObjects_('Sections').find(function (s) {
-      return s.SectionName === emp.Section && String(s.FloorID) === String(floor2 ? floor2.FloorID : '');
-    });
-    return Object.assign(base, {
-      role: 'SectionIncharge',
-      sectionId: section ? section.SectionID : null, sectionName: emp.Section,
-      floorId: floor2 ? floor2.FloorID : null, floorName: emp.Floor
-    });
-  }
-  if (roleType === 'DeptIncharge') {
-    var dept = sheetToObjects_('Departments').find(function (d) { return d.DepartmentName === emp.Department; });
-    return Object.assign(base, { role: 'DeptIncharge', departmentId: dept ? dept.DepartmentID : null, departmentName: emp.Department });
-  }
-  return { error: 'Your designation (' + emp.Designation + ') does not have marking or admin access.' };
-}
-
-// ---------------------------------------------------------------------------
-// Marking screen reads
-// ---------------------------------------------------------------------------
-
-function getSectionsByFloor(floorId) {
-  var floors = sheetToObjects_('Floors');
-  return sheetToObjects_('Sections').filter(function (s) {
-    return isTrue_(s.Active) && String(s.FloorID) === String(floorId);
-  });
-}
-
-function getEmployeesByUnit(unitType, unitId) {
-  var all = sheetToObjects_('EmployeeMaster').filter(function (e) { return isTrue_(e.Active); });
-
-  if (unitType === 'Section') {
-    var section = sheetToObjects_('Sections').find(function (s) { return String(s.SectionID) === String(unitId); });
-    if (!section) return [];
-    var floor = sheetToObjects_('Floors').find(function (f) { return String(f.FloorID) === String(section.FloorID); });
-    var floorName = floor ? floor.FloorName : '';
-    return all.filter(function (e) {
-      return e.Department === 'Sales' && e.Section === section.SectionName && e.Floor === floorName;
-    });
-  }
-
-  if (unitType === 'Department') {
-    var dept = sheetToObjects_('Departments').find(function (d) { return String(d.DepartmentID) === String(unitId); });
-    if (!dept) return [];
-    return all.filter(function (e) { return e.Department === dept.DepartmentName; });
-  }
-
-  return [];
-}
-
-function getUnitStatus(unitType, unitId, date) {
-  date = date || todayStr_();
-  var att = sheetToObjects_('DailyAttendance').find(function (a) {
-    return a.Date === date && a.RecordUnitType === unitType && String(a.RecordUnitID) === String(unitId);
-  });
-  if (!att) return { submitted: false };
-
-  var exceptions = sheetToObjects_('Exceptions').filter(function (x) {
-    return x.Date === date && x.RecordUnitType === unitType && String(x.RecordUnitID) === String(unitId);
-  });
-  var grooming = sheetToObjects_('GroomingLog').filter(function (g) {
-    return g.Date === date && g.RecordUnitType === unitType && String(g.RecordUnitID) === String(unitId);
-  });
-
-  return {
-    submitted: true,
-    submittedByName: att.SubmittedByName,
-    submittedAt: att.SubmittedAt,
-    totalAssigned: att.TotalAssigned,
-    totalPresent: att.TotalPresent,
-    exceptions: exceptions,
-    grooming: grooming
-  };
-}
-
-function getStatusTypes(includeInactive) {
-  var rows = sheetToObjects_('StatusTypes');
-  if (!includeInactive) rows = rows.filter(function (s) { return isTrue_(s.Active); });
-  rows.sort(function (a, b) { return (a.SortOrder || 0) - (b.SortOrder || 0); });
-  return rows;
-}
-
-// Combines getUnitStatus + getStatusTypes + getEmployeesByUnit into one round-trip
-// — the marking screen used to make 3 sequential calls to get going; this cuts it to 1.
-function getMarkingBootstrap(unitType, unitId, date) {
-  return {
-    unitStatus: getUnitStatus(unitType, unitId, date),
-    statusTypes: getStatusTypes(false),
-    employees: getEmployeesByUnit(unitType, unitId)
-  };
-}
-
-// ---------------------------------------------------------------------------
-// Submission
-// ---------------------------------------------------------------------------
-
-function submitAttendance(date, unitType, unitId, userId, userName, totalAssigned, totalPresent, exceptionsJson, groomingJson, adminOverride) {
-  date = date || todayStr_();
-  var isOverride = adminOverride === 'true' || adminOverride === true;
-
-  var existing = sheetToObjects_('DailyAttendance').find(function (a) {
-    return a.Date === date && a.RecordUnitType === unitType && String(a.RecordUnitID) === String(unitId);
-  });
-  if (existing && !isOverride) {
-    return { error: 'Already submitted today by ' + existing.SubmittedByName + '. Only Admin can edit now.' };
-  }
-
-  var now = Utilities.formatDate(new Date(), Session.getScriptTimeZone(), 'yyyy-MM-dd HH:mm:ss');
-
-  deleteMatchingRows_('DailyAttendance', function (r) {
-    return r.Date === date && r.RecordUnitType === unitType && String(r.RecordUnitID) === String(unitId);
-  });
-  sheet_('DailyAttendance').appendRow([date, unitType, unitId, userId, userName, totalAssigned, totalPresent, now]);
-
-  deleteMatchingRows_('Exceptions', function (r) {
-    return r.Date === date && r.RecordUnitType === unitType && String(r.RecordUnitID) === String(unitId);
-  });
-  var exceptions = JSON.parse(exceptionsJson || '[]');
-  var excSheet = sheet_('Exceptions');
-  exceptions.forEach(function (ex) {
-    excSheet.appendRow([date, unitType, unitId, ex.employeeId, ex.employeeName, ex.statusId, ex.statusName, ex.permission, userId, now]);
-  });
-
-  deleteMatchingRows_('GroomingLog', function (r) {
-    return r.Date === date && r.RecordUnitType === unitType && String(r.RecordUnitID) === String(unitId);
-  });
-  var grooming = JSON.parse(groomingJson || '[]');
-  var groomSheet = sheet_('GroomingLog');
-  grooming.forEach(function (g) {
-    groomSheet.appendRow([date, unitType, unitId, g.employeeId, g.employeeName, g.groomingScore, g.uniformOK, g.idCardOK, userId, now]);
-  });
-
-  return { success: true, exceptionCount: exceptions.length, groomingCount: grooming.length };
-}
-
-// ---------------------------------------------------------------------------
-// Dashboard
-// ---------------------------------------------------------------------------
-
-function getDashboard(date) {
-  date = date || todayStr_();
-  var floors = sheetToObjects_('Floors').filter(function (f) { return isTrue_(f.Active); });
-  var sections = sheetToObjects_('Sections').filter(function (s) { return isTrue_(s.Active); });
-  var departments = sheetToObjects_('Departments').filter(function (d) { return isTrue_(d.Active); });
-  var statusTypes = getStatusTypes(false);
-
-  var attendance = sheetToObjects_('DailyAttendance').filter(function (a) { return a.Date === date; });
-  var exceptions = sheetToObjects_('Exceptions').filter(function (x) { return x.Date === date; });
-  var grooming = sheetToObjects_('GroomingLog').filter(function (g) { return g.Date === date; });
-
-  function buildUnit(unitType, unitId, label, extra) {
-    var att = attendance.find(function (a) { return a.RecordUnitType === unitType && String(a.RecordUnitID) === String(unitId); });
-    var exc = exceptions.filter(function (x) { return x.RecordUnitType === unitType && String(x.RecordUnitID) === String(unitId); });
-    var groom = grooming.filter(function (g) { return g.RecordUnitType === unitType && String(g.RecordUnitID) === String(unitId); });
-
-    var statusCounts = {};
-    statusTypes.forEach(function (st) { statusCounts[st.StatusName] = 0; });
-    exc.forEach(function (x) { statusCounts[x.StatusName] = (statusCounts[x.StatusName] || 0) + 1; });
-
-    var nonCompliant = groom.filter(function (g) {
-      return Number(g.GroomingScore) < 5 || g.UniformOK === 'No' || g.IDCardOK === 'No';
-    }).length;
-
-    return Object.assign({
-      unitType: unitType, unitId: unitId, label: label,
-      submitted: !!att,
-      totalAssigned: att ? att.TotalAssigned : null,
-      totalPresent: att ? att.TotalPresent : null,
-      submittedByName: att ? att.SubmittedByName : null,
-      submittedAt: att ? att.SubmittedAt : null,
-      statusCounts: statusCounts,
-      groomingChecked: groom.length,
-      groomingNonCompliant: nonCompliant
-    }, extra || {});
-  }
-
-  var sectionUnits = sections.map(function (s) {
-    var floor = floors.find(function (f) { return String(f.FloorID) === String(s.FloorID); });
-    return buildUnit('Section', s.SectionID, (floor ? floor.FloorName : '') + ' — ' + s.SectionName, { floorName: floor ? floor.FloorName : '' });
-  });
-  var deptUnits = departments.map(function (d) {
-    return buildUnit('Department', d.DepartmentID, d.DepartmentName, {});
-  });
-
-  var allUnits = sectionUnits.concat(deptUnits);
-  var cumulative = { totalAssigned: 0, totalPresent: 0, unitsSubmitted: 0, unitsTotal: allUnits.length, statusCounts: {}, groomingChecked: 0, groomingNonCompliant: 0 };
-  statusTypes.forEach(function (st) { cumulative.statusCounts[st.StatusName] = 0; });
-  allUnits.forEach(function (u) {
-    if (u.submitted) {
-      cumulative.unitsSubmitted++;
-      cumulative.totalAssigned += Number(u.totalAssigned) || 0;
-      cumulative.totalPresent += Number(u.totalPresent) || 0;
-      Object.keys(u.statusCounts).forEach(function (k) { cumulative.statusCounts[k] = (cumulative.statusCounts[k] || 0) + u.statusCounts[k]; });
-      cumulative.groomingChecked += u.groomingChecked;
-      cumulative.groomingNonCompliant += u.groomingNonCompliant;
-    }
-  });
-
-  return { date: date, sectionUnits: sectionUnits, deptUnits: deptUnits, cumulative: cumulative, statusTypes: statusTypes };
-}
-
-// ---------------------------------------------------------------------------
-// Admin Control: Units (Floors / Sections / Departments)
-// ---------------------------------------------------------------------------
-
-function getFloors(includeInactive) {
-  var r = sheetToObjects_('Floors');
-  return includeInactive ? r : r.filter(function (f) { return isTrue_(f.Active); });
-}
-function addFloor(floorName) {
-  var id = nextId_('Floors', 'FloorID', 'FL');
-  sheet_('Floors').appendRow([id, floorName, true]);
-  return { success: true, FloorID: id };
-}
-function toggleFloor(floorId, active) { return toggleById_('Floors', 'FloorID', floorId, 3, active); }
-
-function getSections(includeInactive) {
-  var r = sheetToObjects_('Sections');
-  r = includeInactive ? r : r.filter(function (s) { return isTrue_(s.Active); });
-  var floors = sheetToObjects_('Floors');
-  return r.map(function (s) {
-    var f = floors.find(function (x) { return String(x.FloorID) === String(s.FloorID); });
-    return Object.assign({}, s, { FloorName: f ? f.FloorName : '' });
-  });
-}
-function addSection(sectionName, floorId) {
-  var id = nextId_('Sections', 'SectionID', 'SEC');
-  sheet_('Sections').appendRow([id, sectionName, floorId, true]);
-  return { success: true, SectionID: id };
-}
-function toggleSection(sectionId, active) { return toggleById_('Sections', 'SectionID', sectionId, 4, active); }
-
-function getDepartments(includeInactive) {
-  var r = sheetToObjects_('Departments');
-  return includeInactive ? r : r.filter(function (d) { return isTrue_(d.Active); });
-}
-function addDepartment(departmentName) {
-  var id = nextId_('Departments', 'DepartmentID', 'DEP');
-  sheet_('Departments').appendRow([id, departmentName, true]);
-  return { success: true, DepartmentID: id };
-}
-function toggleDepartment(departmentId, active) { return toggleById_('Departments', 'DepartmentID', departmentId, 3, active); }
-
-// ---------------------------------------------------------------------------
-// Admin Control: Designations
-// ---------------------------------------------------------------------------
-
-function getDesignations(includeInactive) {
-  var r = sheetToObjects_('Designations');
-  return includeInactive ? r : r.filter(function (d) { return isTrue_(d.Active); });
-}
-function addDesignation(designationName, roleType) {
-  var id = nextId_('Designations', 'DesignationID', 'DSG');
-  sheet_('Designations').appendRow([id, designationName, roleType, true]);
-  return { success: true, DesignationID: id };
-}
-function toggleDesignation(designationId, active) { return toggleById_('Designations', 'DesignationID', designationId, 4, active); }
-function editDesignationRoleType(designationId, roleType) {
-  var sh = sheet_('Designations');
-  var data = sh.getDataRange().getValues();
-  for (var i = 1; i < data.length; i++) {
-    if (String(data[i][0]) === String(designationId)) {
-      sh.getRange(i + 1, 3).setValue(roleType);
-      return { success: true };
-    }
-  }
-  return { error: 'Designation not found' };
-}
-
-// ---------------------------------------------------------------------------
-// Admin Control: Users
-// ---------------------------------------------------------------------------
-
-function getUsers() {
-  var users = sheetToObjects_('Users');
-  var emps = sheetToObjects_('EmployeeMaster');
-  return users.map(function (u) {
-    var emp = emps.find(function (e) { return e.EmployeeID === u.EmployeeID && isTrue_(e.Active); });
-    return Object.assign({}, u, { EmployeeName: emp ? emp.Name : '(inactive/unknown)', Designation: emp ? emp.Designation : '' });
-  });
-}
-function addUser(employeeId, pin) {
-  var emp = sheetToObjects_('EmployeeMaster').find(function (e) { return e.EmployeeID === employeeId && isTrue_(e.Active); });
-  if (!emp) return { error: 'No active employee with ID ' + employeeId };
-  var id = nextId_('Users', 'UserID', 'USR');
-  sheet_('Users').appendRow([id, employeeId, pin, true]);
-  return { success: true, UserID: id };
-}
-function toggleUser(userId, active) { return toggleById_('Users', 'UserID', userId, 4, active); }
-function editUserPin(userId, pin) {
-  var sh = sheet_('Users');
-  var data = sh.getDataRange().getValues();
-  for (var i = 1; i < data.length; i++) {
-    if (String(data[i][0]) === String(userId)) {
-      sh.getRange(i + 1, 3).setValue(pin);
-      return { success: true };
-    }
-  }
-  return { error: 'User not found' };
-}
-
-// ---------------------------------------------------------------------------
-// Admin Control: Status Types
-// ---------------------------------------------------------------------------
-
-function addStatusType(statusName, requiresPermission) {
-  var id = nextId_('StatusTypes', 'StatusID', 'ST');
-  var existing = sheetToObjects_('StatusTypes');
-  sheet_('StatusTypes').appendRow([id, statusName, requiresPermission === 'true' || requiresPermission === true, true, existing.length + 1]);
-  return { success: true, StatusID: id };
-}
-function toggleStatusType(statusId, active) { return toggleById_('StatusTypes', 'StatusID', statusId, 4, active); }
-
-// ---------------------------------------------------------------------------
-// Admin Control: Employees
-// ---------------------------------------------------------------------------
-
-function searchEmployees(query) {
-  var rows = sheetToObjectsWithRow_('EmployeeMaster');
-  query = String(query || '').toLowerCase();
-  return rows.filter(function (e) {
-    return String(e.EmployeeID).toLowerCase().indexOf(query) !== -1 || String(e.Name).toLowerCase().indexOf(query) !== -1;
-  }).slice(0, 30);
-}
-
-function addEmployee(employeeId, name, gender, department, section, designation, floor) {
-  var activeClash = sheetToObjects_('EmployeeMaster').find(function (e) { return e.EmployeeID === employeeId && isTrue_(e.Active); });
-  if (activeClash) {
-    return { error: 'Employee ID ' + employeeId + ' is already active (' + activeClash.Name + '). Deactivate it first if this ID is being reassigned.' };
-  }
-  sheet_('EmployeeMaster').appendRow([employeeId, name, gender, department, section, designation, floor, true]);
-  return { success: true };
-}
-
-function editEmployee(rowNum, name, gender, department, section, designation, floor) {
-  sheet_('EmployeeMaster').getRange(Number(rowNum), 2, 1, 6).setValues([[name, gender, department, section, designation, floor]]);
-  return { success: true };
-}
-
-function toggleEmployeeActive(rowNum, active) {
-  sheet_('EmployeeMaster').getRange(Number(rowNum), 8).setValue(active === 'true' || active === true);
-  return { success: true };
-}
+</body>
+</html>
