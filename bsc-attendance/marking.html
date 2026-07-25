@@ -167,6 +167,7 @@ async function showAdminPicker() {
     <select id="adminUnitType" onchange="onAdminUnitTypeChange()">
       <option value="Section">Sales — Floor / Section</option>
       <option value="Department">Non-Sales — Department</option>
+      <option value="Managers">Managers — Floor/Section/Dept Incharges (HR only)</option>
     </select>
     <div id="adminSalesPicker">
       <label>Floor</label>
@@ -181,6 +182,9 @@ async function showAdminPicker() {
       <select id="adminDeptSelect">
         ${departments.map(d => `<option value="${d.DepartmentID}">${d.DepartmentName}</option>`).join('')}
       </select>
+    </div>
+    <div id="adminManagerPicker" style="display:none;">
+      <div class="hint">One flat list covering every active Floor Manager, Section Incharge, and Dept Incharge store-wide.</div>
     </div>
     <button class="btn btn-primary btn-block" onclick="withBtn(this, confirmAdminUnit)">Continue</button>
   `;
@@ -198,6 +202,7 @@ function onAdminUnitTypeChange() {
   const t = document.getElementById('adminUnitType').value;
   document.getElementById('adminSalesPicker').style.display = t === 'Section' ? 'block' : 'none';
   document.getElementById('adminDeptPicker').style.display = t === 'Department' ? 'block' : 'none';
+  document.getElementById('adminManagerPicker').style.display = t === 'Managers' ? 'block' : 'none';
 }
 
 async function confirmAdminUnit() {
@@ -207,10 +212,12 @@ async function confirmAdminUnit() {
     const floorName = document.getElementById('adminFloorSelect').selectedOptions[0].textContent;
     const secName = document.getElementById('adminSectionSelect').selectedOptions[0].textContent;
     currentUnit = { unitType: 'Section', unitId: id, unitLabel: secName + ' (' + floorName + ')' };
-  } else {
+  } else if (t === 'Department') {
     const id = document.getElementById('adminDeptSelect').value;
     const name = document.getElementById('adminDeptSelect').selectedOptions[0].textContent;
     currentUnit = { unitType: 'Department', unitId: id, unitLabel: name };
+  } else {
+    currentUnit = { unitType: 'Managers', unitId: 'ALL', unitLabel: 'All Managers (Floor/Section/Dept Incharges)' };
   }
   saveSelectedUnit(currentUnit.unitType, currentUnit.unitId, currentUnit.unitLabel);
   document.getElementById('unitPickerCard').style.display = 'none';
@@ -273,11 +280,15 @@ function renderLockedView(status) {
   document.getElementById('lockedView').style.display = 'block';
   const exc = status.exceptions || [];
   const groom = status.grooming || [];
+  const showChange = (session.role === 'FloorManager' || session.role === 'Admin');
   document.getElementById('lockedDetail').innerHTML = `
-    <div class="hint">Submitted by <strong>${status.submittedByName}</strong> at ${status.submittedAt}</div>
+    <div style="display:flex;justify-content:space-between;align-items:center;">
+      <div class="hint">Submitted by <strong>${status.submittedByName}</strong> at ${status.submittedAt}</div>
+      ${showChange ? `<button class="btn btn-outline btn-sm" onclick="changeUnit()">Change</button>` : ''}
+    </div>
     <div class="count-table" style="margin-top:8px;">
       <div class="count-box present"><div class="n">${status.totalPresent}</div><div class="lbl">Present</div></div>
-      <div class="count-box"><div class="n">${status.totalAssigned}</div><div class="lbl">Assigned</div></div>
+      <div class="count-box"><div class="n">${status.totalAssigned}</div><div class="lbl">Total</div></div>
     </div>
     <div class="hint" style="margin-top:12px;">Attendance Exceptions</div>
     <div class="picked-list">
