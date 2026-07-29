@@ -343,7 +343,7 @@ function renderStatusSearch() {
 }
 
 function openStatusPicker(empId) {
-  const emp = unitEmployees.find(e => e.EmployeeID === empId);
+  const emp = unitEmployees.find(e => String(e.EmployeeID) === String(empId));
   document.getElementById('statusSearchResults').innerHTML = `
     <div class="card" style="margin-top:8px;">
       <strong>${emp.Name}</strong> <span class="hint">#${emp.EmployeeID}</span>
@@ -367,7 +367,7 @@ function chooseStatus(empId, statusId, statusName, requiresPermission) {
 }
 
 function saveStatusPick(empId, statusId, statusName, permission) {
-  const emp = unitEmployees.find(e => e.EmployeeID === empId);
+  const emp = unitEmployees.find(e => String(e.EmployeeID) === String(empId));
   statusPicks[empId] = { employeeName: emp.Name, statusId, statusName, permission };
   document.getElementById('statusSearch').value = '';
   document.getElementById('statusSearchResults').innerHTML = '';
@@ -409,7 +409,7 @@ function renderGroomSearch() {
 }
 
 function openGroomPicker(empId) {
-  const emp = unitEmployees.find(e => e.EmployeeID === empId);
+  const emp = unitEmployees.find(e => String(e.EmployeeID) === String(empId));
   const existing = groomPicks[empId] || { groomingScore: 5, uniformOK: 'Yes', idCardOK: 'Yes' };
   document.getElementById('groomSearchResults').innerHTML = `
     <div class="card" style="margin-top:8px;">
@@ -435,7 +435,7 @@ function openGroomPicker(empId) {
 }
 
 function saveGroomPick(empId) {
-  const emp = unitEmployees.find(e => e.EmployeeID === empId);
+  const emp = unitEmployees.find(e => String(e.EmployeeID) === String(empId));
   const groomingScore = document.getElementById('groomScoreSel').value;
   const uniformOK = document.getElementById('uniformSel').value;
   const idCardOK = document.getElementById('idCardSel').value;
