@@ -1,0 +1,738 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8"><meta name="viewport" content="width=device-width,initial-scale=1">
+<title>HR Monthly Review Report — BSC Textiles</title>
+<style>
+:root{
+  --navy:#1E2D5A;--gold:#B8860B;--red:#C0272D;--ivory:#F9F7F0;
+  --green:#2d8a4e;--purple:#7c4dbd;--border:#e8e4dd;
+  --white:#fff;--muted:#888;--light:#F5F3EE;
+}
+*{box-sizing:border-box;margin:0;padding:0}
+body{font-family:'Cambria',Georgia,serif;background:#eee;color:#2c2c2c;min-height:100vh}
+
+/* ── Auth Screen ──────────────────────────────────────────── */
+#auth-screen{position:fixed;inset:0;background:var(--navy);display:flex;align-items:center;justify-content:center;z-index:9999;flex-direction:column;gap:20px}
+.auth-box{background:#fff;border-radius:14px;padding:36px 40px;width:340px;text-align:center;box-shadow:0 20px 60px rgba(0,0,0,.3)}
+.auth-logo{width:120px;margin-bottom:16px}
+.auth-title{font-size:18px;font-weight:700;color:var(--navy);margin-bottom:4px}
+.auth-sub{font-size:11px;color:var(--muted);margin-bottom:20px}
+.auth-input{width:100%;padding:10px 14px;border:1.5px solid var(--border);border-radius:8px;font-size:14px;font-family:inherit;text-align:center;letter-spacing:4px;margin-bottom:12px}
+.auth-input:focus{outline:none;border-color:var(--navy)}
+.auth-btn{width:100%;padding:11px;background:var(--navy);color:#fff;border:none;border-radius:8px;font-size:14px;font-weight:700;cursor:pointer;font-family:inherit}
+.auth-btn:hover{background:#162244}
+.auth-err{font-size:11px;color:var(--red);margin-top:6px;display:none}
+
+/* ── Controls ─────────────────────────────────────────────── */
+#controls{background:var(--navy);padding:14px 24px;display:flex;align-items:center;gap:12px;flex-wrap:wrap;position:sticky;top:0;z-index:100;display:none}
+.ctrl-logo{height:36px;border-radius:4px}
+.ctrl-title{color:#fff;font-size:14px;font-weight:700;flex:1}
+.ctrl-group{display:flex;align-items:center;gap:6px}
+.ctrl-label{color:rgba(255,255,255,.6);font-size:10px;font-weight:600}
+.ctrl-select,.ctrl-date{padding:6px 10px;border-radius:6px;border:1px solid rgba(255,255,255,.2);background:rgba(255,255,255,.1);color:#fff;font-size:11px;font-family:inherit;cursor:pointer}
+.ctrl-select option{color:#000;background:#fff}
+.ctrl-btn{padding:7px 14px;border-radius:7px;border:none;font-size:11px;font-weight:700;cursor:pointer;font-family:inherit}
+.ctrl-btn-primary{background:var(--gold);color:#fff}
+.ctrl-btn-outline{background:transparent;color:#fff;border:1px solid rgba(255,255,255,.4)}
+.ctrl-btn-outline:hover{background:rgba(255,255,255,.1)}
+
+/* ── Report Container ─────────────────────────────────────── */
+#report-area{display:none;padding:24px;max-width:960px;margin:0 auto}
+
+/* ── Loading ──────────────────────────────────────────────── */
+#loading{display:none;text-align:center;padding:60px;color:var(--muted)}
+.spinner{width:40px;height:40px;border:4px solid #ddd;border-top-color:var(--navy);border-radius:50%;animation:spin 1s linear infinite;margin:0 auto 16px}
+@keyframes spin{to{transform:rotate(360deg)}}
+
+/* ── Pages ────────────────────────────────────────────────── */
+.page{background:#fff;border-radius:12px;margin-bottom:24px;overflow:hidden;box-shadow:0 2px 12px rgba(0,0,0,.08)}
+.page-header{background:var(--navy);padding:20px 28px;display:flex;justify-content:space-between;align-items:center}
+.page-header-left h2{color:#fff;font-size:18px;font-weight:800}
+.page-header-left p{color:rgba(255,255,255,.6);font-size:10px;margin-top:3px}
+.page-num{color:rgba(255,255,255,.4);font-size:11px;font-weight:700}
+.page-body{padding:24px 28px}
+
+/* ── Cover Page ───────────────────────────────────────────── */
+.cover-page{background:var(--navy);border-radius:12px;padding:60px 40px;text-align:center;margin-bottom:24px;box-shadow:0 2px 12px rgba(0,0,0,.08)}
+.cover-logo{width:140px;border-radius:8px;margin-bottom:24px}
+.cover-title{color:#fff;font-size:32px;font-weight:800;margin-bottom:8px}
+.cover-sub{color:var(--gold);font-size:16px;font-weight:600;margin-bottom:32px}
+.cover-period{background:rgba(255,255,255,.1);border-radius:10px;padding:16px 28px;display:inline-block;margin-bottom:32px}
+.cover-period-label{color:rgba(255,255,255,.5);font-size:10px;text-transform:uppercase;letter-spacing:.1em;margin-bottom:4px}
+.cover-period-val{color:#fff;font-size:18px;font-weight:700}
+.cover-meta{display:flex;justify-content:center;gap:32px;margin-top:8px}
+.cover-meta-item{text-align:center}
+.cover-meta-item label{color:rgba(255,255,255,.4);font-size:9px;text-transform:uppercase;display:block;margin-bottom:4px}
+.cover-meta-item span{color:rgba(255,255,255,.8);font-size:11px;font-weight:600}
+.cover-prepared{color:rgba(255,255,255,.4);font-size:11px;margin-top:32px}
+.cover-prepared b{color:rgba(255,255,255,.7)}
+
+/* ── KPI Grid ─────────────────────────────────────────────── */
+.kpi-grid{display:grid;grid-template-columns:repeat(4,1fr);gap:12px;margin-bottom:20px}
+.kpi-card{border-radius:9px;padding:14px 16px;border:1px solid var(--border)}
+.kpi-card-label{font-size:9px;font-weight:700;color:var(--muted);text-transform:uppercase;letter-spacing:.06em;margin-bottom:6px}
+.kpi-card-val{font-size:28px;font-weight:800}
+.kpi-card-sub{font-size:10px;color:var(--muted);margin-top:3px}
+.kpi-navy{border-left:4px solid var(--navy)}.kpi-navy .kpi-card-val{color:var(--navy)}
+.kpi-gold{border-left:4px solid var(--gold)}.kpi-gold .kpi-card-val{color:var(--gold)}
+.kpi-green{border-left:4px solid var(--green)}.kpi-green .kpi-card-val{color:var(--green)}
+.kpi-red{border-left:4px solid var(--red)}.kpi-red .kpi-card-val{color:var(--red)}
+.kpi-purple{border-left:4px solid var(--purple)}.kpi-purple .kpi-card-val{color:var(--purple)}
+
+/* ── Funnel ───────────────────────────────────────────────── */
+.funnel-row{display:flex;align-items:center;gap:10px;margin-bottom:8px}
+.f-lbl{width:180px;font-size:11px;font-weight:600;color:#444;text-align:right;flex-shrink:0}
+.f-bg{flex:1;background:#f0ede8;border-radius:4px;overflow:hidden;height:28px}
+.f-bar{height:100%;display:flex;align-items:center;padding-left:10px;font-size:11px;font-weight:700;color:#fff;border-radius:4px;transition:width .5s;min-width:30px}
+.f-num{width:36px;font-size:12px;font-weight:700;color:var(--navy);text-align:right;flex-shrink:0}
+.f-drop{width:44px;font-size:10px;color:var(--red);font-weight:700;flex-shrink:0}
+
+/* ── Table ────────────────────────────────────────────────── */
+.report-table{width:100%;border-collapse:collapse;font-size:11px}
+.report-table th{padding:9px 12px;text-align:left;background:var(--navy);color:#fff;font-size:9.5px;font-weight:700;text-transform:uppercase;letter-spacing:.05em}
+.report-table td{padding:9px 12px;border-bottom:1px solid #f0ede8;vertical-align:middle}
+.report-table tr:last-child td{border-bottom:none}
+.report-table tr:nth-child(even) td{background:var(--ivory)}
+.report-table tr:hover td{background:#f5f2ec}
+
+/* ── Section Title ────────────────────────────────────────── */
+.section-title{font-size:11px;font-weight:800;color:var(--navy);text-transform:uppercase;letter-spacing:.06em;margin-bottom:12px;padding-bottom:6px;border-bottom:2px solid var(--gold)}
+
+/* ── Progress bar ─────────────────────────────────────────── */
+.prog-wrap{display:flex;align-items:center;gap:8px}
+.prog-track{flex:1;height:8px;background:#f0ede8;border-radius:4px;overflow:hidden}
+.prog-fill{height:100%;border-radius:4px}
+.prog-pct{font-size:10px;font-weight:700;min-width:36px;text-align:right}
+
+/* ── Badge ────────────────────────────────────────────────── */
+.badge{display:inline-flex;padding:2px 8px;border-radius:4px;font-size:9.5px;font-weight:700}
+.badge-green{background:#EAF3DE;color:#3B6D11}
+.badge-red{background:#FCEBEB;color:#A32D2D}
+.badge-gold{background:#FFF7E6;color:#B8860B}
+.badge-navy{background:#E8EDF5;color:#1E2D5A}
+.badge-purple{background:#F0EBF9;color:#7c4dbd}
+
+/* ── Two col layout ───────────────────────────────────────── */
+.two-col{display:grid;grid-template-columns:1fr 1fr;gap:20px}
+.three-col{display:grid;grid-template-columns:1fr 1fr 1fr;gap:16px}
+
+/* ── Source card ──────────────────────────────────────────── */
+.source-card{border:1px solid var(--border);border-radius:9px;padding:16px;text-align:center}
+.source-card-val{font-size:28px;font-weight:800;color:var(--navy);margin:6px 0}
+.source-card-pct{font-size:13px;font-weight:700;color:var(--gold)}
+.source-card-label{font-size:10px;color:var(--muted);font-weight:600;text-transform:uppercase;letter-spacing:.05em}
+
+/* ── Loss section ─────────────────────────────────────────── */
+.loss-card{border-radius:9px;padding:16px 20px;display:flex;align-items:center;gap:14px}
+.loss-card-icon{font-size:24px}
+.loss-card-val{font-size:24px;font-weight:800}
+.loss-card-label{font-size:10px;font-weight:600;color:var(--muted);margin-top:2px}
+.loss-red{background:#FCEBEB;border:1px solid #f5c0c0}
+.loss-red .loss-card-val{color:var(--red)}
+.loss-gold{background:#FFF7E6;border:1px solid #f5dfa0}
+.loss-gold .loss-card-val{color:var(--gold)}
+
+/* ── Action item ──────────────────────────────────────────── */
+.action-item{display:flex;align-items:flex-start;gap:10px;padding:10px 14px;border-radius:8px;margin-bottom:8px;border:1px solid var(--border)}
+.action-dot{width:8px;height:8px;border-radius:50%;flex-shrink:0;margin-top:4px}
+.action-dot-red{background:var(--red)}
+.action-dot-gold{background:var(--gold)}
+.action-dot-green{background:var(--green)}
+.action-text{font-size:12px;color:#333;line-height:1.5}
+
+/* ── Print / PDF ──────────────────────────────────────────── */
+@media print{
+  *{-webkit-print-color-adjust:exact!important;print-color-adjust:exact!important;color-adjust:exact!important}
+  body{background:#fff!important;padding:0!important}
+  #controls{display:none!important}
+  #report-area{padding:0!important;max-width:100%!important}
+
+  /* Each page starts on new PDF page */
+  .page{
+    box-shadow:none!important;
+    border-radius:0!important;
+    margin:0!important;
+    page-break-before:always!important;
+    break-before:always!important;
+    border:1px solid #ddd!important;
+  }
+
+  /* Cover page — no break before, break after */
+  .cover-page{
+    page-break-before:avoid!important;
+    break-before:avoid!important;
+    page-break-after:always!important;
+    break-after:always!important;
+    border-radius:0!important;
+    margin:0!important;
+  }
+
+  /* Keep inner content together */
+  .kpi-card,.source-card,.action-item,.funnel-row{
+    page-break-inside:avoid!important;
+    break-inside:avoid!important;
+  }
+
+  /* Page body can flow naturally */
+  .page-body{
+    page-break-inside:auto!important;
+    break-inside:auto!important;
+  }
+}
+
+@page{
+  margin: 15mm 12mm;
+  size: A4;
+}
+</style>
+</head>
+<body>
+
+<!-- Auth Screen -->
+<div id="auth-screen">
+  <div class="auth-box">
+    <img class="auth-logo" src="https://bsctextilescandb-ui.github.io/retail-crm/logo.jpg" alt="BSC">
+    <div class="auth-title">HR Monthly Review Report</div>
+    <div class="auth-sub">Enter password to access this report</div>
+    <input class="auth-input" type="password" id="auth-pwd" placeholder="••••••••" onkeydown="if(event.key==='Enter')checkAuth()">
+    <button class="auth-btn" onclick="checkAuth()">Access Report</button>
+    <div class="auth-err" id="auth-err">Incorrect password. Please try again.</div>
+  </div>
+</div>
+
+<!-- Controls -->
+<div id="controls">
+  <img class="ctrl-logo" src="https://bsctextilescandb-ui.github.io/retail-crm/logo.jpg" alt="BSC">
+  <span class="ctrl-title">HR Monthly Review Report</span>
+  <div class="ctrl-group">
+    <span class="ctrl-label">FROM</span>
+    <input type="date" class="ctrl-date" id="from-date">
+    <span class="ctrl-label">TO</span>
+    <input type="date" class="ctrl-date" id="to-date">
+  </div>
+  <div class="ctrl-group">
+    <button class="ctrl-btn ctrl-btn-outline" onclick="setPreset('this_month')">This Month</button>
+    <button class="ctrl-btn ctrl-btn-outline" onclick="setPreset('last_month')">Last Month</button>
+  </div>
+  <button class="ctrl-btn ctrl-btn-primary" onclick="generateReport()">Generate</button>
+  <button class="ctrl-btn ctrl-btn-outline" onclick="window.print()">⬇ Save as PDF</button>
+</div>
+
+<!-- Loading -->
+<div id="loading">
+  <div class="spinner"></div>
+  <div>Loading report data...</div>
+</div>
+
+<!-- Report Area -->
+<div id="report-area"></div>
+
+<script>
+'use strict';
+
+const SCRIPT_URL    = 'https://script.google.com/macros/s/AKfycbwolTclzyP2skiQi4ndcPs4y4z0s0gRglN0fUK3jmBq-w8RAxBUltcw47QqyjGGRF-3/exec';
+const HR_OPS_URL    = 'https://script.google.com/macros/s/AKfycbxr54Thsyn5j4aAqSiLGo4HyyMA4mBps5IXsx5bVEG8DEJLcNFh5ahG0ZswGefS8hMx/exec';
+const PASSWORD      = 'BSCCANDB';
+let reportData      = {};
+
+// ── Auth ──────────────────────────────────────────────────────
+function checkAuth(){
+  const pwd = document.getElementById('auth-pwd').value;
+  if(pwd === PASSWORD){
+    document.getElementById('auth-screen').style.display = 'none';
+    document.getElementById('controls').style.display    = 'flex';
+    setPreset('this_month');
+    generateReport();
+  } else {
+    document.getElementById('auth-err').style.display = 'block';
+    document.getElementById('auth-pwd').value = '';
+  }
+}
+
+// ── Date Helpers ──────────────────────────────────────────────
+function setPreset(p){
+  const now = new Date();
+  let from, to;
+  if(p === 'this_month'){
+    from = new Date(now.getFullYear(), now.getMonth(), 1);
+    to   = new Date(now.getFullYear(), now.getMonth()+1, 0);
+  } else if(p === 'last_month'){
+    from = new Date(now.getFullYear(), now.getMonth()-1, 1);
+    to   = new Date(now.getFullYear(), now.getMonth(), 0);
+  }
+  document.getElementById('from-date').value = fmtDate(from);
+  document.getElementById('to-date').value   = fmtDate(to);
+}
+
+function fmtDate(d){ return d.toISOString().slice(0,10); }
+function fmtDisplay(d){ return new Date(d).toLocaleDateString('en-IN',{day:'2-digit',month:'long',year:'numeric'}); }
+function pct(a,b){ return b>0 ? Math.round(a/b*100) : 0; }
+function avg(arr){ return arr.length ? Math.round(arr.reduce((s,v)=>s+v,0)/arr.length) : 0; }
+
+// ── API Calls ─────────────────────────────────────────────────
+async function callAPI(url, params={}){
+  const res = await fetch(url,{method:'POST',body:JSON.stringify(params)});
+  return res.json();
+}
+
+// ── Generate Report ───────────────────────────────────────────
+async function generateReport(){
+  const from = document.getElementById('from-date').value;
+  const to   = document.getElementById('to-date').value;
+  if(!from||!to){ alert('Please select date range'); return; }
+
+  document.getElementById('loading').style.display    = 'block';
+  document.getElementById('report-area').style.display = 'none';
+
+  try{
+    // Fetch all data in parallel
+    const [kpis, candidates, interviewData, offerData, obData, exitData, sourceData] = await Promise.all([
+      callAPI(SCRIPT_URL, {action:'getKPIs', from, to}),
+      callAPI(SCRIPT_URL, {action:'getCandidatesForReport', from, to}),
+      callAPI(SCRIPT_URL, {action:'getInterviewReport', from, to}),
+      callAPI(SCRIPT_URL, {action:'getOfferReport', from, to}),
+      callAPI(HR_OPS_URL, {action:'getOnboardingList'}),
+      callAPI(HR_OPS_URL, {action:'getExitList'}),
+      callAPI(SCRIPT_URL, {action:'getSourceBreakdown', from, to})
+    ]);
+
+    reportData = {from, to, kpis, candidates, interviewData, offerData, obData, exitData, sourceData};
+    renderReport(reportData);
+  } catch(e){
+    document.getElementById('loading').innerHTML = '<div style="color:red;padding:40px">Error loading data: '+e.message+'</div>';
+  }
+}
+
+// ── Render Report ─────────────────────────────────────────────
+function renderReport(d){
+  const from = d.from, to = d.to;
+  const k    = d.kpis || {};
+  const cands= (d.candidates && d.candidates.candidates) || [];
+  const iv   = d.interviewData || {};
+  const off  = d.offerData || {};
+  const ob   = (d.obData && d.obData.records) || [];
+  const ex   = (d.exitData && d.exitData.records) || [];
+  const src  = d.sourceData || {};
+
+  // Compute period hiring candidates
+  const fromD = new Date(from), toD = new Date(to);
+  toD.setHours(23,59,59);
+
+  const periodCands = cands.filter(c=>{
+    const d2 = new Date(c.date||c.DATE||'');
+    return d2 >= fromD && d2 <= toD;
+  });
+
+  // Source counts
+  const srcCounts = {
+    'Walk-in'            : periodCands.filter(c=>c.source==='Walk-in').length,
+    'Employee Reference' : periodCands.filter(c=>c.source==='Employee Reference').length,
+    'Advertisement'      : periodCands.filter(c=>c.source==='Advertisement').length,
+    'Other'              : periodCands.filter(c=>c.source==='Other'||!c.source).length
+  };
+  const srcTotal = Object.values(srcCounts).reduce((s,v)=>s+v,0)||1;
+
+  // Designation counts
+  const desigMap = {};
+  periodCands.forEach(c=>{
+    const d2 = c.desig||c.DESIG||'Other';
+    if(!desigMap[d2]) desigMap[d2]={applied:0,selected:0,joined:0};
+    desigMap[d2].applied++;
+    if(['Selected','Selected (Probation)','Offer Accepted','Offer Sent','Joined'].includes(c.status||c.STATUS||'')) desigMap[d2].selected++;
+    if((c.status||c.STATUS||'')==='Joined') desigMap[d2].joined++;
+  });
+
+  // Onboarding period filter
+  const obPeriod = ob.filter(r=>{
+    const d2 = new Date(r.joiningDate||r.createdAt||'');
+    return d2 >= fromD && d2 <= toD;
+  });
+  const obCompleted   = obPeriod.filter(r=>r.status==='Completed').length;
+  const obInProgress  = obPeriod.filter(r=>r.status!=='Completed').length;
+  const obOnTime      = obPeriod.filter(r=>r.status==='Completed' && (r.days||0)<=3).length;
+  const obOverdue     = obPeriod.filter(r=>r.status!=='Completed' && (r.days||0)>3).length;
+
+  // Exit period filter
+  const exPeriod      = ex.filter(r=>{
+    const d2 = new Date(r.createdAt||'');
+    return d2 >= fromD && d2 <= toD;
+  });
+  const exCompleted   = exPeriod.filter(r=>r.status==='Completed').length;
+  const exPending     = exPeriod.filter(r=>r.status!=='Completed').length;
+
+  // Pipeline numbers
+  const applied    = periodCands.length;
+  const shortlisted= periodCands.filter(c=>['Shortlisted','1st Call Done','2nd Call Done','Interview Scheduled','Interviewed','Selected','Selected (Probation)','Offer Accepted','Joined'].includes(c.status||c.STATUS||'')).length;
+  const intSched   = periodCands.filter(c=>['Interview Scheduled','Interviewed','Selected','Selected (Probation)','Offer Accepted','Joined'].includes(c.status||c.STATUS||'')).length;
+  const selected   = periodCands.filter(c=>['Selected','Selected (Probation)','Offer Accepted','Joined'].includes(c.status||c.STATUS||'')).length;
+  const offerSent  = periodCands.filter(c=>['Offer Accepted','Joined'].includes(c.status||c.STATUS||'')).length;
+  const joined     = periodCands.filter(c=>(c.status||c.STATUS||'')==='Joined').length;
+  const rejected   = periodCands.filter(c=>(c.status||c.STATUS||'')==='Rejected').length;
+  const onHold     = periodCands.filter(c=>(c.status||c.STATUS||'')==='Hold').length;
+
+  const periodLabel = fmtDisplay(from) + ' — ' + fmtDisplay(to);
+  const genDate     = new Date().toLocaleDateString('en-IN',{day:'2-digit',month:'long',year:'numeric'});
+
+  document.getElementById('loading').style.display    = 'none';
+  document.getElementById('report-area').style.display = 'block';
+
+  document.getElementById('report-area').innerHTML = `
+
+  <!-- PAGE 1: COVER -->
+  <div class="cover-page">
+    <img class="cover-logo" src="https://bsctextilescandb-ui.github.io/retail-crm/logo.jpg" alt="BSC">
+    <div class="cover-title">HR Monthly Review Report</div>
+    <div class="cover-sub">BSC Textiles Private Limited — Belagavi</div>
+    <div class="cover-period">
+      <div class="cover-period-label">Report Period</div>
+      <div class="cover-period-val">${periodLabel}</div>
+    </div>
+    <div class="cover-meta">
+      <div class="cover-meta-item"><label>Generated On</label><span>${genDate}</span></div>
+      <div class="cover-meta-item"><label>Total Applied</label><span>${applied} Candidates</span></div>
+      <div class="cover-meta-item"><label>Total Joined</label><span>${joined} Employees</span></div>
+    </div>
+    <div class="cover-prepared">Prepared by <b>C&amp;B Consulting &amp; Beyond</b> for BSC Textiles — Confidential</div>
+  </div>
+
+  <!-- PAGE 2: HIRING PIPELINE SUMMARY -->
+  <div class="page">
+    <div class="page-header">
+      <div class="page-header-left"><h2>Hiring Pipeline Summary</h2><p>End-to-end candidate journey for the period</p></div>
+      <span class="page-num">02 / 10</span>
+    </div>
+    <div class="page-body">
+      <div class="kpi-grid" style="grid-template-columns:repeat(4,1fr);margin-bottom:24px">
+        <div class="kpi-card kpi-navy"><div class="kpi-card-label">Total Applied</div><div class="kpi-card-val">${applied}</div><div class="kpi-card-sub">New registrations</div></div>
+        <div class="kpi-card kpi-gold"><div class="kpi-card-label">Shortlisted</div><div class="kpi-card-val">${shortlisted}</div><div class="kpi-card-sub">${pct(shortlisted,applied)}% of applied</div></div>
+        <div class="kpi-card kpi-green"><div class="kpi-card-label">Joined</div><div class="kpi-card-val">${joined}</div><div class="kpi-card-sub">${pct(joined,applied)}% conversion</div></div>
+        <div class="kpi-card kpi-purple"><div class="kpi-card-label">Avg Days to Hire</div><div class="kpi-card-val">${k.avgDays||0}<span style="font-size:14px">d</span></div><div class="kpi-card-sub">Applied to Joined</div></div>
+      </div>
+      <div class="section-title">Hiring Funnel</div>
+      ${[
+        {label:'Applied',             val:applied,    color:'#1E2D4E'},
+        {label:'Shortlisted',         val:shortlisted,color:'#2a3f6e'},
+        {label:'Interview Scheduled', val:intSched,   color:'#C9952A'},
+        {label:'Selected',            val:selected,   color:'#2d8a4e'},
+        {label:'Offer Sent',          val:offerSent,  color:'#3da060'},
+        {label:'Joined',              val:joined,     color:'#1a8a84'}
+      ].map((s,i,arr)=>{
+        const p2 = applied>0?Math.round(s.val/applied*100):0;
+        const prev = (arr[i-1]||{}).val||0;
+        const drop = i===0||prev===0?'':'−'+Math.round((1-s.val/prev)*100)+'%';
+        return `<div class="funnel-row">
+          <div class="f-lbl">${s.label}</div>
+          <div class="f-bg"><div class="f-bar" style="width:${Math.max(p2,2)}%;background:${s.color}">${s.val}</div></div>
+          <div class="f-num">${s.val}</div>
+          <div class="f-drop">${drop}</div>
+        </div>`;
+      }).join('')}
+      <div style="margin-top:20px;display:flex;gap:12px">
+        <div class="loss-card loss-red" style="flex:1">
+          <div class="loss-card-icon">🔴</div>
+          <div><div class="loss-card-val">${rejected}</div><div class="loss-card-label">Total Rejected</div></div>
+        </div>
+        <div class="loss-card loss-gold" style="flex:1">
+          <div class="loss-card-icon">🟡</div>
+          <div><div class="loss-card-val">${onHold}</div><div class="loss-card-label">On Hold</div></div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- PAGE 3: SOURCE BREAKDOWN -->
+  <div class="page">
+    <div class="page-header">
+      <div class="page-header-left"><h2>Source Breakdown</h2><p>Where candidates are coming from</p></div>
+      <span class="page-num">03 / 10</span>
+    </div>
+    <div class="page-body">
+      <div class="three-col" style="grid-template-columns:repeat(4,1fr);margin-bottom:24px">
+        ${Object.entries(srcCounts).map(([src2,cnt])=>`
+          <div class="source-card">
+            <div class="source-card-label">${src2}</div>
+            <div class="source-card-val">${cnt}</div>
+            <div class="source-card-pct">${pct(cnt,srcTotal)}%</div>
+          </div>`).join('')}
+      </div>
+      <div class="section-title">Source vs Outcome</div>
+      <table class="report-table">
+        <thead><tr><th>Source</th><th>Applied</th><th>Shortlisted</th><th>Selected</th><th>Joined</th><th>Conversion</th></tr></thead>
+        <tbody>
+          ${Object.entries(srcCounts).map(([src2,cnt])=>{
+            const sel2 = periodCands.filter(c=>c.source===src2&&['Selected','Selected (Probation)','Offer Accepted','Joined'].includes(c.status||'')).length;
+            const jnd2 = periodCands.filter(c=>c.source===src2&&(c.status||'')==='Joined').length;
+            const shl2 = periodCands.filter(c=>c.source===src2&&['Shortlisted','1st Call Done','2nd Call Done','Interview Scheduled','Interviewed','Selected','Selected (Probation)','Offer Accepted','Joined'].includes(c.status||'')).length;
+            return `<tr>
+              <td><b>${src2}</b></td>
+              <td>${cnt}</td>
+              <td>${shl2}</td>
+              <td>${sel2}</td>
+              <td>${jnd2}</td>
+              <td><span class="badge ${pct(jnd2,cnt)>=20?'badge-green':'badge-gold'}">${pct(jnd2,cnt)}%</span></td>
+            </tr>`;
+          }).join('')}
+        </tbody>
+      </table>
+      <div style="margin-top:16px;padding:12px 16px;background:var(--ivory);border-radius:8px;font-size:11px;color:#555">
+        <b>Best Source:</b> ${Object.entries(srcCounts).sort((a,b)=>b[1]-a[1])[0]?.[0]||'—'} (${Object.entries(srcCounts).sort((a,b)=>b[1]-a[1])[0]?.[1]||0} candidates)
+      </div>
+    </div>
+  </div>
+
+  <!-- PAGE 4: DESIGNATION-WISE HIRING -->
+  <div class="page">
+    <div class="page-header">
+      <div class="page-header-left"><h2>Designation-wise Hiring</h2><p>Breakdown by role applied for</p></div>
+      <span class="page-num">04 / 10</span>
+    </div>
+    <div class="page-body">
+      <table class="report-table">
+        <thead><tr><th>Designation</th><th>Applied</th><th>Selected</th><th>Joined</th><th>Conversion</th><th>Status</th></tr></thead>
+        <tbody>
+          ${Object.entries(desigMap).sort((a,b)=>b[1].applied-a[1].applied).map(([desig,dm])=>`
+            <tr>
+              <td><b>${desig}</b></td>
+              <td>${dm.applied}</td>
+              <td>${dm.selected}</td>
+              <td>${dm.joined}</td>
+              <td>
+                <div class="prog-wrap">
+                  <div class="prog-track"><div class="prog-fill" style="width:${pct(dm.joined,dm.applied)}%;background:var(--green)"></div></div>
+                  <span class="prog-pct" style="color:var(--green)">${pct(dm.joined,dm.applied)}%</span>
+                </div>
+              </td>
+              <td><span class="badge ${dm.joined>0?'badge-green':dm.selected>0?'badge-gold':'badge-navy'}">${dm.joined>0?'Filled':dm.selected>0?'In Offer':'Open'}</span></td>
+            </tr>`).join('')}
+        </tbody>
+      </table>
+    </div>
+  </div>
+
+  <!-- PAGE 5: INTERVIEW PERFORMANCE -->
+  <div class="page">
+    <div class="page-header">
+      <div class="page-header-left"><h2>Interview Performance</h2><p>Round-wise assessment analysis</p></div>
+      <span class="page-num">05 / 10</span>
+    </div>
+    <div class="page-body">
+      <div class="kpi-grid" style="margin-bottom:24px">
+        <div class="kpi-card kpi-navy"><div class="kpi-card-label">Interview Scheduled</div><div class="kpi-card-val">${intSched}</div><div class="kpi-card-sub">This period</div></div>
+        <div class="kpi-card kpi-green"><div class="kpi-card-label">Pass Rate</div><div class="kpi-card-val">${pct(selected,intSched)}%</div><div class="kpi-card-sub">Both rounds ≥60%</div></div>
+        <div class="kpi-card kpi-red"><div class="kpi-card-label">Fail Rate</div><div class="kpi-card-val">${pct(intSched-selected,intSched)}%</div><div class="kpi-card-sub">Below 60%</div></div>
+        <div class="kpi-card kpi-gold"><div class="kpi-card-label">Probation Selected</div><div class="kpi-card-val">${periodCands.filter(c=>(c.status||'')==='Selected (Probation)').length}</div><div class="kpi-card-sub">Below 60% approved</div></div>
+      </div>
+      <div class="two-col">
+        <div>
+          <div class="section-title">Round 1 — HR Round</div>
+          <div style="padding:16px;background:var(--ivory);border-radius:9px;text-align:center">
+            <div style="font-size:11px;color:var(--muted);margin-bottom:6px">Same questions for all designations</div>
+            <div style="font-size:28px;font-weight:800;color:var(--navy)">${iv.avgHRScore||'—'}<span style="font-size:14px;color:var(--muted)">/55</span></div>
+            <div style="font-size:11px;color:var(--muted);margin-top:4px">Average HR Round Score</div>
+          </div>
+        </div>
+        <div>
+          <div class="section-title">Round 2 — Technical</div>
+          <div style="padding:16px;background:var(--ivory);border-radius:9px;text-align:center">
+            <div style="font-size:11px;color:var(--muted);margin-bottom:6px">Designation-specific questions</div>
+            <div style="font-size:28px;font-weight:800;color:var(--navy)">${iv.avgR2Score||'—'}<span style="font-size:14px;color:var(--muted)"> pts</span></div>
+            <div style="font-size:11px;color:var(--muted);margin-top:4px">Average Round 2 Score</div>
+          </div>
+        </div>
+      </div>
+      <div style="margin-top:16px;padding:12px 16px;background:#FFF7E6;border-radius:8px;font-size:11px;color:#B8860B">
+        <b>New Role Reassignments this period:</b> ${iv.newRoleCount||0} candidates reassigned to different designation after failing Round 2.
+      </div>
+    </div>
+  </div>
+
+  <!-- PAGE 6: OFFER & JOINING -->
+  <div class="page">
+    <div class="page-header">
+      <div class="page-header-left"><h2>Offer &amp; Joining</h2><p>Offer acceptance and joining analysis</p></div>
+      <span class="page-num">06 / 10</span>
+    </div>
+    <div class="page-body">
+      <div class="kpi-grid" style="margin-bottom:24px">
+        <div class="kpi-card kpi-navy"><div class="kpi-card-label">Total Offers Made</div><div class="kpi-card-val">${off.total||selected}</div><div class="kpi-card-sub">This period</div></div>
+        <div class="kpi-card kpi-green"><div class="kpi-card-label">Accepted</div><div class="kpi-card-val">${off.accepted||offerSent}</div><div class="kpi-card-sub">${pct(off.accepted||offerSent,off.total||selected)}% acceptance rate</div></div>
+        <div class="kpi-card kpi-red"><div class="kpi-card-label">Declined</div><div class="kpi-card-val">${off.declined||0}</div><div class="kpi-card-sub">Offer rejected by candidate</div></div>
+        <div class="kpi-card kpi-gold"><div class="kpi-card-label">Pending</div><div class="kpi-card-val">${off.pending||0}</div><div class="kpi-card-sub">Awaiting response</div></div>
+      </div>
+      <div class="section-title">Joining Summary</div>
+      <table class="report-table">
+        <thead><tr><th>Metric</th><th>Value</th><th>Status</th></tr></thead>
+        <tbody>
+          <tr><td>Total Joined this period</td><td><b>${joined}</b></td><td><span class="badge ${joined>0?'badge-green':'badge-gold'}">${joined>0?'On Track':'Pending'}</span></td></tr>
+          <tr><td>Offer Acceptance Rate</td><td><b>${pct(off.accepted||offerSent,off.total||selected)}%</b></td><td><span class="badge ${pct(off.accepted||offerSent,off.total||selected)>=70?'badge-green':'badge-red'}">${pct(off.accepted||offerSent,off.total||selected)>=70?'Good':'Needs Attention'}</span></td></tr>
+          <tr><td>Average Days to Hire</td><td><b>${k.avgDays||0} days</b></td><td><span class="badge ${(k.avgDays||0)<=30?'badge-green':'badge-gold'}">${(k.avgDays||0)<=30?'Efficient':'Review'}</span></td></tr>
+          <tr><td>Probation Joinings</td><td><b>${periodCands.filter(c=>(c.status||'')==='Selected (Probation)').length}</b></td><td><span class="badge badge-gold">Monitoring Required</span></td></tr>
+        </tbody>
+      </table>
+    </div>
+  </div>
+
+  <!-- PAGE 7: ONBOARDING STATUS -->
+  <div class="page">
+    <div class="page-header">
+      <div class="page-header-left"><h2>Onboarding Status</h2><p>New employee onboarding completion</p></div>
+      <span class="page-num">07 / 10</span>
+    </div>
+    <div class="page-body">
+      <div class="kpi-grid" style="margin-bottom:24px">
+        <div class="kpi-card kpi-navy"><div class="kpi-card-label">Total Onboardings</div><div class="kpi-card-val">${obPeriod.length}</div><div class="kpi-card-sub">This period</div></div>
+        <div class="kpi-card kpi-green"><div class="kpi-card-label">Completed</div><div class="kpi-card-val">${obCompleted}</div><div class="kpi-card-sub">${pct(obCompleted,obPeriod.length)}% completion rate</div></div>
+        <div class="kpi-card kpi-gold"><div class="kpi-card-label">On Time (≤3 days)</div><div class="kpi-card-val">${obOnTime}</div><div class="kpi-card-sub">Bare minimum met</div></div>
+        <div class="kpi-card kpi-red"><div class="kpi-card-label">Overdue</div><div class="kpi-card-val">${obOverdue}</div><div class="kpi-card-sub">Day 4+ pending</div></div>
+      </div>
+      <div class="section-title">Onboarding Details</div>
+      <table class="report-table">
+        <thead><tr><th>Employee</th><th>Designation</th><th>Joining Date</th><th>Day</th><th>Progress</th><th>Status</th></tr></thead>
+        <tbody>
+          ${obPeriod.length ? obPeriod.map(r=>`
+            <tr>
+              <td><b>${r.empName||'—'}</b></td>
+              <td>${r.desig||'—'}</td>
+              <td>${r.joiningDate||'—'}</td>
+              <td>${r.days||0}</td>
+              <td>
+                <div class="prog-wrap">
+                  <div class="prog-track"><div class="prog-fill" style="width:${r.progress||0}%;background:${(r.progress||0)>=70?'var(--green)':'var(--gold)'}"></div></div>
+                  <span class="prog-pct">${r.progress||0}%</span>
+                </div>
+              </td>
+              <td><span class="badge ${r.status==='Completed'?'badge-green':r.status==='Overdue'||r.status==='Critical'?'badge-red':'badge-gold'}">${r.status||'Pending'}</span></td>
+            </tr>`).join('') : '<tr><td colspan="6" style="text-align:center;color:#bbb;padding:20px">No onboarding records for this period</td></tr>'}
+        </tbody>
+      </table>
+    </div>
+  </div>
+
+  <!-- PAGE 8: EXIT / FnF SUMMARY -->
+  <div class="page">
+    <div class="page-header">
+      <div class="page-header-left"><h2>Exit / FnF Summary</h2><p>Employee exit and full &amp; final settlement</p></div>
+      <span class="page-num">08 / 10</span>
+    </div>
+    <div class="page-body">
+      <div class="kpi-grid" style="margin-bottom:24px">
+        <div class="kpi-card kpi-navy"><div class="kpi-card-label">Total Exits</div><div class="kpi-card-val">${exPeriod.length}</div><div class="kpi-card-sub">This period</div></div>
+        <div class="kpi-card kpi-green"><div class="kpi-card-label">FnF Completed</div><div class="kpi-card-val">${exCompleted}</div><div class="kpi-card-sub">${pct(exCompleted,exPeriod.length)}% completion</div></div>
+        <div class="kpi-card kpi-red"><div class="kpi-card-label">FnF Pending</div><div class="kpi-card-val">${exPending}</div><div class="kpi-card-sub">Needs attention</div></div>
+        <div class="kpi-card kpi-gold"><div class="kpi-card-label">All Time Exits</div><div class="kpi-card-val">${ex.length}</div><div class="kpi-card-sub">Total recorded</div></div>
+      </div>
+      <div class="section-title">Exit Details</div>
+      <table class="report-table">
+        <thead><tr><th>Employee</th><th>Designation</th><th>Last Working Day</th><th>Progress</th><th>Status</th></tr></thead>
+        <tbody>
+          ${exPeriod.length ? exPeriod.map(r=>`
+            <tr>
+              <td><b>${r.empName||'—'}</b></td>
+              <td>${r.desig||'—'}</td>
+              <td>${r.lwd||'—'}</td>
+              <td>
+                <div class="prog-wrap">
+                  <div class="prog-track"><div class="prog-fill" style="width:${r.progress||0}%;background:${(r.progress||0)>=70?'var(--green)':'var(--red)'}"></div></div>
+                  <span class="prog-pct">${r.progress||0}%</span>
+                </div>
+              </td>
+              <td><span class="badge ${r.status==='Completed'?'badge-green':'badge-red'}">${r.status||'Pending'}</span></td>
+            </tr>`).join('') : '<tr><td colspan="5" style="text-align:center;color:#bbb;padding:20px">No exit records for this period</td></tr>'}
+        </tbody>
+      </table>
+    </div>
+  </div>
+
+  <!-- PAGE 9: PIPELINE LOSS ANALYSIS -->
+  <div class="page">
+    <div class="page-header">
+      <div class="page-header-left"><h2>Pipeline Loss Analysis</h2><p>Where and why candidates dropped off</p></div>
+      <span class="page-num">09 / 10</span>
+    </div>
+    <div class="page-body">
+      <div class="two-col" style="margin-bottom:20px">
+        <div class="loss-card loss-red">
+          <div class="loss-card-icon">🔴</div>
+          <div><div class="loss-card-val">${rejected}</div><div class="loss-card-label">Total Rejected</div></div>
+        </div>
+        <div class="loss-card loss-gold">
+          <div class="loss-card-icon">🟡</div>
+          <div><div class="loss-card-val">${onHold}</div><div class="loss-card-label">On Hold</div></div>
+        </div>
+      </div>
+      <div class="section-title">Drop-off Analysis</div>
+      <table class="report-table">
+        <thead><tr><th>Stage</th><th>In</th><th>Out (Next Stage)</th><th>Drop-off</th><th>Rate</th></tr></thead>
+        <tbody>
+          <tr><td>Applied → Shortlisted</td><td>${applied}</td><td>${shortlisted}</td><td>${applied-shortlisted}</td><td><span class="badge ${pct(applied-shortlisted,applied)>50?'badge-red':'badge-gold'}">${pct(applied-shortlisted,applied)}%</span></td></tr>
+          <tr><td>Shortlisted → Interview</td><td>${shortlisted}</td><td>${intSched}</td><td>${shortlisted-intSched}</td><td><span class="badge ${pct(shortlisted-intSched,shortlisted)>40?'badge-red':'badge-gold'}">${pct(shortlisted-intSched,shortlisted)}%</span></td></tr>
+          <tr><td>Interview → Selected</td><td>${intSched}</td><td>${selected}</td><td>${intSched-selected}</td><td><span class="badge ${pct(intSched-selected,intSched)>50?'badge-red':'badge-gold'}">${pct(intSched-selected,intSched)}%</span></td></tr>
+          <tr><td>Selected → Offer Sent</td><td>${selected}</td><td>${offerSent}</td><td>${selected-offerSent}</td><td><span class="badge ${pct(selected-offerSent,selected)>30?'badge-red':'badge-gold'}">${pct(selected-offerSent,selected)}%</span></td></tr>
+          <tr><td>Offer Sent → Joined</td><td>${offerSent}</td><td>${joined}</td><td>${offerSent-joined}</td><td><span class="badge ${pct(offerSent-joined,offerSent)>30?'badge-red':'badge-gold'}">${pct(offerSent-joined,offerSent)}%</span></td></tr>
+        </tbody>
+      </table>
+    </div>
+  </div>
+
+  <!-- PAGE 10: ACTION ITEMS & SUMMARY -->
+  <div class="page">
+    <div class="page-header">
+      <div class="page-header-left"><h2>Action Items &amp; Summary</h2><p>Key highlights and next steps</p></div>
+      <span class="page-num">10 / 10</span>
+    </div>
+    <div class="page-body">
+      <div class="two-col">
+        <div>
+          <div class="section-title">Key Highlights</div>
+          <div class="action-item">
+            <div class="action-dot action-dot-green"></div>
+            <div class="action-text">Total <b>${applied}</b> candidates applied this period with <b>${joined}</b> successful joinings (${pct(joined,applied)}% conversion)</div>
+          </div>
+          <div class="action-item">
+            <div class="action-dot ${pct(shortlisted,applied)>=50?'action-dot-green':'action-dot-gold'}"></div>
+            <div class="action-text">Shortlisting rate: <b>${pct(shortlisted,applied)}%</b> — ${pct(shortlisted,applied)>=50?'Good pipeline quality':'Needs improvement in sourcing'}</div>
+          </div>
+          <div class="action-item">
+            <div class="action-dot ${pct(selected,intSched)>=60?'action-dot-green':'action-dot-red'}"></div>
+            <div class="action-text">Interview pass rate: <b>${pct(selected,intSched)}%</b> — ${pct(selected,intSched)>=60?'Healthy selection rate':'Review interview criteria'}</div>
+          </div>
+          <div class="action-item">
+            <div class="action-dot ${obOverdue===0?'action-dot-green':'action-dot-red'}"></div>
+            <div class="action-text">Onboarding: <b>${obOverdue}</b> overdue records — ${obOverdue===0?'All on track':'Requires immediate attention'}</div>
+          </div>
+          <div class="action-item">
+            <div class="action-dot ${exPending===0?'action-dot-green':'action-dot-red'}"></div>
+            <div class="action-text">Exit / FnF: <b>${exPending}</b> pending settlements — ${exPending===0?'All cleared':'Action required'}</div>
+          </div>
+        </div>
+        <div>
+          <div class="section-title">Targets vs Actual</div>
+          <table class="report-table">
+            <thead><tr><th>Metric</th><th>Actual</th><th>Status</th></tr></thead>
+            <tbody>
+              <tr><td>Offer Acceptance Rate</td><td>${pct(off.accepted||offerSent,off.total||selected)}%</td><td><span class="badge ${pct(off.accepted||offerSent,off.total||selected)>=70?'badge-green':'badge-red'}">${pct(off.accepted||offerSent,off.total||selected)>=70?'✓ Target Met':'✗ Below Target'}</span></td></tr>
+              <tr><td>Onboarding On Time</td><td>${pct(obOnTime,obPeriod.length)}%</td><td><span class="badge ${pct(obOnTime,obPeriod.length)>=80?'badge-green':'badge-red'}">${pct(obOnTime,obPeriod.length)>=80?'✓ Target Met':'✗ Below Target'}</span></td></tr>
+              <tr><td>FnF Completion</td><td>${pct(exCompleted,exPeriod.length)}%</td><td><span class="badge ${pct(exCompleted,exPeriod.length)>=90?'badge-green':'badge-red'}">${pct(exCompleted,exPeriod.length)>=90?'✓ Target Met':'✗ Below Target'}</span></td></tr>
+              <tr><td>Interview Pass Rate</td><td>${pct(selected,intSched)}%</td><td><span class="badge ${pct(selected,intSched)>=60?'badge-green':'badge-gold'}">${pct(selected,intSched)>=60?'✓ Target Met':'△ Review'}</span></td></tr>
+            </tbody>
+          </table>
+          <div style="margin-top:16px;padding:14px;background:var(--ivory);border-radius:9px;font-size:11px;color:#555;line-height:1.8">
+            <b style="color:var(--navy);display:block;margin-bottom:6px">Next Month Focus</b>
+            ${rejected>5?'• Analyse rejection reasons and improve sourcing quality<br>':''}
+            ${obOverdue>0?'• Complete pending onboarding checklists immediately<br>':''}
+            ${exPending>0?'• Clear all pending FnF settlements<br>':''}
+            ${pct(joined,applied)<5?'• Review end-to-end conversion — target 5%+ joining rate<br>':''}
+            • Continue tracking source quality for better hiring ROI
+          </div>
+        </div>
+      </div>
+      <div style="margin-top:24px;text-align:center;padding-top:16px;border-top:1px solid var(--border);font-size:10px;color:var(--muted)">
+        Prepared by <b>C&amp;B Consulting &amp; Beyond</b> &nbsp;|&nbsp; BSC Textiles Private Limited, Belagavi &nbsp;|&nbsp; Confidential — For Internal Use Only
+      </div>
+    </div>
+  </div>`;
+}
+</script>
+</body>
+</html>
