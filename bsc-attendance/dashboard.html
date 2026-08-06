@@ -37,7 +37,8 @@
     <div class="hint" id="submitStatusLine"></div>
     <div class="hint" id="groomLine"></div>
     <button class="btn btn-outline btn-sm" onclick="withBtn(this, copySummary)">Copy summary for management</button>
-    <button class="btn btn-gold btn-sm" onclick="withBtn(this, downloadFullReport)">Download PNG</button>
+    <button class="btn btn-gold btn-sm" onclick="withBtn(this, downloadFullReport)">Download PNG (Detailed)</button>
+    <button class="btn btn-gold btn-sm" onclick="withBtn(this, downloadSimpleReport)">Download PNG (Simple Table)</button>
   </div>
 
   <div class="card">
@@ -109,7 +110,13 @@ function renderUnitRow(u) {
 
 async function downloadFullReport() {
   if (!lastDashboard) return;
-  await downloadReportPNG(buildFullStoreReportHTML(lastDashboard), `BSC_Attendance_${lastDashboard.date}.png`);
+  await downloadReportPNG(buildFullStoreReportHTML(lastDashboard), `BSC_Attendance_Detailed_${lastDashboard.date}.png`);
+}
+
+async function downloadSimpleReport() {
+  if (!lastDashboard) return;
+  const managerDetail = await jsonpCall({ action: 'getManagerDetail', date: lastDashboard.date });
+  await downloadReportPNG(buildSimpleTableReportHTML(lastDashboard, managerDetail), `BSC_Attendance_Simple_${lastDashboard.date}.png`);
 }
 
 function copySummary() {
