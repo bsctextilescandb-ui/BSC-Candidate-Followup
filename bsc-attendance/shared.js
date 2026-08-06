@@ -325,7 +325,7 @@ function buildSalesSimpleTable(sectionUnits, statusTypes) {
   });
 
   const statusCols = statusTypes.map(st => st.StatusName);
-  const totalCols = 3 + statusCols.length; // Floor + Section + Present + statuses + Total = 4 + statusCols.length, minus the 1 we add separately below
+  const totalCols = 2 + statusCols.length; // Section + Present + statuses + Total
   let grand = { present: 0, total: 0, counts: {} };
   statusCols.forEach(c => grand.counts[c] = 0);
 
@@ -334,23 +334,23 @@ function buildSalesSimpleTable(sectionUnits, statusTypes) {
     const rows = byFloor[floor];
     let sub = { present: 0, total: 0, counts: {} };
     statusCols.forEach(c => sub.counts[c] = 0);
-    rowsHtml += `<tr>${simpleTableCell(floor.toUpperCase(), { bold: true, bg: '#1E2D4E', color: '#fff', colspan: totalCols + 1 })}</tr>`;
+    rowsHtml += `<tr>${simpleTableCell(floor.toUpperCase(), { bold: true, bg: '#C9952A', color: '#fff', colspan: totalCols + 1 })}</tr>`;
     rows.forEach(r => {
       sub.present += r.present; sub.total += r.total;
       statusCols.forEach(c => sub.counts[c] += (r.counts[c] || 0));
-      rowsHtml += `<tr>${simpleTableCell('')}${simpleTableCell(r.section)}${simpleTableCell(r.present, { align: 'center' })}${statusCols.map(c => simpleTableCell(r.counts[c] || 0, { align: 'center' })).join('')}${simpleTableCell(r.total, { align: 'center', bold: true })}</tr>`;
+      rowsHtml += `<tr>${simpleTableCell(r.section)}${simpleTableCell(r.present, { align: 'center' })}${statusCols.map(c => simpleTableCell(r.counts[c] || 0, { align: 'center' })).join('')}${simpleTableCell(r.total, { align: 'center', bold: true })}</tr>`;
     });
-    rowsHtml += `<tr>${simpleTableCell('')}${simpleTableCell('TOTAL', { bold: true, bg: '#FAEEDA' })}${simpleTableCell(sub.present, { bold: true, bg: '#FAEEDA', align: 'center' })}${statusCols.map(c => simpleTableCell(sub.counts[c], { bold: true, bg: '#FAEEDA', align: 'center' })).join('')}${simpleTableCell(sub.total, { bold: true, bg: '#FAEEDA', align: 'center' })}</tr>`;
+    rowsHtml += `<tr>${simpleTableCell('TOTAL', { bold: true, bg: '#FAEEDA' })}${simpleTableCell(sub.present, { bold: true, bg: '#FAEEDA', align: 'center' })}${statusCols.map(c => simpleTableCell(sub.counts[c], { bold: true, bg: '#FAEEDA', align: 'center' })).join('')}${simpleTableCell(sub.total, { bold: true, bg: '#FAEEDA', align: 'center' })}</tr>`;
     grand.present += sub.present; grand.total += sub.total;
     statusCols.forEach(c => grand.counts[c] += sub.counts[c]);
   });
 
-  const headerCols = ['FLOOR', 'SECTION', 'PRESENT', ...statusCols.map(s => s.toUpperCase()), 'TOTAL STRENGTH'];
+  const headerCols = ['SECTION', 'PRESENT', ...statusCols.map(s => s.toUpperCase()), 'TOTAL STRENGTH'];
   return `
     <table style="width:100%;border-collapse:collapse;margin-bottom:6px;">
       ${simpleTableHeaderRow(headerCols)}
       ${rowsHtml}
-      <tr>${simpleTableCell('GRAND TOTAL OF STAFF', { bold: true, bg: '#1E2D4E', color: '#fff', colspan: 2 })}${simpleTableCell(grand.present, { bold: true, bg: '#1E2D4E', color: '#fff', align: 'center' })}${statusCols.map(c => simpleTableCell(grand.counts[c], { bold: true, bg: '#1E2D4E', color: '#fff', align: 'center' })).join('')}${simpleTableCell(grand.total, { bold: true, bg: '#1E2D4E', color: '#fff', align: 'center' })}</tr>
+      <tr>${simpleTableCell('GRAND TOTAL OF STAFF', { bold: true, bg: '#1E2D4E', color: '#fff' })}${simpleTableCell(grand.present, { bold: true, bg: '#1E2D4E', color: '#fff', align: 'center' })}${statusCols.map(c => simpleTableCell(grand.counts[c], { bold: true, bg: '#1E2D4E', color: '#fff', align: 'center' })).join('')}${simpleTableCell(grand.total, { bold: true, bg: '#1E2D4E', color: '#fff', align: 'center' })}</tr>
     </table>
   `;
 }
