@@ -303,7 +303,8 @@ function simpleTableCell(text, opts = {}) {
   const bg = opts.bg || '#fff';
   const color = opts.color || '#222';
   const align = opts.align || 'left';
-  return `<td style="border:1px solid #333;padding:6px 10px;background:${bg};color:${color};text-align:${align};font-size:12px;${bold}">${text}</td>`;
+  const colspan = opts.colspan ? ` colspan="${opts.colspan}"` : '';
+  return `<td${colspan} style="border:1px solid #333;padding:6px 10px;background:${bg};color:${color};text-align:${align};font-size:12px;${bold}">${text}</td>`;
 }
 
 function simpleTableHeaderRow(cols) {
@@ -324,6 +325,7 @@ function buildSalesSimpleTable(sectionUnits, statusTypes) {
   });
 
   const statusCols = statusTypes.map(st => st.StatusName);
+  const totalCols = 3 + statusCols.length; // Floor + Section + Present + statuses + Total = 4 + statusCols.length, minus the 1 we add separately below
   let grand = { present: 0, total: 0, counts: {} };
   statusCols.forEach(c => grand.counts[c] = 0);
 
@@ -332,13 +334,13 @@ function buildSalesSimpleTable(sectionUnits, statusTypes) {
     const rows = byFloor[floor];
     let sub = { present: 0, total: 0, counts: {} };
     statusCols.forEach(c => sub.counts[c] = 0);
-    rowsHtml += `<tr>${simpleTableCell(floor.toUpperCase(), { bold: true, bg: '#29ABE2', color: '#fff' })}${simpleTableCell('', { bg: '#29ABE2' })}${statusCols.map(() => simpleTableCell('', { bg: '#29ABE2' })).join('')}${simpleTableCell('', { bg: '#29ABE2' })}${simpleTableCell('', { bg: '#29ABE2' })}</tr>`;
+    rowsHtml += `<tr>${simpleTableCell(floor.toUpperCase(), { bold: true, bg: '#1E2D4E', color: '#fff', colspan: totalCols + 1 })}</tr>`;
     rows.forEach(r => {
       sub.present += r.present; sub.total += r.total;
       statusCols.forEach(c => sub.counts[c] += (r.counts[c] || 0));
       rowsHtml += `<tr>${simpleTableCell('')}${simpleTableCell(r.section)}${simpleTableCell(r.present, { align: 'center' })}${statusCols.map(c => simpleTableCell(r.counts[c] || 0, { align: 'center' })).join('')}${simpleTableCell(r.total, { align: 'center', bold: true })}</tr>`;
     });
-    rowsHtml += `<tr>${simpleTableCell('')}${simpleTableCell('TOTAL', { bold: true, bg: '#F7DFC7' })}${simpleTableCell(sub.present, { bold: true, bg: '#F7DFC7', align: 'center' })}${statusCols.map(c => simpleTableCell(sub.counts[c], { bold: true, bg: '#F7DFC7', align: 'center' })).join('')}${simpleTableCell(sub.total, { bold: true, bg: '#F7DFC7', align: 'center' })}</tr>`;
+    rowsHtml += `<tr>${simpleTableCell('')}${simpleTableCell('TOTAL', { bold: true, bg: '#FAEEDA' })}${simpleTableCell(sub.present, { bold: true, bg: '#FAEEDA', align: 'center' })}${statusCols.map(c => simpleTableCell(sub.counts[c], { bold: true, bg: '#FAEEDA', align: 'center' })).join('')}${simpleTableCell(sub.total, { bold: true, bg: '#FAEEDA', align: 'center' })}</tr>`;
     grand.present += sub.present; grand.total += sub.total;
     statusCols.forEach(c => grand.counts[c] += sub.counts[c]);
   });
@@ -348,7 +350,7 @@ function buildSalesSimpleTable(sectionUnits, statusTypes) {
     <table style="width:100%;border-collapse:collapse;margin-bottom:6px;">
       ${simpleTableHeaderRow(headerCols)}
       ${rowsHtml}
-      <tr>${simpleTableCell('GRAND TOTAL OF STAFF', { bold: true, bg: '#29ABE2', color: '#fff' })}${simpleTableCell('', { bg: '#29ABE2' })}${simpleTableCell(grand.present, { bold: true, bg: '#29ABE2', color: '#fff', align: 'center' })}${statusCols.map(c => simpleTableCell(grand.counts[c], { bold: true, bg: '#29ABE2', color: '#fff', align: 'center' })).join('')}${simpleTableCell(grand.total, { bold: true, bg: '#29ABE2', color: '#fff', align: 'center' })}</tr>
+      <tr>${simpleTableCell('GRAND TOTAL OF STAFF', { bold: true, bg: '#1E2D4E', color: '#fff', colspan: 2 })}${simpleTableCell(grand.present, { bold: true, bg: '#1E2D4E', color: '#fff', align: 'center' })}${statusCols.map(c => simpleTableCell(grand.counts[c], { bold: true, bg: '#1E2D4E', color: '#fff', align: 'center' })).join('')}${simpleTableCell(grand.total, { bold: true, bg: '#1E2D4E', color: '#fff', align: 'center' })}</tr>
     </table>
   `;
 }
@@ -372,12 +374,12 @@ function buildNonSalesSimpleTable(deptUnits, statusTypes) {
     <table style="width:100%;border-collapse:collapse;margin-bottom:6px;">
       ${simpleTableHeaderRow(headerCols)}
       ${rowsHtml}
-      <tr>${simpleTableCell('GRAND TOTAL', { bold: true, bg: '#29ABE2', color: '#fff' })}${simpleTableCell(grand.present, { bold: true, bg: '#29ABE2', color: '#fff', align: 'center' })}${statusCols.map(c => simpleTableCell(grand.counts[c], { bold: true, bg: '#29ABE2', color: '#fff', align: 'center' })).join('')}${simpleTableCell(grand.total, { bold: true, bg: '#29ABE2', color: '#fff', align: 'center' })}</tr>
+      <tr>${simpleTableCell('GRAND TOTAL', { bold: true, bg: '#1E2D4E', color: '#fff' })}${simpleTableCell(grand.present, { bold: true, bg: '#1E2D4E', color: '#fff', align: 'center' })}${statusCols.map(c => simpleTableCell(grand.counts[c], { bold: true, bg: '#1E2D4E', color: '#fff', align: 'center' })).join('')}${simpleTableCell(grand.total, { bold: true, bg: '#1E2D4E', color: '#fff', align: 'center' })}</tr>
     </table>
   `;
 }
 
-// Table 3 — Managers, one row per person (Floor Managers + Dept Incharges only)
+// Table 3 — Managers, one row per person (Floor Managers, Dept Incharges, and Admin/HR)
 function buildManagersSimpleTable(managerDetail) {
   let present = 0;
   let rowsHtml = managerDetail.map(m => {
@@ -391,7 +393,7 @@ function buildManagersSimpleTable(managerDetail) {
     <table style="width:100%;border-collapse:collapse;margin-bottom:6px;">
       ${simpleTableHeaderRow(['NAME', 'FLOOR / DEPARTMENT', 'STATUS'])}
       ${rowsHtml}
-      <tr>${simpleTableCell('GRAND TOTAL', { bold: true, bg: '#29ABE2', color: '#fff' })}${simpleTableCell('', { bg: '#29ABE2' })}${simpleTableCell(`${present} / ${managerDetail.length} Present`, { bold: true, bg: '#29ABE2', color: '#fff', align: 'center' })}</tr>
+      <tr>${simpleTableCell('GRAND TOTAL', { bold: true, bg: '#1E2D4E', color: '#fff', colspan: 2 })}${simpleTableCell(`${present} / ${managerDetail.length} Present`, { bold: true, bg: '#1E2D4E', color: '#fff', align: 'center' })}</tr>
     </table>
   `;
 }
@@ -400,7 +402,7 @@ function buildSimpleTableReportHTML(data, managerDetail) {
   return `
     <div style="width:760px;background:#fff;padding:20px;font-family:'Segoe UI',system-ui,sans-serif;">
       <div style="text-align:center;margin-bottom:10px;"><img src="${LOGO_BSC}" style="height:50px;"></div>
-      <div style="background:#FBE4CF;border:1px solid #333;padding:8px;text-align:center;font-weight:800;font-size:15px;color:#1E2D4E;margin-bottom:10px;">DATE : ${data.date}</div>
+      <div style="background:#EDE8DE;border:1px solid #333;padding:8px;text-align:center;font-weight:800;font-size:15px;color:#1E2D4E;margin-bottom:10px;">DATE : ${data.date}</div>
       <div style="font-size:9px;font-weight:800;color:#1E2D4E;text-transform:uppercase;letter-spacing:.1em;margin-bottom:4px;">Sales — By Floor / Section</div>
       ${buildSalesSimpleTable(data.sectionUnits, data.statusTypes)}
       <div style="font-size:9px;font-weight:800;color:#1E2D4E;text-transform:uppercase;letter-spacing:.1em;margin:14px 0 4px;">Non-Sales — By Department</div>
