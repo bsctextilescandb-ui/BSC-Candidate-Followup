@@ -295,6 +295,125 @@ function buildSingleGroupReportHTML(scopeLabel, dateStr, status, statusTypes) {
   `;
 }
 
+// ── Simple Table report (classic bordered Excel-style layout) ──────────────
+const FLOOR_ORDER_ = ['Ground Floor', 'Ground', 'First Floor', 'First', 'Second Floor', 'Second', 'Third Floor', 'Third', 'Fourth Floor', 'Fourth'];
+
+function simpleTableCell(text, opts = {}) {
+  const bold = opts.bold ? 'font-weight:700;' : '';
+  const bg = opts.bg || '#fff';
+  const color = opts.color || '#222';
+  const align = opts.align || 'left';
+  return `<td style="border:1px solid #333;padding:6px 10px;background:${bg};color:${color};text-align:${align};font-size:12px;${bold}">${text}</td>`;
+}
+
+function simpleTableHeaderRow(cols) {
+  return `<tr>${cols.map(c => simpleTableCell(c, { bold: true, bg: '#1E2D4E', color: '#fff', align: 'center' })).join('')}</tr>`;
+}
+
+// Table 1 — Sales, grouped by floor with a subtotal row per floor, then grand total
+function buildSalesSimpleTable(sectionUnits, statusTypes) {
+  const byFloor = {};
+  sectionUnits.forEach(u => {
+    const floor = u.floorName || 'Unknown';
+    const section = u.label.replace(floor + ' — ', '');
+    (byFloor[floor] = byFloor[floor] || []).push({ section, present: u.totalPresent ?? 0, total: u.totalAssigned ?? 0, counts: u.statusCounts });
+  });
+  const floorNames = Object.keys(byFloor).sort((a, b) => {
+    const ia = FLOOR_ORDER_.indexOf(a), ib = FLOOR_ORDER_.indexOf(b);
+    return (ia === -1 ? 999 : ia) - (ib === -1 ? 999 : ib);
+  });
+
+  const statusCols = statusTypes.map(st => st.StatusName);
+  let grand = { present: 0, total: 0, counts: {} };
+  statusCols.forEach(c => grand.counts[c] = 0);
+
+  let rowsHtml = '';
+  floorNames.forEach(floor => {
+    const rows = byFloor[floor];
+    let sub = { present: 0, total: 0, counts: {} };
+    statusCols.forEach(c => sub.counts[c] = 0);
+    rowsHtml += `<tr>${simpleTableCell(floor.toUpperCase(), { bold: true, bg: '#29ABE2', color: '#fff' })}${simpleTableCell('', { bg: '#29ABE2' })}${statusCols.map(() => simpleTableCell('', { bg: '#29ABE2' })).join('')}${simpleTableCell('', { bg: '#29ABE2' })}${simpleTableCell('', { bg: '#29ABE2' })}</tr>`;
+    rows.forEach(r => {
+      sub.present += r.present; sub.total += r.total;
+      statusCols.forEach(c => sub.counts[c] += (r.counts[c] || 0));
+      rowsHtml += `<tr>${simpleTableCell('')}${simpleTableCell(r.section)}${simpleTableCell(r.present, { align: 'center' })}${statusCols.map(c => simpleTableCell(r.counts[c] || 0, { align: 'center' })).join('')}${simpleTableCell(r.total, { align: 'center', bold: true })}</tr>`;
+    });
+    rowsHtml += `<tr>${simpleTableCell('')}${simpleTableCell('TOTAL', { bold: true, bg: '#F7DFC7' })}${simpleTableCell(sub.present, { bold: true, bg: '#F7DFC7', align: 'center' })}${statusCols.map(c => simpleTableCell(sub.counts[c], { bold: true, bg: '#F7DFC7', align: 'center' })).join('')}${simpleTableCell(sub.total, { bold: true, bg: '#F7DFC7', align: 'center' })}</tr>`;
+    grand.present += sub.present; grand.total += sub.total;
+    statusCols.forEach(c => grand.counts[c] += sub.counts[c]);
+  });
+
+  const headerCols = ['FLOOR', 'SECTION', 'PRESENT', ...statusCols.map(s => s.toUpperCase()), 'TOTAL STRENGTH'];
+  return `
+    <table style="width:100%;border-collapse:collapse;margin-bottom:6px;">
+      ${simpleTableHeaderRow(headerCols)}
+      ${rowsHtml}
+      <tr>${simpleTableCell('GRAND TOTAL OF STAFF', { bold: true, bg: '#29ABE2', color: '#fff' })}${simpleTableCell('', { bg: '#29ABE2' })}${simpleTableCell(grand.present, { bold: true, bg: '#29ABE2', color: '#fff', align: 'center' })}${statusCols.map(c => simpleTableCell(grand.counts[c], { bold: true, bg: '#29ABE2', color: '#fff', align: 'center' })).join('')}${simpleTableCell(grand.total, { bold: true, bg: '#29ABE2', color: '#fff', align: 'center' })}</tr>
+    </table>
+  `;
+}
+
+// Table 2 — Non-Sales, flat by department (no Floor column)
+function buildNonSalesSimpleTable(deptUnits, statusTypes) {
+  const statusCols = statusTypes.map(st => st.StatusName);
+  let grand = { present: 0, total: 0, counts: {} };
+  statusCols.forEach(c => grand.counts[c] = 0);
+
+  let rowsHtml = '';
+  deptUnits.forEach(u => {
+    const present = u.totalPresent ?? 0, total = u.totalAssigned ?? 0;
+    grand.present += present; grand.total += total;
+    statusCols.forEach(c => grand.counts[c] += (u.statusCounts[c] || 0));
+    rowsHtml += `<tr>${simpleTableCell(u.label)}${simpleTableCell(present, { align: 'center' })}${statusCols.map(c => simpleTableCell(u.statusCounts[c] || 0, { align: 'center' })).join('')}${simpleTableCell(total, { align: 'center', bold: true })}</tr>`;
+  });
+
+  const headerCols = ['DEPARTMENT', 'PRESENT', ...statusCols.map(s => s.toUpperCase()), 'TOTAL STRENGTH'];
+  return `
+    <table style="width:100%;border-collapse:collapse;margin-bottom:6px;">
+      ${simpleTableHeaderRow(headerCols)}
+      ${rowsHtml}
+      <tr>${simpleTableCell('GRAND TOTAL', { bold: true, bg: '#29ABE2', color: '#fff' })}${simpleTableCell(grand.present, { bold: true, bg: '#29ABE2', color: '#fff', align: 'center' })}${statusCols.map(c => simpleTableCell(grand.counts[c], { bold: true, bg: '#29ABE2', color: '#fff', align: 'center' })).join('')}${simpleTableCell(grand.total, { bold: true, bg: '#29ABE2', color: '#fff', align: 'center' })}</tr>
+    </table>
+  `;
+}
+
+// Table 3 — Managers, one row per person (Floor Managers + Dept Incharges only)
+function buildManagersSimpleTable(managerDetail) {
+  let present = 0;
+  let rowsHtml = managerDetail.map(m => {
+    const context = m.Department === 'Sales' ? m.Floor : m.Department;
+    const isPresent = m.Status === 'Present';
+    if (isPresent) present++;
+    return `<tr>${simpleTableCell(m.Name)}${simpleTableCell(context)}${simpleTableCell(m.Status, { align: 'center', color: isPresent ? '#2d8a4e' : '#C0272D', bold: true })}</tr>`;
+  }).join('');
+
+  return `
+    <table style="width:100%;border-collapse:collapse;margin-bottom:6px;">
+      ${simpleTableHeaderRow(['NAME', 'FLOOR / DEPARTMENT', 'STATUS'])}
+      ${rowsHtml}
+      <tr>${simpleTableCell('GRAND TOTAL', { bold: true, bg: '#29ABE2', color: '#fff' })}${simpleTableCell('', { bg: '#29ABE2' })}${simpleTableCell(`${present} / ${managerDetail.length} Present`, { bold: true, bg: '#29ABE2', color: '#fff', align: 'center' })}</tr>
+    </table>
+  `;
+}
+
+function buildSimpleTableReportHTML(data, managerDetail) {
+  return `
+    <div style="width:760px;background:#fff;padding:20px;font-family:'Segoe UI',system-ui,sans-serif;">
+      <div style="text-align:center;margin-bottom:10px;"><img src="${LOGO_BSC}" style="height:50px;"></div>
+      <div style="background:#FBE4CF;border:1px solid #333;padding:8px;text-align:center;font-weight:800;font-size:15px;color:#1E2D4E;margin-bottom:10px;">DATE : ${data.date}</div>
+      <div style="font-size:9px;font-weight:800;color:#1E2D4E;text-transform:uppercase;letter-spacing:.1em;margin-bottom:4px;">Sales — By Floor / Section</div>
+      ${buildSalesSimpleTable(data.sectionUnits, data.statusTypes)}
+      <div style="font-size:9px;font-weight:800;color:#1E2D4E;text-transform:uppercase;letter-spacing:.1em;margin:14px 0 4px;">Non-Sales — By Department</div>
+      ${buildNonSalesSimpleTable(data.deptUnits, data.statusTypes)}
+      <div style="font-size:9px;font-weight:800;color:#1E2D4E;text-transform:uppercase;letter-spacing:.1em;margin:14px 0 4px;">Managers</div>
+      ${buildManagersSimpleTable(managerDetail)}
+      <div style="margin-top:16px;padding-top:10px;border-top:1px solid #ccc;font-size:10px;color:#888;text-align:center;">
+        Prepared via BSC Attendance App · C&amp;B (Consulting &amp; Beyond)
+      </div>
+    </div>
+  `;
+}
+
 // Renders reportHTML off-screen, rasterizes with html2canvas, triggers a PNG download.
 // Requires html2canvas to be loaded on the page (CDN script tag).
 function downloadReportPNG(reportHTML, filename) {
