@@ -2,7 +2,7 @@
 // SHARED — included by every page (login, marking, dashboard, admin)
 // ============================================================
 
-const API_URL = 'https://script.google.com/macros/s/AKfycbzcaGs8hGfvhsydKcdcjdObMqa4VE52LenPxCEMwOH-Lpl6ijLjxxtYh4EiJIc-pkSc/exec';
+const API_URL = 'https://bsc-attendance.bsctextiles-candb.workers.dev/';
 const LOGO_BSC = 'https://bsctextilescandb-ui.github.io/retail-crm/logo.jpg';
 const LOGO_CNB = 'https://bsctextilescandb-ui.github.io/retail-crm/cnb-logo.png';
 
@@ -21,23 +21,27 @@ async function withBtn(btn, fn) {
   }
 }
 
-// ---- JSONP helper (GET-only, avoids CORS from GitHub Pages) ----
-let jsonpCounter = 0;
+// ---- Backend call helper ----
+// Same name/signature as the old JSONP version on purpose — every other file
+// calls jsonpCall(...) and none of them need to change. Now it's a plain
+// fetch() against the Cloudflare Worker, which sets proper CORS headers, so
+// the old script-tag/callback trick (needed for Apps Script) isn't needed
+// anymore. Real JSON in, real JSON out.
 function jsonpCall(params, timeoutMs = 15000) {
-  return new Promise((resolve, reject) => {
-    const cbName = 'cb_' + (jsonpCounter++) + '_' + Date.now();
-    const timer = setTimeout(() => {
-      delete window[cbName];
-      script.remove();
-      reject(new Error('No response after 15s — check the Apps Script deployment access is "Anyone", and that API_URL in shared.js is correct.'));
-    }, timeoutMs);
-    window[cbName] = (data) => { clearTimeout(timer); resolve(data); delete window[cbName]; script.remove(); };
-    const qs = new URLSearchParams({ ...params, callback: cbName }).toString();
-    const script = document.createElement('script');
-    script.src = API_URL + '?' + qs;
-    script.onerror = () => { clearTimeout(timer); reject(new Error('Network error calling backend.')); };
-    document.body.appendChild(script);
-  });
+  const qs = new URLSearchParams(params).toString();
+  const controller = new AbortController();
+  const timer = setTimeout(() => controller.abort(), timeoutMs);
+
+  return fetch(API_URL + '?' + qs, { signal: controller.signal })
+    .then(res => {
+      if (!res.ok) throw new Error('Backend returned HTTP ' + res.status);
+      return res.json();
+    })
+    .finally(() => clearTimeout(timer))
+    .catch(err => {
+      if (err.name === 'AbortError') throw new Error('No response after ' + (timeoutMs / 1000) + 's — check the Worker is deployed and API_URL in shared.js is correct.');
+      throw new Error(err.message || 'Network error calling backend.');
+    });
 }
 
 // ---- Session (survives navigation between pages, since each .html is a fresh page load) ----
@@ -204,58 +208,6 @@ function reportFooterHTML() {
   `;
 }
 
-function reportGroupRowHTML(icon, label, present, total, statusTypes, statusCounts, submittedLine) {
-  const chips = statusTypes.map(st => `
-    <span style="font-size:10px;background:#F9F7F4;border-radius:12px;padding:3px 9px;margin-right:5px;color:#555;">
-      ${statusIcon(st)} ${statusCounts[st.StatusName] || 0} ${st.StatusName}
-    </span>
-  `).join('');
-  return `
-    <div style="padding:10px 0;border-bottom:1px solid #f0ede8;">
-      <div style="display:flex;justify-content:space-between;align-items:center;font-size:12.5px;">
-        <span>${icon} <strong style="color:#1E2D4E;">${label}</strong></span>
-        <span style="color:#2d8a4e;font-weight:700;">${present} / ${total} Present</span>
-      </div>
-      <div style="margin-top:5px;">${chips}</div>
-      ${submittedLine ? `<div style="font-size:9.5px;color:#aaa;margin-top:4px;">${submittedLine}</div>` : ''}
-    </div>
-  `;
-}
-
-// Builds the full whole-store report (Dashboard / Admin use)
-function buildFullStoreReportHTML(data) {
-  const cum = data.cumulative;
-  let boxes = reportCountBoxHTML(PRESENT_ICON, cum.totalPresent, 'Present', '#2d8a4e');
-  data.statusTypes.forEach(st => {
-    boxes += reportCountBoxHTML(statusIcon(st), cum.statusCounts[st.StatusName] || 0, st.StatusName, '#C9952A');
-  });
-
-  const mgr = data.managerUnit;
-  const mgrHtml = reportGroupRowHTML('\u{1F3E2}', mgr.label, mgr.totalPresent ?? 0, mgr.totalAssigned ?? 0, data.statusTypes, mgr.statusCounts,
-    mgr.submitted ? `Submitted by ${mgr.submittedByName} at ${mgr.submittedAt}` : 'Not yet submitted');
-
-  const sectionRows = data.sectionUnits.map(u => reportGroupRowHTML('\u{1F3EC}', u.label, u.totalPresent ?? 0, u.totalAssigned ?? 0, data.statusTypes, u.statusCounts,
-    u.submitted ? `Submitted by ${u.submittedByName} at ${u.submittedAt}` : 'Not yet submitted')).join('');
-
-  const deptRows = data.deptUnits.map(u => reportGroupRowHTML('\u{1F5C2}\uFE0F', u.label, u.totalPresent ?? 0, u.totalAssigned ?? 0, data.statusTypes, u.statusCounts,
-    u.submitted ? `Submitted by ${u.submittedByName} at ${u.submittedAt}` : 'Not yet submitted')).join('');
-
-  return `
-    <div style="width:820px;background:#fff;padding:24px;font-family:'Segoe UI',system-ui,sans-serif;">
-      ${reportHeaderHTML('BSC Textiles — Daily Attendance Report', 'Whole Store', data.date)}
-      <div style="font-size:10px;color:#aaa;margin-bottom:8px;">${cum.unitsSubmitted} of ${cum.unitsTotal} groups submitted · ${cum.totalAssigned} total assigned · Grooming checked ${cum.groomingChecked} (non-compliant ${cum.groomingNonCompliant})</div>
-      <div style="display:flex;gap:8px;flex-wrap:wrap;margin-bottom:18px;">${boxes}</div>
-      <div style="font-size:9px;font-weight:800;color:#1E2D4E;text-transform:uppercase;letter-spacing:.1em;margin-bottom:8px;">Managers</div>
-      ${mgrHtml}
-      <div style="font-size:9px;font-weight:800;color:#1E2D4E;text-transform:uppercase;letter-spacing:.1em;margin:16px 0 8px;">Sales — By Section</div>
-      ${sectionRows}
-      <div style="font-size:9px;font-weight:800;color:#1E2D4E;text-transform:uppercase;letter-spacing:.1em;margin:16px 0 8px;">Non-Sales — By Department</div>
-      ${deptRows}
-      ${reportFooterHTML()}
-    </div>
-  `;
-}
-
 // Builds a single section/department's own report (marker's submitted view)
 function buildSingleGroupReportHTML(scopeLabel, dateStr, status, statusTypes) {
   const statusCounts = {};
@@ -317,7 +269,7 @@ function buildSalesSimpleTable(sectionUnits, statusTypes) {
   sectionUnits.forEach(u => {
     const floor = u.floorName || 'Unknown';
     const section = u.label.replace(floor + ' — ', '');
-    (byFloor[floor] = byFloor[floor] || []).push({ section, present: u.totalPresent ?? 0, total: u.totalAssigned ?? 0, counts: u.statusCounts });
+    (byFloor[floor] = byFloor[floor] || []).push({ section, present: Number(u.totalPresent) || 0, total: Number(u.totalAssigned) || 0, counts: u.statusCounts });
   });
   const floorNames = Object.keys(byFloor).sort((a, b) => {
     const ia = FLOOR_ORDER_.indexOf(a), ib = FLOOR_ORDER_.indexOf(b);
@@ -363,7 +315,7 @@ function buildNonSalesSimpleTable(deptUnits, statusTypes) {
 
   let rowsHtml = '';
   deptUnits.forEach(u => {
-    const present = u.totalPresent ?? 0, total = u.totalAssigned ?? 0;
+    const present = Number(u.totalPresent) || 0, total = Number(u.totalAssigned) || 0;
     grand.present += present; grand.total += total;
     statusCols.forEach(c => grand.counts[c] += (u.statusCounts[c] || 0));
     rowsHtml += `<tr>${simpleTableCell(u.label)}${simpleTableCell(present, { align: 'center' })}${statusCols.map(c => simpleTableCell(u.statusCounts[c] || 0, { align: 'center' })).join('')}${simpleTableCell(total, { align: 'center', bold: true })}</tr>`;
@@ -398,7 +350,7 @@ function buildManagersSimpleTable(managerDetail) {
   `;
 }
 
-function buildSimpleTableReportHTML(data, managerDetail) {
+function buildSalesNonSalesReportHTML(data) {
   return `
     <div style="width:760px;background:#fff;padding:20px;font-family:'Segoe UI',system-ui,sans-serif;">
       <div style="text-align:center;margin-bottom:10px;"><img src="${LOGO_BSC}" style="height:50px;"></div>
@@ -407,7 +359,19 @@ function buildSimpleTableReportHTML(data, managerDetail) {
       ${buildSalesSimpleTable(data.sectionUnits, data.statusTypes)}
       <div style="font-size:9px;font-weight:800;color:#1E2D4E;text-transform:uppercase;letter-spacing:.1em;margin:14px 0 4px;">Non-Sales — By Department</div>
       ${buildNonSalesSimpleTable(data.deptUnits, data.statusTypes)}
-      <div style="font-size:9px;font-weight:800;color:#1E2D4E;text-transform:uppercase;letter-spacing:.1em;margin:14px 0 4px;">Managers</div>
+      <div style="margin-top:16px;padding-top:10px;border-top:1px solid #ccc;font-size:10px;color:#888;text-align:center;">
+        Prepared via BSC Attendance App · C&amp;B (Consulting &amp; Beyond)
+      </div>
+    </div>
+  `;
+}
+
+function buildManagersReportHTML(data, managerDetail) {
+  return `
+    <div style="width:560px;background:#fff;padding:20px;font-family:'Segoe UI',system-ui,sans-serif;">
+      <div style="text-align:center;margin-bottom:10px;"><img src="${LOGO_BSC}" style="height:50px;"></div>
+      <div style="background:#EDE8DE;border:1px solid #333;padding:8px;text-align:center;font-weight:800;font-size:15px;color:#1E2D4E;margin-bottom:10px;">DATE : ${data.date}</div>
+      <div style="font-size:9px;font-weight:800;color:#1E2D4E;text-transform:uppercase;letter-spacing:.1em;margin-bottom:4px;">Managers</div>
       ${buildManagersSimpleTable(managerDetail)}
       <div style="margin-top:16px;padding-top:10px;border-top:1px solid #ccc;font-size:10px;color:#888;text-align:center;">
         Prepared via BSC Attendance App · C&amp;B (Consulting &amp; Beyond)
