@@ -1,0 +1,136 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>BSC Textiles — HR Dashboard</title>
+<link rel="stylesheet" href="style.css">
+<script src="https://cdnjs.cloudflare.com/ajax/libs/html2canvas/1.4.1/html2canvas.min.js"></script>
+</head>
+<body>
+
+<button class="sb-toggle" id="sbToggle" onclick="toggleSidebar()"><span></span><span></span><span></span></button>
+<div class="sb-mob-overlay" id="sbOverlay" onclick="closeSidebar()"></div>
+
+  
+<div class="app-shell">
+  <aside class="sidebar" id="sidebar"></aside>
+  <div class="main">
+    <header class="topbar">
+      <div class="topbar-left">
+        <div class="topbar-title" id="topbarTitle">HR Dashboard</div>
+        <div class="breadcrumb" id="topbarBreadcrumb"></div>
+      </div>
+      <div class="topbar-right">
+        <span class="topbar-time" id="topbarClock"></span>
+      </div>
+    </header>
+
+<div class="content">
+
+  <div class="card">
+    <h2>Cumulative — Whole Store</h2>
+    <div class="row-2">
+      <div><label>Date</label><input type="text" id="dashDate"></div>
+      <div style="display:flex;align-items:flex-end;"><button class="btn btn-outline btn-sm" onclick="withBtn(this, loadDashboard)">Refresh</button></div>
+    </div>
+    <div class="count-table" id="cumCountTable"></div>
+    <div class="hint" id="submitStatusLine"></div>
+    <div class="hint" id="groomLine"></div>
+    <button class="btn btn-outline btn-sm" onclick="withBtn(this, copySummary)">Copy summary for management</button>
+    <button class="btn btn-gold btn-sm" onclick="withBtn(this, downloadFullReport)">Download PNG (Detailed)</button>
+    <button class="btn btn-gold btn-sm" onclick="withBtn(this, downloadSimpleReport)">Download PNG (Simple Table)</button>
+  </div>
+
+  <div class="card">
+    <h2>Managers (Floor / Section / Dept Incharges)</h2>
+    <div class="hint">Marked only by HR — never counted inside a section or department's own numbers.</div>
+    <div id="managerRow"></div>
+  </div>
+
+  <div class="card">
+    <h2>Sales — By Section</h2>
+    <div id="sectionList"></div>
+  </div>
+
+  <div class="card">
+    <h2>Non-Sales — By Department</h2>
+    <div id="deptList"></div>
+  </div>
+
+</div>
+  </div>
+</div>
+
+<script src="shared.js"></script>
+<script>
+let session = requireLogin(['Admin']);
+let lastDashboard = null;
+
+if (session) {
+  renderShell('dashboard');
+  document.getElementById('dashDate').value = todayStr();
+  loadDashboard();
+}
+
+async function loadDashboard() {
+  const date = document.getElementById('dashDate').value || todayStr();
+  const data = await jsonpCall({ action: 'getDashboard', date });
+  if (data.error) {
+    document.getElementById('cumCountTable').innerHTML = `<div class="msg msg-err">Backend error: ${data.error}</div>`;
+    return;
+  }
+  lastDashboard = data;
+
+  let cHtml = `<div class="count-box present"><div class="n">${data.cumulative.totalPresent}</div><div class="lbl">Present</div></div>`;
+  Object.keys(data.cumulative.statusCounts).forEach(k => {
+    cHtml += `<div class="count-box"><div class="n">${data.cumulative.statusCounts[k]}</div><div class="lbl">${k}</div></div>`;
+  });
+  document.getElementById('cumCountTable').innerHTML = cHtml;
+  document.getElementById('submitStatusLine').innerText =
+    `${data.cumulative.unitsSubmitted} of ${data.cumulative.unitsTotal} units submitted · ${data.cumulative.totalAssigned} total assigned`;
+  document.getElementById('groomLine').innerText =
+    `Grooming/Uniform/ID checked: ${data.cumulative.groomingChecked} · Non-compliant: ${data.cumulative.groomingNonCompliant}`;
+
+  document.getElementById('managerRow').innerHTML = renderUnitRow(data.managerUnit);
+  document.getElementById('sectionList').innerHTML = data.sectionUnits.map(renderUnitRow).join('') || '<div class="hint">No sections found.</div>';
+  document.getElementById('deptList').innerHTML = data.deptUnits.map(renderUnitRow).join('') || '<div class="hint">No departments found.</div>';
+}
+
+function renderUnitRow(u) {
+  return `
+    <div class="dash-unit">
+      <div class="top">
+        <span>${u.label}</span>
+        <span class="pill ${u.submitted ? 'pill-yes' : 'pill-no'}">${u.submitted ? 'Submitted' : 'Pending'}</span>
+      </div>
+      ${u.submitted ? `<div class="hint">Present ${u.totalPresent} / ${u.totalAssigned} · by ${u.submittedByName} at ${u.submittedAt} · Grooming checked ${u.groomingChecked} (non-compliant ${u.groomingNonCompliant})</div>` : ''}
+    </div>
+  `;
+}
+
+async function downloadFullReport() {
+  if (!lastDashboard) return;
+  await downloadReportPNG(buildFullStoreReportHTML(lastDashboard), `BSC_Attendance_Detailed_${lastDashboard.date}.png`);
+}
+
+async function downloadSimpleReport() {
+  if (!lastDashboard) return;
+  const managerDetail = await jsonpCall({ action: 'getManagerDetail', date: lastDashboard.date });
+  await downloadReportPNG(buildSimpleTableReportHTML(lastDashboard, managerDetail), `BSC_Attendance_Simple_${lastDashboard.date}.png`);
+}
+
+function copySummary() {
+  if (!lastDashboard) return;
+  const d = lastDashboard;
+  let text = `BSC Textiles — Attendance Summary (${d.date})\n`;
+  text += `Units submitted: ${d.cumulative.unitsSubmitted}/${d.cumulative.unitsTotal}\n`;
+  text += `Total Assigned: ${d.cumulative.totalAssigned} | Present: ${d.cumulative.totalPresent}\n`;
+  Object.keys(d.cumulative.statusCounts).forEach(k => { text += `${k}: ${d.cumulative.statusCounts[k]}\n`; });
+  text += `Grooming/Uniform/ID checked: ${d.cumulative.groomingChecked} | Non-compliant: ${d.cumulative.groomingNonCompliant}\n`;
+  navigator.clipboard.writeText(text).then(() => alert('Summary copied — ready to paste to management.'));
+}
+</script>
+
+</body>
+</html>

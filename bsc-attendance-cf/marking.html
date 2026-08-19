@@ -1,0 +1,525 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>BSC Textiles — Daily Marking</title>
+<link rel="stylesheet" href="style.css">
+<script src="https://cdnjs.cloudflare.com/ajax/libs/html2canvas/1.4.1/html2canvas.min.js"></script>
+</head>
+<body>
+
+<button class="sb-toggle" id="sbToggle" onclick="toggleSidebar()"><span></span><span></span><span></span></button>
+<div class="sb-mob-overlay" id="sbOverlay" onclick="closeSidebar()"></div>
+
+<div class="app-shell">
+  <aside class="sidebar" id="sidebar"></aside>
+  <div class="main">
+    <header class="topbar">
+      <div class="topbar-left">
+        <div class="topbar-title" id="topbarTitle">Daily Marking</div>
+        <div class="breadcrumb" id="topbarBreadcrumb"></div>
+      </div>
+      <div class="topbar-right">
+        <span class="topbar-time" id="topbarClock"></span>
+      </div>
+    </header>
+
+<div class="content">
+
+  <!-- UNIT PICKER (Floor Manager section dropdown / Admin full picker) -->
+  <div class="card" id="unitPickerCard" style="display:none;">
+    <h2>Choose what to mark</h2>
+    <div id="unitPickerBody"></div>
+  </div>
+
+  <div id="markingArea" style="display:none;">
+
+    <div class="card">
+      <div style="display:flex;justify-content:space-between;align-items:center;">
+        <h2 id="unitLabel" style="margin:0;">Unit</h2>
+        <button class="btn btn-outline btn-sm" id="changeUnitBtn" style="display:none;" onclick="changeUnit()">Change</button>
+      </div>
+      <div class="hint">Report due before 11:00 AM. Everyone defaults to Present — mark only exceptions below.</div>
+      <div id="lockBanner"></div>
+      <div class="count-table" id="countTable"></div>
+    </div>
+
+    <!-- TABLE 2: Status marking -->
+    <div class="card" id="statusCard">
+      <h2>Mark Attendance Status</h2>
+      <input type="text" id="statusSearch" placeholder="Type employee ID or name...">
+      <div class="search-results" id="statusSearchResults"></div>
+      <div class="picked-list" id="statusPickedList" style="margin-top:10px;"></div>
+    </div>
+
+    <!-- TABLE 3: Grooming / Uniform / ID -->
+    <div class="card" id="groomCard">
+      <h2>Grooming / Uniform / ID (Present staff only)</h2>
+      <div class="hint">Everyone Present defaults to Grooming 5, Uniform Yes, ID Yes. Search only to change someone's.</div>
+      <input type="text" id="groomSearch" placeholder="Type employee ID or name...">
+      <div class="search-results" id="groomSearchResults"></div>
+      <div class="picked-list" id="groomPickedList" style="margin-top:10px;"></div>
+    </div>
+
+    <button class="btn btn-gold btn-block" id="reviewBtn" onclick="withBtn(this, openReview)">Review &amp; Submit</button>
+  </div>
+
+  <!-- READ-ONLY LOCKED VIEW -->
+  <div class="card" id="lockedView" style="display:none;">
+    <h2>Already Submitted</h2>
+    <div id="lockedDetail"></div>
+  </div>
+
+</div>
+  </div>
+</div>
+
+<!-- REVIEW MODAL -->
+<div class="overlay" id="reviewOverlay" style="display:none;">
+  <div class="modal">
+    <h2 style="color:var(--gold);text-transform:uppercase;font-size:14px;">Final Review — <span id="reviewUnitName"></span></h2>
+    <div class="count-table" id="reviewCountTable"></div>
+    <div class="hint" style="margin-top:10px;">Attendance Exceptions</div>
+    <div class="picked-list" id="reviewStatusList"></div>
+    <div class="hint" style="margin-top:10px;">Grooming/Uniform/ID Overrides</div>
+    <div class="picked-list" id="reviewGroomList"></div>
+    <div class="row-2" style="margin-top:16px;">
+      <button class="btn btn-outline btn-block" onclick="closeReview()">Back &amp; Edit</button>
+      <button class="btn btn-gold btn-block" onclick="withBtn(this, finalSubmit)">Confirm &amp; Submit</button>
+    </div>
+    <div id="reviewMsg"></div>
+  </div>
+</div>
+
+<script src="shared.js"></script>
+<script>
+let session = requireLogin(['FloorManager', 'SectionIncharge', 'DeptIncharge', 'Admin']);
+let currentUnit = null;      // { unitType, unitId, unitLabel }
+let statusTypes = [];
+let unitEmployees = [];
+let statusPicks = {};        // employeeId -> {employeeName, statusId, statusName, permission}
+let groomPicks = {};         // employeeId -> {employeeName, groomingScore, uniformOK, idCardOK}
+let isAdminEditing = false;  // true when Admin is overriding an already-submitted unit
+
+if (session) {
+  renderShell('marking');
+  init();
+}
+
+async function init() {
+  if (session.role === 'SectionIncharge') {
+    currentUnit = { unitType: 'Section', unitId: session.sectionId, unitLabel: session.sectionName + ' (' + session.floorName + ')' };
+    await loadUnitScreen();
+  } else if (session.role === 'DeptIncharge') {
+    currentUnit = { unitType: 'Department', unitId: session.departmentId, unitLabel: session.departmentName };
+    await loadUnitScreen();
+  } else if (session.role === 'FloorManager') {
+    const saved = getSelectedUnit();
+    if (saved) { currentUnit = saved; await loadUnitScreen(); }
+    else await showFloorManagerPicker();
+  } else if (session.role === 'Admin') {
+    const saved = getSelectedUnit();
+    if (saved) { currentUnit = saved; await loadUnitScreen(); }
+    else await showAdminPicker();
+  }
+}
+
+function changeUnit() {
+  clearSelectedUnit();
+  currentUnit = null;
+  document.getElementById('markingArea').style.display = 'none';
+  document.getElementById('lockedView').style.display = 'none';
+  if (session.role === 'FloorManager') showFloorManagerPicker();
+  else if (session.role === 'Admin') showAdminPicker();
+}
+
+// ===================== UNIT PICKERS =====================
+async function showFloorManagerPicker() {
+  const sections = await jsonpCall({ action: 'getSectionsByFloor', floorId: session.floorId });
+  window._fmSections = sections;
+  document.getElementById('unitPickerCard').style.display = 'block';
+  document.getElementById('unitPickerBody').innerHTML = `
+    <label>Section on ${session.floorName}</label>
+    <select id="fmSectionSelect">
+      ${sections.map(s => `<option value="${s.SectionID}">${s.SectionName}</option>`).join('')}
+    </select>
+    <button class="btn btn-primary btn-block" onclick="withBtn(this, () => confirmFmSection(window._fmSections))">Continue</button>
+  `;
+}
+
+async function confirmFmSection(sections) {
+  const id = document.getElementById('fmSectionSelect').value;
+  const sec = sections.find(s => s.SectionID === id);
+  currentUnit = { unitType: 'Section', unitId: id, unitLabel: sec.SectionName + ' (' + session.floorName + ')' };
+  saveSelectedUnit(currentUnit.unitType, currentUnit.unitId, currentUnit.unitLabel);
+  document.getElementById('unitPickerCard').style.display = 'none';
+  await loadUnitScreen();
+}
+
+async function showAdminPicker() {
+  const [floors, departments] = await Promise.all([
+    jsonpCall({ action: 'getFloors' }),
+    jsonpCall({ action: 'getDepartments' })
+  ]);
+  document.getElementById('unitPickerCard').style.display = 'block';
+  document.getElementById('unitPickerBody').innerHTML = `
+    <label>Type</label>
+    <select id="adminUnitType" onchange="onAdminUnitTypeChange()">
+      <option value="Section">Sales — Floor / Section</option>
+      <option value="Department">Non-Sales — Department</option>
+      <option value="Managers">Managers — Floor/Section/Dept Incharges (HR only)</option>
+    </select>
+    <div id="adminSalesPicker">
+      <label>Floor</label>
+      <select id="adminFloorSelect" onchange="onAdminFloorChange()">
+        ${floors.map(f => `<option value="${f.FloorID}">${f.FloorName}</option>`).join('')}
+      </select>
+      <label>Section</label>
+      <select id="adminSectionSelect"></select>
+    </div>
+    <div id="adminDeptPicker" style="display:none;">
+      <label>Department</label>
+      <select id="adminDeptSelect">
+        ${departments.map(d => `<option value="${d.DepartmentID}">${d.DepartmentName}</option>`).join('')}
+      </select>
+    </div>
+    <div id="adminManagerPicker" style="display:none;">
+      <div class="hint">One flat list covering every active Floor Manager, Section Incharge, and Dept Incharge store-wide.</div>
+    </div>
+    <button class="btn btn-primary btn-block" onclick="withBtn(this, confirmAdminUnit)">Continue</button>
+  `;
+  onAdminFloorChange();
+}
+
+async function onAdminFloorChange() {
+  const floorId = document.getElementById('adminFloorSelect').value;
+  const sections = await jsonpCall({ action: 'getSectionsByFloor', floorId });
+  window._adminSections = sections;
+  document.getElementById('adminSectionSelect').innerHTML = sections.map(s => `<option value="${s.SectionID}">${s.SectionName}</option>`).join('');
+}
+
+function onAdminUnitTypeChange() {
+  const t = document.getElementById('adminUnitType').value;
+  document.getElementById('adminSalesPicker').style.display = t === 'Section' ? 'block' : 'none';
+  document.getElementById('adminDeptPicker').style.display = t === 'Department' ? 'block' : 'none';
+  document.getElementById('adminManagerPicker').style.display = t === 'Managers' ? 'block' : 'none';
+}
+
+async function confirmAdminUnit() {
+  const t = document.getElementById('adminUnitType').value;
+  if (t === 'Section') {
+    const id = document.getElementById('adminSectionSelect').value;
+    const floorName = document.getElementById('adminFloorSelect').selectedOptions[0].textContent;
+    const secName = document.getElementById('adminSectionSelect').selectedOptions[0].textContent;
+    currentUnit = { unitType: 'Section', unitId: id, unitLabel: secName + ' (' + floorName + ')' };
+  } else if (t === 'Department') {
+    const id = document.getElementById('adminDeptSelect').value;
+    const name = document.getElementById('adminDeptSelect').selectedOptions[0].textContent;
+    currentUnit = { unitType: 'Department', unitId: id, unitLabel: name };
+  } else {
+    currentUnit = { unitType: 'Managers', unitId: 'ALL', unitLabel: 'All Managers (Floor/Section/Dept Incharges)' };
+  }
+  saveSelectedUnit(currentUnit.unitType, currentUnit.unitId, currentUnit.unitLabel);
+  document.getElementById('unitPickerCard').style.display = 'none';
+  await loadUnitScreen();
+}
+
+// ===================== LOAD UNIT (check lock, then render) =====================
+async function loadUnitScreen() {
+  document.getElementById('changeUnitBtn').style.display = (session.role === 'FloorManager' || session.role === 'Admin') ? 'inline-block' : 'none';
+  document.getElementById('unitLabel').textContent = currentUnit.unitLabel + ' — ' + todayStr();
+  document.getElementById('markingArea').style.display = 'none';
+  document.getElementById('lockedView').style.display = 'none';
+  document.getElementById('countTable').innerHTML = '<div class="hint">Loading...</div>';
+
+  const boot = await jsonpCall({ action: 'getMarkingBootstrap', unitType: currentUnit.unitType, unitId: currentUnit.unitId, date: todayStr() });
+  if (!boot || boot.error) {
+    document.getElementById('countTable').innerHTML = `<div class="msg msg-err">Backend error: ${boot ? boot.error : 'no response'}. Make sure Code_v3.gs is deployed as the latest version (Deploy → Manage deployments → New version).</div>`;
+    return;
+  }
+  const status = boot.unitStatus;
+  statusTypes = boot.statusTypes; // needed even in the locked view, for the report's icons
+
+  if (status.submitted && session.role !== 'Admin') {
+    renderLockedView(status);
+    return;
+  }
+
+  unitEmployees = boot.employees;
+
+  statusPicks = {};
+  groomPicks = {};
+  isAdminEditing = false;
+
+  if (status.submitted && session.role === 'Admin') {
+    isAdminEditing = true;
+    document.getElementById('lockBanner').innerHTML = `<div class="msg msg-err">Already submitted by ${status.submittedByName} at ${status.submittedAt}. You are editing as Admin — this will overwrite it.</div>`;
+    (status.exceptions || []).forEach(x => {
+      statusPicks[x.EmployeeID] = { employeeName: x.EmployeeName, statusId: x.StatusID, statusName: x.StatusName, permission: x.Permission };
+    });
+    (status.grooming || []).forEach(g => {
+      groomPicks[g.EmployeeID] = { employeeName: g.EmployeeName, groomingScore: g.GroomingScore, uniformOK: g.UniformOK, idCardOK: g.IDCardOK };
+    });
+  } else {
+    document.getElementById('lockBanner').innerHTML = '';
+  }
+
+  document.getElementById('lockedView').style.display = 'none';
+  document.getElementById('markingArea').style.display = 'block';
+  document.getElementById('statusSearch').oninput = renderStatusSearch;
+  document.getElementById('groomSearch').oninput = renderGroomSearch;
+  document.getElementById('statusSearchResults').innerHTML = '';
+  document.getElementById('groomSearchResults').innerHTML = '';
+  renderCountTable();
+  renderStatusPickedList();
+  renderGroomPickedList();
+}
+
+function renderLockedView(status) {
+  document.getElementById('markingArea').style.display = 'none';
+  document.getElementById('lockedView').style.display = 'block';
+  window._lockedStatus = status; // for the report download
+  const exc = status.exceptions || [];
+  const groom = status.grooming || [];
+  const showChange = (session.role === 'FloorManager' || session.role === 'Admin');
+  document.getElementById('lockedDetail').innerHTML = `
+    <div style="display:flex;justify-content:space-between;align-items:center;flex-wrap:wrap;gap:8px;">
+      <div class="hint">Submitted by <strong>${status.submittedByName}</strong> at ${status.submittedAt}</div>
+      <div>
+        <button class="btn btn-gold btn-sm" onclick="withBtn(this, downloadSingleReport)">Download PNG</button>
+        ${showChange ? `<button class="btn btn-outline btn-sm" onclick="changeUnit()">Change</button>` : ''}
+      </div>
+    </div>
+    <div class="count-table" style="margin-top:8px;">
+      <div class="count-box present"><div class="n">${status.totalPresent}</div><div class="lbl">Present</div></div>
+      <div class="count-box"><div class="n">${status.totalAssigned}</div><div class="lbl">Total</div></div>
+    </div>
+    <div class="hint" style="margin-top:12px;">Attendance Exceptions</div>
+    <div class="picked-list">
+      ${exc.length ? exc.map(x => `<div class="row"><span>${x.EmployeeName}</span><span><span class="tag">${x.StatusName}</span><span class="tag ${String(x.Permission).toLowerCase()==='with permission'||String(x.Permission).toLowerCase()==='with'?'with':'without'}">${x.Permission}</span></span></div>`).join('') : '<div class="hint">None — everyone Present.</div>'}
+    </div>
+    <div class="hint" style="margin-top:12px;">Grooming/Uniform/ID Overrides</div>
+    <div class="picked-list">
+      ${groom.length ? groom.map(g => `<div class="row"><span>${g.EmployeeName}</span><span>Grooming ${g.GroomingScore} · Uniform ${g.UniformOK} · ID ${g.IDCardOK}</span></div>`).join('') : '<div class="hint">None — everyone default.</div>'}
+    </div>
+    <div class="hint" style="margin-top:12px;">Only Admin can edit an already-submitted entry.</div>
+  `;
+}
+
+async function downloadSingleReport() {
+  if (!window._lockedStatus) return;
+  await downloadReportPNG(
+    buildSingleGroupReportHTML(currentUnit.unitLabel, todayStr(), window._lockedStatus, statusTypes),
+    `BSC_Attendance_${currentUnit.unitLabel.replace(/[^a-zA-Z0-9]/g, '_')}_${todayStr()}.png`
+  );
+}
+
+// ===================== COUNT TABLE =====================
+function renderCountTable() {
+  const assigned = unitEmployees.length;
+  const exceptionCount = Object.keys(statusPicks).length;
+  const present = assigned - exceptionCount;
+  let html = `<div class="count-box present"><div class="n">${present}</div><div class="lbl">Present</div></div>`;
+  statusTypes.forEach(st => {
+    const c = Object.values(statusPicks).filter(p => p.statusId === st.StatusID).length;
+    html += `<div class="count-box"><div class="n">${c}</div><div class="lbl">${st.StatusName}</div></div>`;
+  });
+  document.getElementById('countTable').innerHTML = html;
+}
+
+// ===================== TABLE 2: STATUS =====================
+function renderStatusSearch() {
+  const q = document.getElementById('statusSearch').value.trim().toLowerCase();
+  const box = document.getElementById('statusSearchResults');
+  if (!q) { box.innerHTML = ''; return; }
+  const hits = unitEmployees.filter(e => String(e.EmployeeID).toLowerCase().includes(q) || String(e.Name).toLowerCase().includes(q)).slice(0, 12);
+  box.innerHTML = hits.map(e => `
+    <div class="emp-hit" onclick="openStatusPicker('${e.EmployeeID}')">
+      <span>${e.Name} ${statusPicks[e.EmployeeID] ? '<span class="tag">' + statusPicks[e.EmployeeID].statusName + '</span>' : ''}</span>
+      <span class="num">#${e.EmployeeID}</span>
+    </div>
+  `).join('') || '<div class="hint">No match.</div>';
+}
+
+function openStatusPicker(empId) {
+  const emp = unitEmployees.find(e => String(e.EmployeeID) === String(empId));
+  document.getElementById('statusSearchResults').innerHTML = `
+    <div class="card" style="margin-top:8px;">
+      <strong>${emp.Name}</strong> <span class="hint">#${emp.EmployeeID}</span>
+      <div class="chip-row">
+        ${statusTypes.map(st => `<button class="chip-btn" onclick="chooseStatus('${empId}','${st.StatusID}','${st.StatusName}', ${st.RequiresPermission === true || st.RequiresPermission === 'TRUE'})">${st.StatusName}</button>`).join('')}
+        <button class="chip-btn" onclick="clearStatusPick('${empId}')">Clear (Present)</button>
+      </div>
+      <div id="permRow"></div>
+      <button class="btn btn-outline btn-sm" style="margin-top:10px;" onclick="renderStatusSearch()">Cancel</button>
+    </div>
+  `;
+}
+
+function chooseStatus(empId, statusId, statusName, requiresPermission) {
+  if (!requiresPermission) { saveStatusPick(empId, statusId, statusName, ''); return; }
+  document.getElementById('permRow').innerHTML = `
+    <label>With or without permission?</label>
+    <button class="perm-btn" onclick="saveStatusPick('${empId}','${statusId}','${statusName}','With Permission')">With Permission</button>
+    <button class="perm-btn" onclick="saveStatusPick('${empId}','${statusId}','${statusName}','Without Permission')">Without Permission</button>
+  `;
+}
+
+function saveStatusPick(empId, statusId, statusName, permission) {
+  const emp = unitEmployees.find(e => String(e.EmployeeID) === String(empId));
+  statusPicks[empId] = { employeeName: emp.Name, statusId, statusName, permission };
+  document.getElementById('statusSearch').value = '';
+  document.getElementById('statusSearchResults').innerHTML = '';
+  renderCountTable();
+  renderStatusPickedList();
+}
+
+function clearStatusPick(empId) {
+  delete statusPicks[empId];
+  document.getElementById('statusSearch').value = '';
+  document.getElementById('statusSearchResults').innerHTML = '';
+  renderCountTable();
+  renderStatusPickedList();
+}
+
+function renderStatusPickedList() {
+  const keys = Object.keys(statusPicks);
+  document.getElementById('statusPickedList').innerHTML = keys.length ? keys.map(k => {
+    const p = statusPicks[k];
+    const permTag = p.permission ? `<span class="tag ${p.permission.toLowerCase().includes('without') ? 'without' : 'with'}">${p.permission}</span>` : '';
+    return `<div class="row"><span>${p.employeeName} <span class="tag">${p.statusName}</span>${permTag}</span><button class="remove-x" onclick="clearStatusPick('${k}')">Remove</button></div>`;
+  }).join('') : '<div class="hint">No exceptions marked yet — everyone Present.</div>';
+}
+
+// ===================== TABLE 3: GROOMING =====================
+function renderGroomSearch() {
+  const q = document.getElementById('groomSearch').value.trim().toLowerCase();
+  const box = document.getElementById('groomSearchResults');
+  if (!q) { box.innerHTML = ''; return; }
+  // Only employees currently Present are eligible for grooming edits
+  const presentEmployees = unitEmployees.filter(e => !statusPicks[e.EmployeeID]);
+  const hits = presentEmployees.filter(e => String(e.EmployeeID).toLowerCase().includes(q) || String(e.Name).toLowerCase().includes(q)).slice(0, 12);
+  box.innerHTML = hits.map(e => `
+    <div class="emp-hit" onclick="openGroomPicker('${e.EmployeeID}')">
+      <span>${e.Name} ${groomPicks[e.EmployeeID] ? '<span class="tag">edited</span>' : ''}</span>
+      <span class="num">#${e.EmployeeID}</span>
+    </div>
+  `).join('') || '<div class="hint">No match among Present staff.</div>';
+}
+
+function openGroomPicker(empId) {
+  const emp = unitEmployees.find(e => String(e.EmployeeID) === String(empId));
+  const existing = groomPicks[empId] || { groomingScore: 5, uniformOK: 'Yes', idCardOK: 'Yes' };
+  document.getElementById('groomSearchResults').innerHTML = `
+    <div class="card" style="margin-top:8px;">
+      <strong>${emp.Name}</strong> <span class="hint">#${emp.EmployeeID}</span>
+      <label>Grooming (1-5)</label>
+      <select id="groomScoreSel">
+        ${[1,2,3,4,5].map(n => `<option value="${n}" ${Number(existing.groomingScore)===n?'selected':''}>${n}</option>`).join('')}
+      </select>
+      <label>Uniform</label>
+      <select id="uniformSel">
+        <option value="Yes" ${existing.uniformOK==='Yes'?'selected':''}>Yes</option>
+        <option value="No" ${existing.uniformOK==='No'?'selected':''}>No</option>
+      </select>
+      <label>ID Card</label>
+      <select id="idCardSel">
+        <option value="Yes" ${existing.idCardOK==='Yes'?'selected':''}>Yes</option>
+        <option value="No" ${existing.idCardOK==='No'?'selected':''}>No</option>
+      </select>
+      <button class="btn btn-primary btn-sm" style="margin-top:10px;" onclick="withBtn(this, () => saveGroomPick('${empId}'))">Save</button>
+      <button class="btn btn-outline btn-sm" style="margin-top:10px;" onclick="renderGroomSearch()">Cancel</button>
+    </div>
+  `;
+}
+
+function saveGroomPick(empId) {
+  const emp = unitEmployees.find(e => String(e.EmployeeID) === String(empId));
+  const groomingScore = document.getElementById('groomScoreSel').value;
+  const uniformOK = document.getElementById('uniformSel').value;
+  const idCardOK = document.getElementById('idCardSel').value;
+  if (groomingScore === '5' && uniformOK === 'Yes' && idCardOK === 'Yes') {
+    delete groomPicks[empId]; // back to default, no need to store
+  } else {
+    groomPicks[empId] = { employeeName: emp.Name, groomingScore, uniformOK, idCardOK };
+  }
+  document.getElementById('groomSearch').value = '';
+  document.getElementById('groomSearchResults').innerHTML = '';
+  renderGroomPickedList();
+}
+
+function renderGroomPickedList() {
+  const keys = Object.keys(groomPicks);
+  document.getElementById('groomPickedList').innerHTML = keys.length ? keys.map(k => {
+    const g = groomPicks[k];
+    return `<div class="row"><span>${g.employeeName} — Grooming ${g.groomingScore}, Uniform ${g.uniformOK}, ID ${g.idCardOK}</span><button class="remove-x" onclick="delete groomPicks['${k}']; renderGroomPickedList();">Remove</button></div>`;
+  }).join('') : '<div class="hint">No overrides — everyone default (5 / Yes / Yes).</div>';
+}
+
+// ===================== REVIEW & SUBMIT =====================
+function openReview() {
+  document.getElementById('reviewUnitName').textContent = currentUnit.unitLabel;
+  const assigned = unitEmployees.length;
+  const exceptionCount = Object.keys(statusPicks).length;
+  const present = assigned - exceptionCount;
+  let cHtml = `<div class="count-box present"><div class="n">${present}</div><div class="lbl">Present</div></div>`;
+  statusTypes.forEach(st => {
+    const c = Object.values(statusPicks).filter(p => p.statusId === st.StatusID).length;
+    cHtml += `<div class="count-box"><div class="n">${c}</div><div class="lbl">${st.StatusName}</div></div>`;
+  });
+  document.getElementById('reviewCountTable').innerHTML = cHtml;
+
+  const sKeys = Object.keys(statusPicks);
+  document.getElementById('reviewStatusList').innerHTML = sKeys.length ? sKeys.map(k => {
+    const p = statusPicks[k];
+    const permTag = p.permission ? `<span class="tag ${p.permission.toLowerCase().includes('without') ? 'without' : 'with'}">${p.permission}</span>` : '';
+    return `<div class="row"><span>${p.employeeName}</span><span><span class="tag">${p.statusName}</span>${permTag}</span></div>`;
+  }).join('') : '<div class="hint">None — everyone Present.</div>';
+
+  const gKeys = Object.keys(groomPicks);
+  document.getElementById('reviewGroomList').innerHTML = gKeys.length ? gKeys.map(k => {
+    const g = groomPicks[k];
+    return `<div class="row"><span>${g.employeeName}</span><span>Grooming ${g.groomingScore} · Uniform ${g.uniformOK} · ID ${g.idCardOK}</span></div>`;
+  }).join('') : '<div class="hint">None — everyone default.</div>';
+
+  document.getElementById('reviewMsg').innerHTML = '';
+  document.getElementById('reviewOverlay').style.display = 'flex';
+}
+
+function closeReview() { document.getElementById('reviewOverlay').style.display = 'none'; }
+
+async function finalSubmit() {
+  const assigned = unitEmployees.length;
+  const exceptionCount = Object.keys(statusPicks).length;
+  const present = assigned - exceptionCount;
+
+  const exceptions = Object.keys(statusPicks).map(k => ({
+    employeeId: k, employeeName: statusPicks[k].employeeName,
+    statusId: statusPicks[k].statusId, statusName: statusPicks[k].statusName, permission: statusPicks[k].permission
+  }));
+  const grooming = Object.keys(groomPicks).map(k => ({
+    employeeId: k, employeeName: groomPicks[k].employeeName,
+    groomingScore: groomPicks[k].groomingScore, uniformOK: groomPicks[k].uniformOK, idCardOK: groomPicks[k].idCardOK
+  }));
+
+  const res = await jsonpCall({
+    action: 'submitAttendance', date: todayStr(), unitType: currentUnit.unitType, unitId: currentUnit.unitId,
+    userId: session.userId, userName: session.name,
+    totalAssigned: assigned, totalPresent: present,
+    exceptions: JSON.stringify(exceptions), grooming: JSON.stringify(grooming),
+    adminOverride: isAdminEditing ? 'true' : 'false'
+  });
+
+  const msgEl = document.getElementById('reviewMsg');
+  if (res.success) {
+    msgEl.innerHTML = '<div class="msg msg-ok">Submitted to HR successfully.</div>';
+    setTimeout(() => { closeReview(); loadUnitScreen(); }, 500);
+  } else {
+    msgEl.innerHTML = '<div class="msg msg-err">' + (res.error || 'Submission failed.') + '</div>';
+  }
+}
+</script>
+
+</body>
+</html>

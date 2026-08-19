@@ -1,0 +1,367 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>BSC Textiles — Admin Control</title>
+<link rel="stylesheet" href="style.css">
+</head>
+<body>
+
+<button class="sb-toggle" id="sbToggle" onclick="toggleSidebar()"><span></span><span></span><span></span></button>
+<div class="sb-mob-overlay" id="sbOverlay" onclick="closeSidebar()"></div>
+
+<div class="app-shell">
+  <aside class="sidebar" id="sidebar"></aside>
+  <div class="main">
+    <header class="topbar">
+      <div class="topbar-left">
+        <div class="topbar-title" id="topbarTitle">Admin Control</div>
+        <div class="breadcrumb" id="topbarBreadcrumb"></div>
+      </div>
+      <div class="topbar-right">
+        <span class="topbar-time" id="topbarClock"></span>
+      </div>
+    </header>
+
+<div class="content">
+
+<nav class="tabs">
+  <button id="atab-emp" class="active" onclick="showTab('emp')">Employees</button>
+  <button id="atab-unit" onclick="showTab('unit')">Units</button>
+  <button id="atab-desig" onclick="showTab('desig')">Designations</button>
+  <button id="atab-user" onclick="showTab('user')">Users</button>
+  <button id="atab-status" onclick="showTab('status')">Status Types</button>
+</nav>
+
+
+
+  <div id="panel-emp">
+    <div class="card">
+      <h2>Add Employee</h2>
+      <div class="hint">The initial 500+ bulk load stays in the sheet. Use this only for new joiners going forward.</div>
+      <div class="row-2">
+        <div><label>Employee ID (payroll number)</label><input type="text" id="newEmpId"></div>
+        <div><label>Name</label><input type="text" id="newEmpName"></div>
+      </div>
+      <div class="row-2">
+        <div><label>Gender</label><select id="newEmpGender"><option>Male</option><option>Female</option><option>Other</option></select></div>
+        <div><label>Designation</label><select id="newEmpDesignation"></select></div>
+      </div>
+      <div class="row-2">
+        <div><label>Department</label><input type="text" id="newEmpDept" placeholder="Sales, CRM, Housekeeping..."></div>
+        <div><label>Section</label><input type="text" id="newEmpSection" placeholder="Sarees, Non-Sales..."></div>
+      </div>
+      <label>Floor</label>
+      <input type="text" id="newEmpFloor" placeholder="Ground Floor, Non-Sales...">
+      <button class="btn btn-primary" onclick="withBtn(this, addEmployee)">Add Employee</button>
+      <div id="empAddMsg"></div>
+    </div>
+
+    <div class="card">
+      <h2>Search / Edit / Transfer / Deactivate</h2>
+      <input type="text" id="empSearchInput" placeholder="Search by employee ID or name..." oninput="searchEmployeesAdmin()">
+      <div id="empSearchResults"></div>
+    </div>
+  </div>
+
+  <!-- UNITS -->
+  <div id="panel-unit" style="display:none;">
+    <div class="card">
+      <h2>Floors</h2>
+      <div class="row-2">
+        <div><input type="text" id="newFloorName" placeholder="Floor name"></div>
+        <div><button class="btn btn-primary" onclick="withBtn(this, addFloor)">Add</button></div>
+      </div>
+      <table id="floorTable"><thead><tr><th>Floor</th><th>Status</th><th></th></tr></thead><tbody></tbody></table>
+    </div>
+    <div class="card">
+      <h2>Sections</h2>
+      <div class="row-2">
+        <div><input type="text" id="newSectionName" placeholder="Section name"></div>
+        <div><select id="newSectionFloor"></select></div>
+      </div>
+      <button class="btn btn-primary" onclick="withBtn(this, addSection)">Add</button>
+      <table id="sectionTable"><thead><tr><th>Section</th><th>Floor</th><th>Status</th><th></th></tr></thead><tbody></tbody></table>
+    </div>
+    <div class="card">
+      <h2>Departments</h2>
+      <div class="row-2">
+        <div><input type="text" id="newDeptName" placeholder="Department name"></div>
+        <div><button class="btn btn-primary" onclick="withBtn(this, addDepartment)">Add</button></div>
+      </div>
+      <table id="deptTable"><thead><tr><th>Department</th><th>Status</th><th></th></tr></thead><tbody></tbody></table>
+    </div>
+  </div>
+
+  <!-- DESIGNATIONS -->
+  <div id="panel-desig" style="display:none;">
+    <div class="card">
+      <h2>Designations</h2>
+      <div class="hint">RoleType controls app behavior. FloorManager = picks a section then marks. SectionIncharge / DeptIncharge = marks directly. Staff = regular employee, no login. Admin = full access.</div>
+      <div class="row-2">
+        <div><input type="text" id="newDesigName" placeholder="Designation name"></div>
+        <div>
+          <select id="newDesigRole">
+            <option value="Staff">Staff</option>
+            <option value="SectionIncharge">Section Incharge</option>
+            <option value="FloorManager">Floor Manager</option>
+            <option value="DeptIncharge">Dept Incharge</option>
+            <option value="Admin">Admin</option>
+          </select>
+        </div>
+      </div>
+      <button class="btn btn-primary" onclick="withBtn(this, addDesignation)">Add</button>
+      <table id="desigTable"><thead><tr><th>Designation</th><th>Role Type</th><th>Status</th><th></th></tr></thead><tbody></tbody></table>
+    </div>
+  </div>
+
+  <!-- USERS -->
+  <div id="panel-user" style="display:none;">
+    <div class="card">
+      <h2>Add User (login access)</h2>
+      <div class="hint">Links an existing active employee to a PIN so they can log in.</div>
+      <div class="row-2">
+        <div><input type="text" id="newUserEmpId" placeholder="Employee ID"></div>
+        <div><input type="text" id="newUserPin" placeholder="PIN"></div>
+      </div>
+      <button class="btn btn-primary" onclick="withBtn(this, addUser)">Add User</button>
+      <div id="userAddMsg"></div>
+      <table id="userTable"><thead><tr><th>Name</th><th>Designation</th><th>PIN</th><th>Status</th><th></th></tr></thead><tbody></tbody></table>
+    </div>
+  </div>
+
+  <!-- STATUS TYPES -->
+  <div id="panel-status" style="display:none;">
+    <div class="card">
+      <h2>Status Types (Table 2 dropdown)</h2>
+      <div class="hint">⚠️ One-time sheet update needed: add a 6th column header "Icon" to the StatusTypes tab.</div>
+      <div class="row-2">
+        <div><input type="text" id="newStatusName" placeholder="e.g. Sick Leave"></div>
+        <div><input type="text" id="newStatusIcon" placeholder="Icon (e.g. 🩹)" maxlength="4"></div>
+      </div>
+      <label style="display:flex;align-items:center;gap:6px;margin-top:8px;"><input type="checkbox" id="newStatusPerm" checked style="width:auto;"> Ask With/Without Permission</label>
+      <button class="btn btn-primary" onclick="withBtn(this, addStatusType)">Add</button>
+      <table id="statusTable"><thead><tr><th>Icon</th><th>Status</th><th>Permission?</th><th>Active</th><th></th></tr></thead><tbody></tbody></table>
+    </div>
+  </div>
+
+</div>
+  </div>
+</div>
+
+<script src="shared.js"></script>
+<script>
+let session = requireLogin(['Admin']);
+if (session) { renderShell('admin'); showTab('emp'); }
+
+function showTab(tab) {
+  ['emp','unit','desig','user','status'].forEach(t => {
+    document.getElementById('atab-' + t).classList.toggle('active', t === tab);
+    document.getElementById('panel-' + t).style.display = t === tab ? 'block' : 'none';
+  });
+  if (tab === 'emp') loadDesignationsForEmpForm();
+  if (tab === 'unit') loadUnits();
+  if (tab === 'desig') loadDesignations();
+  if (tab === 'user') loadUsers();
+  if (tab === 'status') loadStatusTypes();
+}
+
+// ---- Employees ----
+async function loadDesignationsForEmpForm() {
+  const desigs = await jsonpCall({ action: 'getDesignations' });
+  document.getElementById('newEmpDesignation').innerHTML = desigs.map(d => `<option value="${d.DesignationName}">${d.DesignationName}</option>`).join('');
+}
+
+async function addEmployee() {
+  const id = document.getElementById('newEmpId').value.trim();
+  const name = document.getElementById('newEmpName').value.trim();
+  const gender = document.getElementById('newEmpGender').value;
+  const designation = document.getElementById('newEmpDesignation').value;
+  const department = document.getElementById('newEmpDept').value.trim();
+  const section = document.getElementById('newEmpSection').value.trim();
+  const floor = document.getElementById('newEmpFloor').value.trim();
+  const msgEl = document.getElementById('empAddMsg');
+  if (!id || !name || !department || !section || !floor) { msgEl.innerHTML = '<div class="msg msg-err">Fill all fields.</div>'; return; }
+
+  const res = await jsonpCall({ action: 'addEmployee', employeeId: id, name, gender, department, section, designation, floor });
+  if (res.error) { msgEl.innerHTML = '<div class="msg msg-err">' + res.error + '</div>'; return; }
+  msgEl.innerHTML = '<div class="msg msg-ok">Employee added.</div>';
+  document.getElementById('newEmpId').value = '';
+  document.getElementById('newEmpName').value = '';
+  document.getElementById('newEmpDept').value = '';
+  document.getElementById('newEmpSection').value = '';
+  document.getElementById('newEmpFloor').value = '';
+}
+
+let empSearchTimer = null;
+function searchEmployeesAdmin() {
+  clearTimeout(empSearchTimer);
+  empSearchTimer = setTimeout(async () => {
+    const q = document.getElementById('empSearchInput').value.trim();
+    if (q.length < 2) { document.getElementById('empSearchResults').innerHTML = ''; return; }
+    const hits = await jsonpCall({ action: 'searchEmployees', query: q });
+    document.getElementById('empSearchResults').innerHTML = hits.map(e => `
+      <div class="card" style="margin-top:8px;">
+        <div class="row-2">
+          <div><label>Name</label><input type="text" id="ename_${e._row}" value="${e.Name}"></div>
+          <div><label>Gender</label><input type="text" id="egender_${e._row}" value="${e.Gender||''}"></div>
+        </div>
+        <div class="row-2">
+          <div><label>Department</label><input type="text" id="edept_${e._row}" value="${e.Department}"></div>
+          <div><label>Section</label><input type="text" id="esection_${e._row}" value="${e.Section}"></div>
+        </div>
+        <div class="row-2">
+          <div><label>Designation</label><input type="text" id="edesig_${e._row}" value="${e.Designation}"></div>
+          <div><label>Floor</label><input type="text" id="efloor_${e._row}" value="${e.Floor}"></div>
+        </div>
+        <div class="hint">ID #${e.EmployeeID} · ${(e.Active===true||e.Active==='TRUE')?'Active':'Inactive'}</div>
+        <div class="row-2" style="margin-top:6px;">
+          <button class="btn btn-outline btn-sm" onclick="withBtn(this, () => saveEmployeeEdit(${e._row}))">Save Changes</button>
+          <button class="btn ${(e.Active===true||e.Active==='TRUE') ? 'btn-crimson' : 'btn-outline'} btn-sm" onclick="withBtn(this, () => toggleEmployeeAdmin(${e._row}, ${!(e.Active===true||e.Active==='TRUE')}))">
+            ${(e.Active===true||e.Active==='TRUE') ? 'Deactivate (exit)' : 'Reactivate'}
+          </button>
+        </div>
+      </div>
+    `).join('') || '<div class="hint">No match.</div>';
+  }, 300);
+}
+
+async function saveEmployeeEdit(rowNum) {
+  const name = document.getElementById('ename_' + rowNum).value.trim();
+  const gender = document.getElementById('egender_' + rowNum).value.trim();
+  const department = document.getElementById('edept_' + rowNum).value.trim();
+  const section = document.getElementById('esection_' + rowNum).value.trim();
+  const designation = document.getElementById('edesig_' + rowNum).value.trim();
+  const floor = document.getElementById('efloor_' + rowNum).value.trim();
+  await jsonpCall({ action: 'editEmployee', rowNum, name, gender, department, section, designation, floor });
+  searchEmployeesAdmin();
+}
+
+async function toggleEmployeeAdmin(rowNum, active) {
+  await jsonpCall({ action: 'toggleEmployeeActive', rowNum, active });
+  searchEmployeesAdmin();
+}
+
+// ---- Units ----
+async function loadUnits() {
+  const floors = await jsonpCall({ action: 'getFloors', includeInactive: 'true' });
+  document.getElementById('floorTable').querySelector('tbody').innerHTML = floors.map(f => `
+    <tr><td>${f.FloorName}</td><td>${(f.Active===true||f.Active==='TRUE')?'Active':'Inactive'}</td>
+    <td><button class="btn btn-outline btn-sm" onclick="withBtn(this, () => toggleFloor('${f.FloorID}', ${!(f.Active===true||f.Active==='TRUE')}))">Toggle</button></td></tr>
+  `).join('');
+  document.getElementById('newSectionFloor').innerHTML = floors.filter(f=>f.Active===true||f.Active==='TRUE').map(f => `<option value="${f.FloorID}">${f.FloorName}</option>`).join('');
+
+  const sections = await jsonpCall({ action: 'getSections', includeInactive: 'true' });
+  document.getElementById('sectionTable').querySelector('tbody').innerHTML = sections.map(s => `
+    <tr><td>${s.SectionName}</td><td>${s.FloorName}</td><td>${(s.Active===true||s.Active==='TRUE')?'Active':'Inactive'}</td>
+    <td><button class="btn btn-outline btn-sm" onclick="withBtn(this, () => toggleSection('${s.SectionID}', ${!(s.Active===true||s.Active==='TRUE')}))">Toggle</button></td></tr>
+  `).join('');
+
+  const depts = await jsonpCall({ action: 'getDepartments', includeInactive: 'true' });
+  document.getElementById('deptTable').querySelector('tbody').innerHTML = depts.map(d => `
+    <tr><td>${d.DepartmentName}</td><td>${(d.Active===true||d.Active==='TRUE')?'Active':'Inactive'}</td>
+    <td><button class="btn btn-outline btn-sm" onclick="withBtn(this, () => toggleDepartment('${d.DepartmentID}', ${!(d.Active===true||d.Active==='TRUE')}))">Toggle</button></td></tr>
+  `).join('');
+}
+
+async function addFloor() {
+  const name = document.getElementById('newFloorName').value.trim();
+  if (!name) return;
+  await jsonpCall({ action: 'addFloor', floorName: name });
+  document.getElementById('newFloorName').value = '';
+  loadUnits();
+}
+async function toggleFloor(id, active) { await jsonpCall({ action: 'toggleFloor', floorId: id, active }); loadUnits(); }
+
+async function addSection() {
+  const name = document.getElementById('newSectionName').value.trim();
+  const floorId = document.getElementById('newSectionFloor').value;
+  if (!name || !floorId) return;
+  await jsonpCall({ action: 'addSection', sectionName: name, floorId });
+  document.getElementById('newSectionName').value = '';
+  loadUnits();
+}
+async function toggleSection(id, active) { await jsonpCall({ action: 'toggleSection', sectionId: id, active }); loadUnits(); }
+
+async function addDepartment() {
+  const name = document.getElementById('newDeptName').value.trim();
+  if (!name) return;
+  await jsonpCall({ action: 'addDepartment', departmentName: name });
+  document.getElementById('newDeptName').value = '';
+  loadUnits();
+}
+async function toggleDepartment(id, active) { await jsonpCall({ action: 'toggleDepartment', departmentId: id, active }); loadUnits(); }
+
+// ---- Designations ----
+async function loadDesignations() {
+  const rows = await jsonpCall({ action: 'getDesignations', includeInactive: 'true' });
+  document.getElementById('desigTable').querySelector('tbody').innerHTML = rows.map(d => `
+    <tr><td>${d.DesignationName}</td><td>${d.RoleType}</td><td>${(d.Active===true||d.Active==='TRUE')?'Active':'Inactive'}</td>
+    <td><button class="btn btn-outline btn-sm" onclick="withBtn(this, () => toggleDesignation('${d.DesignationID}', ${!(d.Active===true||d.Active==='TRUE')}))">Toggle</button></td></tr>
+  `).join('');
+}
+async function addDesignation() {
+  const name = document.getElementById('newDesigName').value.trim();
+  const role = document.getElementById('newDesigRole').value;
+  if (!name) return;
+  await jsonpCall({ action: 'addDesignation', designationName: name, roleType: role });
+  document.getElementById('newDesigName').value = '';
+  loadDesignations();
+}
+async function toggleDesignation(id, active) { await jsonpCall({ action: 'toggleDesignation', designationId: id, active }); loadDesignations(); }
+
+// ---- Users ----
+async function loadUsers() {
+  const rows = await jsonpCall({ action: 'getUsers' });
+  document.getElementById('userTable').querySelector('tbody').innerHTML = rows.map(u => `
+    <tr><td>${u.EmployeeName}</td><td>${u.Designation}</td><td>${u.PIN}</td><td>${(u.Active===true||u.Active==='TRUE')?'Active':'Inactive'}</td>
+    <td><button class="btn btn-outline btn-sm" onclick="withBtn(this, () => toggleUser('${u.UserID}', ${!(u.Active===true||u.Active==='TRUE')}))">Toggle</button></td></tr>
+  `).join('');
+}
+async function addUser() {
+  const empId = document.getElementById('newUserEmpId').value.trim();
+  const pin = document.getElementById('newUserPin').value.trim();
+  const msgEl = document.getElementById('userAddMsg');
+  if (!empId || !pin) { msgEl.innerHTML = '<div class="msg msg-err">Fill all fields.</div>'; return; }
+  const res = await jsonpCall({ action: 'addUser', employeeId: empId, pin });
+  if (res.error) { msgEl.innerHTML = '<div class="msg msg-err">' + res.error + '</div>'; return; }
+  msgEl.innerHTML = '<div class="msg msg-ok">User added.</div>';
+  document.getElementById('newUserEmpId').value = '';
+  document.getElementById('newUserPin').value = '';
+  loadUsers();
+}
+async function toggleUser(id, active) { await jsonpCall({ action: 'toggleUser', userId: id, active }); loadUsers(); }
+
+// ---- Status Types ----
+async function loadStatusTypes() {
+  const rows = await jsonpCall({ action: 'getStatusTypes', includeInactive: 'true' });
+  document.getElementById('statusTable').querySelector('tbody').innerHTML = rows.map(s => `
+    <tr>
+      <td><input type="text" id="icon_${s.StatusID}" value="${s.Icon || ''}" maxlength="4" style="width:44px;padding:4px;text-align:center;" onchange="withBtn(this, () => saveStatusIcon('${s.StatusID}'))"></td>
+      <td>${s.StatusName}</td>
+      <td>${(s.RequiresPermission===true||s.RequiresPermission==='TRUE')?'Yes':'No'}</td>
+      <td>${(s.Active===true||s.Active==='TRUE')?'Active':'Inactive'}</td>
+      <td><button class="btn btn-outline btn-sm" onclick="withBtn(this, () => toggleStatusType('${s.StatusID}', ${!(s.Active===true||s.Active==='TRUE')}))">Toggle</button></td>
+    </tr>
+  `).join('');
+}
+async function saveStatusIcon(statusId) {
+  const icon = document.getElementById('icon_' + statusId).value.trim();
+  await jsonpCall({ action: 'editStatusIcon', statusId, icon });
+}
+async function addStatusType() {
+  const name = document.getElementById('newStatusName').value.trim();
+  const icon = document.getElementById('newStatusIcon').value.trim();
+  const perm = document.getElementById('newStatusPerm').checked;
+  if (!name) return;
+  await jsonpCall({ action: 'addStatusType', statusName: name, requiresPermission: perm, icon });
+  document.getElementById('newStatusName').value = '';
+  document.getElementById('newStatusIcon').value = '';
+  loadStatusTypes();
+}
+async function toggleStatusType(id, active) { await jsonpCall({ action: 'toggleStatusType', statusId: id, active }); loadStatusTypes(); }
+</script>
+
+</body>
+</html>
