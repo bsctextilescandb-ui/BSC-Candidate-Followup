@@ -208,58 +208,6 @@ function reportFooterHTML() {
   `;
 }
 
-function reportGroupRowHTML(icon, label, present, total, statusTypes, statusCounts, submittedLine) {
-  const chips = statusTypes.map(st => `
-    <span style="font-size:10px;background:#F9F7F4;border-radius:12px;padding:3px 9px;margin-right:5px;color:#555;">
-      ${statusIcon(st)} ${statusCounts[st.StatusName] || 0} ${st.StatusName}
-    </span>
-  `).join('');
-  return `
-    <div style="padding:10px 0;border-bottom:1px solid #f0ede8;">
-      <div style="display:flex;justify-content:space-between;align-items:center;font-size:12.5px;">
-        <span>${icon} <strong style="color:#1E2D4E;">${label}</strong></span>
-        <span style="color:#2d8a4e;font-weight:700;">${present} / ${total} Present</span>
-      </div>
-      <div style="margin-top:5px;">${chips}</div>
-      ${submittedLine ? `<div style="font-size:9.5px;color:#aaa;margin-top:4px;">${submittedLine}</div>` : ''}
-    </div>
-  `;
-}
-
-// Builds the full whole-store report (Dashboard / Admin use)
-function buildFullStoreReportHTML(data) {
-  const cum = data.cumulative;
-  let boxes = reportCountBoxHTML(PRESENT_ICON, cum.totalPresent, 'Present', '#2d8a4e');
-  data.statusTypes.forEach(st => {
-    boxes += reportCountBoxHTML(statusIcon(st), cum.statusCounts[st.StatusName] || 0, st.StatusName, '#C9952A');
-  });
-
-  const mgr = data.managerUnit;
-  const mgrHtml = reportGroupRowHTML('\u{1F3E2}', mgr.label, mgr.totalPresent ?? 0, mgr.totalAssigned ?? 0, data.statusTypes, mgr.statusCounts,
-    mgr.submitted ? `Submitted by ${mgr.submittedByName} at ${mgr.submittedAt}` : 'Not yet submitted');
-
-  const sectionRows = data.sectionUnits.map(u => reportGroupRowHTML('\u{1F3EC}', u.label, u.totalPresent ?? 0, u.totalAssigned ?? 0, data.statusTypes, u.statusCounts,
-    u.submitted ? `Submitted by ${u.submittedByName} at ${u.submittedAt}` : 'Not yet submitted')).join('');
-
-  const deptRows = data.deptUnits.map(u => reportGroupRowHTML('\u{1F5C2}\uFE0F', u.label, u.totalPresent ?? 0, u.totalAssigned ?? 0, data.statusTypes, u.statusCounts,
-    u.submitted ? `Submitted by ${u.submittedByName} at ${u.submittedAt}` : 'Not yet submitted')).join('');
-
-  return `
-    <div style="width:820px;background:#fff;padding:24px;font-family:'Segoe UI',system-ui,sans-serif;">
-      ${reportHeaderHTML('BSC Textiles — Daily Attendance Report', 'Whole Store', data.date)}
-      <div style="font-size:10px;color:#aaa;margin-bottom:8px;">${cum.unitsSubmitted} of ${cum.unitsTotal} groups submitted · ${cum.totalAssigned} total assigned · Grooming checked ${cum.groomingChecked} (non-compliant ${cum.groomingNonCompliant})</div>
-      <div style="display:flex;gap:8px;flex-wrap:wrap;margin-bottom:18px;">${boxes}</div>
-      <div style="font-size:9px;font-weight:800;color:#1E2D4E;text-transform:uppercase;letter-spacing:.1em;margin-bottom:8px;">Managers</div>
-      ${mgrHtml}
-      <div style="font-size:9px;font-weight:800;color:#1E2D4E;text-transform:uppercase;letter-spacing:.1em;margin:16px 0 8px;">Sales — By Section</div>
-      ${sectionRows}
-      <div style="font-size:9px;font-weight:800;color:#1E2D4E;text-transform:uppercase;letter-spacing:.1em;margin:16px 0 8px;">Non-Sales — By Department</div>
-      ${deptRows}
-      ${reportFooterHTML()}
-    </div>
-  `;
-}
-
 // Builds a single section/department's own report (marker's submitted view)
 function buildSingleGroupReportHTML(scopeLabel, dateStr, status, statusTypes) {
   const statusCounts = {};
@@ -402,7 +350,7 @@ function buildManagersSimpleTable(managerDetail) {
   `;
 }
 
-function buildSimpleTableReportHTML(data, managerDetail) {
+function buildSalesNonSalesReportHTML(data) {
   return `
     <div style="width:760px;background:#fff;padding:20px;font-family:'Segoe UI',system-ui,sans-serif;">
       <div style="text-align:center;margin-bottom:10px;"><img src="${LOGO_BSC}" style="height:50px;"></div>
@@ -411,7 +359,19 @@ function buildSimpleTableReportHTML(data, managerDetail) {
       ${buildSalesSimpleTable(data.sectionUnits, data.statusTypes)}
       <div style="font-size:9px;font-weight:800;color:#1E2D4E;text-transform:uppercase;letter-spacing:.1em;margin:14px 0 4px;">Non-Sales — By Department</div>
       ${buildNonSalesSimpleTable(data.deptUnits, data.statusTypes)}
-      <div style="font-size:9px;font-weight:800;color:#1E2D4E;text-transform:uppercase;letter-spacing:.1em;margin:14px 0 4px;">Managers</div>
+      <div style="margin-top:16px;padding-top:10px;border-top:1px solid #ccc;font-size:10px;color:#888;text-align:center;">
+        Prepared via BSC Attendance App · C&amp;B (Consulting &amp; Beyond)
+      </div>
+    </div>
+  `;
+}
+
+function buildManagersReportHTML(data, managerDetail) {
+  return `
+    <div style="width:560px;background:#fff;padding:20px;font-family:'Segoe UI',system-ui,sans-serif;">
+      <div style="text-align:center;margin-bottom:10px;"><img src="${LOGO_BSC}" style="height:50px;"></div>
+      <div style="background:#EDE8DE;border:1px solid #333;padding:8px;text-align:center;font-weight:800;font-size:15px;color:#1E2D4E;margin-bottom:10px;">DATE : ${data.date}</div>
+      <div style="font-size:9px;font-weight:800;color:#1E2D4E;text-transform:uppercase;letter-spacing:.1em;margin-bottom:4px;">Managers</div>
       ${buildManagersSimpleTable(managerDetail)}
       <div style="margin-top:16px;padding-top:10px;border-top:1px solid #ccc;font-size:10px;color:#888;text-align:center;">
         Prepared via BSC Attendance App · C&amp;B (Consulting &amp; Beyond)
