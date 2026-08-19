@@ -12,7 +12,6 @@
 <button class="sb-toggle" id="sbToggle" onclick="toggleSidebar()"><span></span><span></span><span></span></button>
 <div class="sb-mob-overlay" id="sbOverlay" onclick="closeSidebar()"></div>
 
-  
 <div class="app-shell">
   <aside class="sidebar" id="sidebar"></aside>
   <div class="main">
@@ -56,6 +55,61 @@
   <div class="card">
     <h2>Non-Sales — By Department</h2>
     <div id="deptList"></div>
+  </div>
+
+  <div class="card">
+    <h2>Grooming &amp; Compliance Report</h2>
+    <div class="row-2">
+      <div>
+        <label>Scope</label>
+        <select id="grScopeType" onchange="onGrScopeChange()">
+          <option value="store">Store-wide</option>
+          <option value="section">Floor / Section</option>
+          <option value="department">Department</option>
+          <option value="employee">Individual Employee</option>
+        </select>
+      </div>
+      <div>
+        <label>Range</label>
+        <select id="grRange" onchange="onGrRangeChange()">
+          <option value="today">Today</option>
+          <option value="week">This Week</option>
+          <option value="month">This Month</option>
+          <option value="custom">Custom</option>
+        </select>
+      </div>
+    </div>
+
+    <div id="grScopeSection" style="display:none;">
+      <div class="row-2">
+        <div><label>Floor</label><select id="grFloorSelect" onchange="onGrFloorChange()"></select></div>
+        <div><label>Section</label><select id="grSectionSelect"></select></div>
+      </div>
+    </div>
+    <div id="grScopeDept" style="display:none;">
+      <label>Department</label>
+      <select id="grDeptSelect"></select>
+    </div>
+    <div id="grScopeEmployee" style="display:none;">
+      <label>Search Employee</label>
+      <input type="text" id="grEmpSearch" placeholder="Type employee ID or name..." oninput="grSearchEmployees()">
+      <div id="grEmpResults" class="search-results"></div>
+      <div class="hint" id="grEmpSelected"></div>
+    </div>
+
+    <div id="grCustomRange" class="row-2" style="display:none;">
+      <div><label>From</label><input type="text" id="grDateFrom"></div>
+      <div><label>To</label><input type="text" id="grDateTo"></div>
+    </div>
+
+    <button class="btn btn-primary" onclick="withBtn(this, runGroomingReport)">Run Report</button>
+    <div id="grMsg"></div>
+
+    <div id="grResults" style="display:none;margin-top:14px;">
+      <div class="count-table" id="grSummaryBoxes"></div>
+      <div class="hint" style="margin-top:8px;">Sorted by lowest compliance first — easiest way to spot repeat issues.</div>
+      <table id="grEmpTable"><thead><tr><th>Employee</th><th>Eligible Days</th><th>Avg Score</th><th>Compliance</th></tr></thead><tbody></tbody></table>
+    </div>
   </div>
 
 </div>
@@ -129,6 +183,119 @@ function copySummary() {
   Object.keys(d.cumulative.statusCounts).forEach(k => { text += `${k}: ${d.cumulative.statusCounts[k]}\n`; });
   text += `Grooming/Uniform/ID checked: ${d.cumulative.groomingChecked} | Non-compliant: ${d.cumulative.groomingNonCompliant}\n`;
   navigator.clipboard.writeText(text).then(() => alert('Summary copied — ready to paste to management.'));
+}
+
+// ===================== GROOMING & COMPLIANCE REPORT =====================
+let grSelectedEmployee = null;
+
+async function onGrScopeChange() {
+  const t = document.getElementById('grScopeType').value;
+  document.getElementById('grScopeSection').style.display = t === 'section' ? 'block' : 'none';
+  document.getElementById('grScopeDept').style.display = t === 'department' ? 'block' : 'none';
+  document.getElementById('grScopeEmployee').style.display = t === 'employee' ? 'block' : 'none';
+
+  if (t === 'section' && !document.getElementById('grFloorSelect').options.length) {
+    const floors = await jsonpCall({ action: 'getFloors' });
+    document.getElementById('grFloorSelect').innerHTML = floors.map(f => `<option value="${f.FloorID}">${f.FloorName}</option>`).join('');
+    onGrFloorChange();
+  }
+  if (t === 'department' && !document.getElementById('grDeptSelect').options.length) {
+    const depts = await jsonpCall({ action: 'getDepartments' });
+    document.getElementById('grDeptSelect').innerHTML = depts.map(d => `<option value="${d.DepartmentID}">${d.DepartmentName}</option>`).join('');
+  }
+}
+
+async function onGrFloorChange() {
+  const floorId = document.getElementById('grFloorSelect').value;
+  const sections = await jsonpCall({ action: 'getSectionsByFloor', floorId });
+  document.getElementById('grSectionSelect').innerHTML = sections.map(s => `<option value="${s.SectionID}">${s.SectionName}</option>`).join('');
+}
+
+function onGrRangeChange() {
+  document.getElementById('grCustomRange').style.display = document.getElementById('grRange').value === 'custom' ? 'flex' : 'none';
+}
+
+let grSearchTimer = null;
+function grSearchEmployees() {
+  clearTimeout(grSearchTimer);
+  grSearchTimer = setTimeout(async () => {
+    const q = document.getElementById('grEmpSearch').value.trim();
+    if (q.length < 2) { document.getElementById('grEmpResults').innerHTML = ''; return; }
+    const hits = await jsonpCall({ action: 'searchEmployees', query: q });
+    document.getElementById('grEmpResults').innerHTML = hits.map(e => `
+      <div class="emp-hit" onclick="grPickEmployee('${e.EmployeeID}','${e.Name.replace(/'/g, "\\'")}')">
+        <span>${e.Name}</span><span class="num">#${e.EmployeeID}</span>
+      </div>
+    `).join('') || '<div class="hint">No match.</div>';
+  }, 300);
+}
+function grPickEmployee(id, name) {
+  grSelectedEmployee = { id, name };
+  document.getElementById('grEmpSelected').innerText = `Selected: ${name} (#${id})`;
+  document.getElementById('grEmpResults').innerHTML = '';
+  document.getElementById('grEmpSearch').value = '';
+}
+
+function grDateRangeForPreset(preset) {
+  const today = new Date();
+  const toStr = d => d.toISOString().slice(0, 10);
+  if (preset === 'today') return { from: toStr(today), to: toStr(today) };
+  if (preset === 'week') {
+    const from = new Date(today); from.setDate(from.getDate() - 6);
+    return { from: toStr(from), to: toStr(today) };
+  }
+  if (preset === 'month') {
+    const from = new Date(today.getFullYear(), today.getMonth(), 1);
+    return { from: toStr(from), to: toStr(today) };
+  }
+  return null;
+}
+
+async function runGroomingReport() {
+  const msgEl = document.getElementById('grMsg');
+  msgEl.innerHTML = '';
+  const scopeType = document.getElementById('grScopeType').value;
+  const rangePreset = document.getElementById('grRange').value;
+
+  let scopeId = '';
+  if (scopeType === 'section') scopeId = document.getElementById('grSectionSelect').value;
+  else if (scopeType === 'department') scopeId = document.getElementById('grDeptSelect').value;
+  else if (scopeType === 'employee') {
+    if (!grSelectedEmployee) { msgEl.innerHTML = '<div class="msg msg-err">Search and select an employee first.</div>'; return; }
+    scopeId = grSelectedEmployee.id;
+  }
+
+  let dateFrom, dateTo;
+  if (rangePreset === 'custom') {
+    dateFrom = document.getElementById('grDateFrom').value;
+    dateTo = document.getElementById('grDateTo').value;
+    if (!dateFrom || !dateTo) { msgEl.innerHTML = '<div class="msg msg-err">Pick both From and To dates.</div>'; return; }
+  } else {
+    const r = grDateRangeForPreset(rangePreset);
+    dateFrom = r.from; dateTo = r.to;
+  }
+
+  const scopeApiMap = { store: 'store', section: 'section', department: 'department', employee: 'employee' };
+  const res = await jsonpCall({ action: 'getGroomingReport', scope: scopeApiMap[scopeType], scopeId, dateFrom, dateTo });
+  if (res.error) { msgEl.innerHTML = '<div class="msg msg-err">' + res.error + '</div>'; return; }
+
+  document.getElementById('grResults').style.display = 'block';
+  document.getElementById('grSummaryBoxes').innerHTML = `
+    <div class="count-box present"><div class="n">${res.averageScore !== null ? res.averageScore : '—'}</div><div class="lbl">Avg Score / 5</div></div>
+    <div class="count-box"><div class="n">${res.compliancePercent !== null ? res.compliancePercent + '%' : '—'}</div><div class="lbl">Compliance</div></div>
+    <div class="count-box"><div class="n">${res.eligibleDays}</div><div class="lbl">Eligible Days</div></div>
+    <div class="count-box"><div class="n">${res.employeeCount}</div><div class="lbl">Employees</div></div>
+  `;
+
+  const rows = res.employees.filter(e => e.eligibleDays > 0)
+    .sort((a, b) => (a.compliancePercent ?? 100) - (b.compliancePercent ?? 100));
+
+  document.getElementById('grEmpTable').querySelector('tbody').innerHTML = rows.map(e => {
+    const overrideNote = e.overrideDays && e.overrideDays.length
+      ? `<div class="hint">${e.overrideDays.map(o => `${o.date}: score ${o.score}${o.uniform === 'No' ? ', uniform issue' : ''}${o.idCard === 'No' ? ', ID issue' : ''}`).join(' · ')}</div>`
+      : '';
+    return `<tr><td>${e.name}<br>${overrideNote}</td><td>${e.eligibleDays}</td><td>${e.averageScore}</td><td>${e.compliancePercent}%</td></tr>`;
+  }).join('') || '<tr><td colspan="4" class="hint">No eligible days found for this range/scope.</td></tr>';
 }
 </script>
 
