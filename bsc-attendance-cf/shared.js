@@ -269,7 +269,7 @@ function buildSalesSimpleTable(sectionUnits, statusTypes) {
   sectionUnits.forEach(u => {
     const floor = u.floorName || 'Unknown';
     const section = u.label.replace(floor + ' — ', '');
-    (byFloor[floor] = byFloor[floor] || []).push({ section, present: u.totalPresent ?? 0, total: u.totalAssigned ?? 0, counts: u.statusCounts });
+    (byFloor[floor] = byFloor[floor] || []).push({ section, present: Number(u.totalPresent) || 0, total: Number(u.totalAssigned) || 0, counts: u.statusCounts });
   });
   const floorNames = Object.keys(byFloor).sort((a, b) => {
     const ia = FLOOR_ORDER_.indexOf(a), ib = FLOOR_ORDER_.indexOf(b);
@@ -315,7 +315,7 @@ function buildNonSalesSimpleTable(deptUnits, statusTypes) {
 
   let rowsHtml = '';
   deptUnits.forEach(u => {
-    const present = u.totalPresent ?? 0, total = u.totalAssigned ?? 0;
+    const present = Number(u.totalPresent) || 0, total = Number(u.totalAssigned) || 0;
     grand.present += present; grand.total += total;
     statusCols.forEach(c => grand.counts[c] += (u.statusCounts[c] || 0));
     rowsHtml += `<tr>${simpleTableCell(u.label)}${simpleTableCell(present, { align: 'center' })}${statusCols.map(c => simpleTableCell(u.statusCounts[c] || 0, { align: 'center' })).join('')}${simpleTableCell(total, { align: 'center', bold: true })}</tr>`;
